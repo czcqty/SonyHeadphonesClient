@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=SonyHeadphonesClient
+Comment=Control local features of supported Sony headphones
+Exec=SonyHeadphonesClient
+Icon=io.github.czcqty.SonyHeadphonesClient
+Terminal=false
+Categories=AudioVideo;Audio;Settings;
+StartupWMClass=SonyHeadphonesClient

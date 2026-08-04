@@ -1,0 +1,57 @@
+# Build directories
+build/
+cmake-build*/
+
+# Compiled objects
+*.o
+*.obj
+*.slo
+*.lo
+
+# Libraries
+*.so
+*.dylib
+*.dll
+*.a
+*.lib
+*.pdb
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Precompiled headers
+*.gch
+*.pch
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+CMakeSettings.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node (theme generator)
+tooling/theme-generator/node_modules/
+
+# vcpkg
+vcpkg_installed/
+
+# Backup files
+*.bak
+
+# Local interoperability references and analysis tools
+*.apk
+*.apks
+*.xapk
+*.aab
+.tools/
+reference-input/
+reference-output/

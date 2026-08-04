@@ -1,0 +1,71 @@
+import QtQuick
+import QtQuick.Controls
+
+Item {
+    id: root
+    property string title
+    property string subtitle
+    property bool switchVisible: false
+    property bool checked: false
+    property bool rowEnabled: true
+    signal activated()
+    signal toggled(bool checked)
+
+    width: parent ? parent.width : 0
+    height: subtitle.length > 0 ? 76 : 64
+    opacity: rowEnabled ? 1 : 0.38
+
+    TapHandler {
+        enabled: root.rowEnabled
+        onTapped: {
+            if (root.switchVisible)
+                root.toggled(!root.checked)
+            else
+                root.activated()
+        }
+    }
+
+    Column {
+        anchors.left: parent.left
+        anchors.right: root.switchVisible ? toggle.left : parent.right
+        anchors.leftMargin: 16
+        anchors.rightMargin: 16
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: 4
+
+        Text {
+            width: parent.width
+            text: root.title
+            color: Tokens.textPrimary
+            font.pixelSize: Tokens.fontS
+            elide: Text.ElideRight
+        }
+        Text {
+            width: parent.width
+            visible: root.subtitle.length > 0
+            text: root.subtitle
+            color: Tokens.textSecondary
+            font.pixelSize: Tokens.font3S
+            elide: Text.ElideRight
+        }
+    }
+
+    AppSwitch {
+        id: toggle
+        visible: root.switchVisible
+        enabled: root.rowEnabled
+        checked: root.checked
+        anchors.right: parent.right
+        anchors.rightMargin: 12
+        anchors.verticalCenter: parent.verticalCenter
+        onToggled: root.toggled(checked)
+    }
+
+    Rectangle {
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 1
+        color: Tokens.divider
+    }
+}

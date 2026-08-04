@@ -1,0 +1,136 @@
+import QtQuick
+import QtQuick.Controls
+
+ApplicationWindow {
+    id: window
+    width: Tokens.windowWidth
+    height: Tokens.windowHeight
+    minimumWidth: Tokens.windowWidth
+    maximumWidth: Tokens.windowWidth
+    minimumHeight: Tokens.windowHeight
+    maximumHeight: Tokens.windowHeight
+    visible: true
+    title: "SonyHeadphonesClient"
+    color: Tokens.surface
+    palette.window: Tokens.surface
+    palette.windowText: Tokens.textPrimary
+    palette.base: Tokens.surfaceContainer
+    palette.alternateBase: Tokens.surfaceContainerHigh
+    palette.text: Tokens.textPrimary
+    palette.button: Tokens.surfaceContainerHighest
+    palette.buttonText: Tokens.textPrimary
+    palette.highlight: Tokens.primary
+    palette.highlightedText: Tokens.primaryText
+
+    Binding {
+        target: Tokens
+        property: "darkMode"
+        value: appController.darkMode
+    }
+
+    Loader {
+        anchors.fill: parent
+        sourceComponent: {
+            switch (appController.currentRoute) {
+            case "connection": return connectionPage
+            case "settings": return settingsPage
+            case "touch": return touchPage
+            case "voice": return voicePage
+            case "noise": return noisePage
+            case "equalizer": return equalizerPage
+            case "devices": return devicesPage
+            default: return homePage
+            }
+        }
+    }
+
+    Component { id: connectionPage; ConnectionPage {} }
+    Component { id: homePage; HomePage {} }
+    Component { id: settingsPage; SettingsPage {} }
+    Component { id: touchPage; TouchAssignmentsPage {} }
+    Component { id: voicePage; VoiceGuidancePage {} }
+    Component { id: noisePage; NoiseControlPage {} }
+    Component { id: equalizerPage; EqualizerPage {} }
+    Component { id: devicesPage; DevicesPage {} }
+
+    Rectangle {
+        anchors.fill: parent
+        visible: appController.previewState !== "ready"
+        color: Tokens.scrim
+        z: 100
+
+        Column {
+            anchors.centerIn: parent
+            width: parent.width - 64
+            spacing: 18
+
+            BusyIndicator {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: appController.previewState === "loading"
+                running: visible
+            }
+            Text {
+                width: parent.width
+                horizontalAlignment: Text.AlignHCenter
+                wrapMode: Text.WordWrap
+                color: Tokens.textPrimary
+                font.pixelSize: Tokens.fontS
+                text: {
+                    switch (appController.previewState) {
+                    case "loading": return I18n.text("loading")
+                    case "empty": return I18n.text("empty")
+                    case "error": return appController.connection.errorCode.length > 0
+                        ? I18n.errorMessage(appController.connection.errorCode,
+                                            appController.connection.errorDetail)
+                        : I18n.text("unavailable")
+                    case "disabled": return I18n.text("unavailable")
+                    default: return ""
+                    }
+                }
+            }
+            Button {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: appController.previewState === "empty" || appController.previewState === "error"
+                text: I18n.text("retry")
+                onClicked: appController.previewState = "ready"
+            }
+        }
+    }
+
+    Rectangle {
+        visible: appController.profileReferenceBlocked && appController.previewMode
+        anchors.left: parent.left
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        height: 28
+        color: Tokens.primaryContainer
+        z: 101
+        Text {
+            anchors.centerIn: parent
+            text: I18n.text("reference.blocked")
+            color: Tokens.textPrimary
+            font.pixelSize: Tokens.font3S
+        }
+    }
+
+    ConnectionOverlay {
+        anchors.fill: parent
+        z: 150
+    }
+
+    ThemeToggle {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: 16
+        anchors.bottomMargin: 16
+        z: 200
+    }
+
+    LanguageToggle {
+        anchors.right: parent.right
+        anchors.bottom: parent.bottom
+        anchors.rightMargin: 76
+        anchors.bottomMargin: 16
+        z: 200
+    }
+}
