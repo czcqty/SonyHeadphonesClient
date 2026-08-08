@@ -12,8 +12,9 @@ Quick/QML application backed by C++ ViewModels and `libmdr`.
   transport regression tests
 - `SonyHeadphonesClient_qml_tests`: QML/QuickTest contract tests
 - `SonyHeadphonesClient_visual_diff`: deterministic pixel comparison utility
-- `run_gui_tests`: runs all registered `gui-*` CTest suites
-- `capture_qml_baselines`: captures the Windows route/state/locale matrix
+- `run_gui_tests`: runs all registered `gui-*` CTest suites, including the
+  Python metadata validators when Python is found
+- `capture_qml_baselines`: captures the Windows route/state/locale/theme matrix
 
 ## Structure
 
@@ -52,6 +53,11 @@ capability, updates `MDRProperty::desired`, and lets `MdrSession` submit dirty
 values through the existing polling state machine. Unsupported operations must
 not modify desired state or emit a protocol command.
 
+The current Devices page is intentionally incomplete: `libmdr` can decode a
+paired-device list, but `DeviceManagerViewModel::devices()` still returns two
+deterministic placeholder rows. Pairing-mode and playback-target writes are
+wired; live list display, connect/disconnect, and unpair actions are not.
+
 ## Preview interface
 
 ```text
@@ -85,6 +91,10 @@ Preview profiles prove UI behavior and capability mapping only. They are not
 evidence that a physical model has passed read, write, reconnect, or
 persistence testing.
 
+Supplying any `--preview-*` option enables preview mode. `--capture` only saves
+the current window; combine it with `--preview-profile` for a hardware-free,
+deterministic capture.
+
 ## Windows development runtime
 
 The CMake target copies Qt Quick runtime DLLs, the Windows platform plugin, and
@@ -110,6 +120,10 @@ To regenerate platform icons from `assets/icons/app-icon.svg`, install Pillow
 and CairoSVG and run `python packaging/generate_icons.py` from the repository
 root.
 
+English source strings live in `qml/I18n.qml`. Simplified Chinese translations
+live in `translations/SonyHeadphonesClient_zh_CN.ts`, are compiled to a Qt
+catalog, and are applied at runtime by `AppController`.
+
 ## Visual acceptance
 
 `CapturePreviewBaselines.ps1` produces deterministic captures at 412 × 780
@@ -120,3 +134,8 @@ overlay.
 Static APK measurements are documented under `docs/reference/`. Visual parity
 remains `reference-blocked` until the implementation and official application
 are captured at the same route, locale, device profile, viewport, and state.
+
+The current local Debug baseline contains six passing CTest entries: ViewModel,
+backend, QML QuickTest, localization-catalog, application-icon, and package-
+metadata checks. This does not replace real-device or cross-platform release
+verification.

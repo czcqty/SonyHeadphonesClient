@@ -14,12 +14,21 @@ generated protocol files:
 
 ```bash
 cmake -S . -B build -DMDR_ENABLE_CODEGEN=OFF
-cmake --build build --target SonyHeadphonesClient
-ctest --test-dir build --output-on-failure
+cmake --build build --config RelWithDebInfo --parallel
+ctest --test-dir build -C RelWithDebInfo --output-on-failure
 ```
 
-If you do modify protocol payload declarations, follow `AGENTS.md`, run the
-appropriate code-generation targets, and include the generated outputs.
+With `BUILD_TESTING=ON` (the default), the registered suite covers ViewModels,
+backend regressions, QML navigation, translations, icons, and package metadata.
+Python-based validators are registered only when a Python interpreter is found.
+
+If you do modify protocol payload declarations, follow
+[`AGENTS.md`](../AGENTS.md), run the appropriate code-generation targets, and
+include the generated outputs.
+
+Do not mark a feature implemented for a device from a preview profile or bundled
+artwork. Update `docs/device-support/` only from a real-device report that names
+the application commit/version, firmware, operating system, and tested behavior.
 
 ## Licensing and credits
 

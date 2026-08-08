@@ -30,6 +30,7 @@ SonyHeadphonesClient
   --preview-profile <profile>
   --preview-route <route>
   --preview-state <state>
+  --preview-theme <system|light|dark>
   --locale <en|zh_CN>
   --capture <output.png>
 ```
@@ -49,8 +50,9 @@ masks, and fails when the mismatch ratio exceeds the configured gate.
   translation catalog have been removed.
 - The Qt Quick application, ViewModel test, backend regression test, QuickTest
   target, and visual diff utility build with MSVC.
-- CTest result after the Widgets removal: 3/3 passing (`gui-viewmodels`,
-  `gui-backend-regressions`, and `gui-qml-quicktest`).
+- Current Windows Debug CTest result on 2026-08-04: 6/6 passing
+  (`gui-viewmodels`, `gui-backend-regressions`, `gui-localization-catalog`,
+  `gui-application-icons`, `gui-package-metadata`, and `gui-qml-quicktest`).
 - The visual diff utility self-check completed with zero mismatched pixels.
 - Local implementation captures were visually inspected for the home,
   settings, ambient sound, equalizer, error, and empty states.

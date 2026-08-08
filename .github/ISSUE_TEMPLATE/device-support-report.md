@@ -18,18 +18,25 @@ Use **✅** for working, **❌** for unsupported or broken, **❓** for untested
 
 | Feature | Status | Notes |
 | --- | --- | --- |
+| Scan, connect, reconnect | | |
 | Playback metadata | | |
 | Battery | | |
 | Volume and playback controls | | |
 | Noise cancelling / ambient sound | | |
 | Equalizer | | |
 | DSEE / upscaling | | |
+| Bluetooth connection quality | | |
 | Speak-to-Chat | | |
 | Listening mode | | |
 | Auto power-off / wearing detection | | |
 | Touch and button assignments | | |
 | Voice guidance | | |
 | Pairing and multipoint | | |
+| Safe Listening | | |
+
+For every working write operation, note whether reconnect and device-side
+persistence were also verified. If a page shows placeholder data or a control
+is absent, report that separately from protocol support.
 
 ## Additional observations
 

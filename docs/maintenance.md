@@ -27,6 +27,10 @@ The coroutine ownership and MDR v1 packet regressions live in
 mapping live in `gui/tests/ViewModelTests.cpp`; QML contracts live under
 `gui/tests/qml/`.
 
+With Python available, CTest also registers translation-catalog, application-
+icon, and package-metadata validators. The existing Windows Debug build passed
+all six registered tests on 2026-08-04.
+
 The protocol and Windows changes are compile-checked by the normal Windows
 build. Real-device verification remains required for transport, reconnect,
 capability, and persistence behavior.

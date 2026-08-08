@@ -12,19 +12,34 @@ the application scope.
 ## Features
 
 - Noise cancelling, Ambient Sound Control, ambient level, and Focus on Voice
-- Five-band and ten-band equalizers with Clear Bass and device presets
-- Playback, volume, battery, codec, and track information
-- DSEE, Speak-to-Chat, listening modes, auto power-off, and wearing detection
-- Touch/button assignments, notification and voice guidance
-- Pairing and multipoint management when exposed by the connected device
+- Device-reported equalizer band layouts, Clear Bass, and Flat/Custom editing
+- Playback, volume, left/right/case battery, and track information
+- DSEE, Speak-to-Chat on/off, BGM listening mode, auto power-off, and wearing
+  pause
+- Touch/button assignments, head gestures, and voice-guidance on/off and volume
+- Pairing-mode and multipoint playback-target protocol commands when advertised
 - MDR v2 connection with automatic MDR v1 fallback for implemented legacy
   operations
 - Fixed 412 × 780 logical-pixel preview surface with system DPI scaling
-- Built-in English and Simplified Chinese UI text with a persistent in-app
-  language switch
+- Light/dark themes plus English and Simplified Chinese UI text, with persistent
+  in-app theme and language switches
 
-All controls are capability-driven. Unsupported operations are hidden or
-disabled and must not enqueue protocol commands.
+Optional device settings are capability-driven. Unsupported operations are
+hidden or disabled and must not enqueue protocol commands.
+
+## Current scope and known gaps
+
+The current GUI is complete enough for deterministic preview and local protocol
+development, but several decoded backend features are not yet finished as user
+features. Safe Listening has no QML surface, XM6 noise adaptation is not exposed,
+and the Devices page still uses placeholder paired-device rows rather than the
+live `libmdr` paired-device list. That page currently exercises pairing mode and
+playback-target selection only; it is not complete device management.
+
+MDR v1 fallback currently reads and writes Noise Cancelling/Ambient Sound state.
+Other legacy operations remain unintegrated. See the
+[parity roadmap](docs/official-parity-roadmap.md) for the implementation boundary
+used by the project.
 
 ## Deterministic preview
 
@@ -75,6 +90,8 @@ requirements are recorded in
 - Qt Test and QuickTest when `BUILD_TESTING=ON`
 - Git and network access during the first configure so CMake can fetch `fmt`
 - Linux only: BlueZ and D-Bus development packages
+
+CI uses Qt 6.8.x; the release workflow is pinned to Qt 6.8.3.
 
 On Debian or Ubuntu:
 
@@ -139,7 +156,9 @@ ctest --test-dir build -C RelWithDebInfo --output-on-failure
 ```
 
 `run_gui_tests` builds and runs the three GUI/backend regression suites.
-`capture_qml_baselines` captures the Windows preview matrix.
+When Python is available, CTest also validates the translation catalog,
+application icons, and package metadata. `capture_qml_baselines` captures the
+Windows route/state/locale/theme preview matrix.
 
 ### CMake options
 

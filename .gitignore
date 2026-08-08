@@ -29,6 +29,7 @@ cmake-build*/
 .vs/
 .vscode/
 .idea/
+.playwright-cli/
 *.sln
 *.vcxproj
 *.vcxproj.filters
