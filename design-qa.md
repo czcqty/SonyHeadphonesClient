@@ -61,6 +61,6 @@ masks, and fails when the mismatch ratio exceeds the configured gate.
 
 1. The Android emulator/toolchain and same-state official screenshots have not
    yet been captured.
-2. Exact licensed art is missing for three documented device models.
+2. Exact model artwork is missing for three documented device models.
 
 final result: blocked

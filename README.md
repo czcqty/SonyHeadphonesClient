@@ -189,8 +189,7 @@ The project is licensed under the [MIT License](LICENSE).
 
 - Original SonyHeadphonesClient by
   [Plutoberth](https://github.com/Plutoberth/SonyHeadphonesClient)
-- MDR protocol and cross-platform work by the SonyHeadphonesClient community
+- MDR v2 protocol and cross-platform implementation from
+  [mos9527/SonyHeadphonesClient](https://github.com/mos9527/SonyHeadphonesClient)
 - Legacy MDR v1 connection and NC/ASM behavior adapted from SonyBridge under
   the MIT License; see `libmdr/THIRD_PARTY_NOTICES.md`
-- Device artwork adapted from SonyBridge under the MIT License; see
-  `gui/assets/SONYBRIDGE_LICENSE.txt`

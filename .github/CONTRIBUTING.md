@@ -34,8 +34,7 @@ the application commit/version, firmware, operating system, and tested behavior.
 
 This repository is MIT licensed, but that does not make code from every source
 compatible. Confirm the license before adapting external implementations and
-retain all required notices. Device artwork credits are stored alongside the
-assets.
+retain all required notices.
 
 ## AI-assisted contributions
 

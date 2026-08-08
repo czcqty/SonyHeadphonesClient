@@ -34,7 +34,7 @@ Quick/QML application backed by C++ ViewModels and `libmdr`.
   catalog; English strings live in `qml/I18n.qml`.
 - `assets/icons/` contains the canonical SVG product icon and its generated
   PNG, ICO, and ICNS variants.
-- `assets/devices/` contains credited, already-licensed device artwork.
+- `assets/devices/` contains device artwork.
 - `tests/` contains ViewModel, backend, QuickTest, capture, and visual-diff
   tooling.
 

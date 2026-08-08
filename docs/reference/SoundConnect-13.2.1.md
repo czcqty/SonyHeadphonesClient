@@ -73,8 +73,8 @@ the APK font resources.
 | Sony logo and trademarks | None | Excluded |
 | APK drawables | Local measurement only | Ignored, never packaged |
 
-WF-1000XM6, WF-C510, and WF-L910 currently use family fallback art because no
-licensed exact model image exists in the repository. Those profiles are marked
+WF-1000XM6, WF-C510, and WF-L910 currently use family fallback art because an
+exact model image is not available in the repository. Those profiles are marked
 `reference-blocked` in preview mode.
 
 ## Remaining reference capture

@@ -55,11 +55,9 @@ The preferred sources are:
 | Source | License | Intended use |
 | --- | --- | --- |
 | Historical upstream `libmdr` implementation | MIT | MDR v2 protocol and platform-transport lineage; legal provenance is retained in the applicable source notices. |
-| `AmitRajput-Dev/SonyBridge` | MIT | Legacy MDR v1 behavior, dual-protocol discovery, and credited device artwork. |
+| `AmitRajput-Dev/SonyBridge` | MIT | Legacy MDR v1 behavior and dual-protocol discovery. |
 | `Plutoberth/SonyHeadphonesClient` | MIT | Legacy MDR v1 protocol, VPT, sound position, and older-device reports. |
 | `sevsev9/sonyctl` | MIT | Linux/BlueZ operational behavior where it improves the existing backend. |
-| `NicholasSlattery/sony-head-tracker` | Check before integration | Optional standards-based Android Head Tracker support, isolated from core settings. |
-| Gadgetbridge | GPL | Behavioral and packet-layout reference only; do not copy GPL implementation into this MIT repository. |
 
 When importing code, preserve the upstream copyright notice, add a local notice
 beside the imported files, and keep protocol-specific code out of the Qt pages.
