@@ -18,14 +18,21 @@ DeviceCapabilities capabilities(
     value.hasBatteryR = tws;
     value.hasBatteryCase = tws;
     value.hasPowerOff = true;
+    value.hasPlaybackControl = true;
+    value.hasPlaybackMetadata = true;
+    value.hasVolumeControl = true;
     value.hasNoiseCancelling = noiseControl;
     value.hasAmbientSound = noiseControl;
     value.hasEqualizer = true;
     value.hasDSEE = dsee;
     value.hasConnectionQuality = true;
     value.hasSpeakToChat = speakToChat;
+    value.hasAdaptiveVolume = true;
+    value.hasCaptureVoice = true;
     value.hasMultipoint = true;
+    value.hasSourceSwitch = true;
     value.hasAutoPowerOff = true;
+    value.hasAutoPowerOffWearingDetection = autoPause;
     value.hasAutoPause = autoPause;
     value.hasTouchFunction = true;
     value.hasNcButtonFunction = noiseControl;
@@ -81,17 +88,17 @@ DeviceProfileRepository::DeviceProfileRepository()
                     QStringLiteral("MDR v2"), QStringLiteral("qrc:/devices/wh-ch720n.png"),
                     capabilities(false, true, false, true, false, false, false)),
         makeProfile(QStringLiteral("WF-1000XM6"), QStringLiteral("tws"),
-                    QStringLiteral("MDR v2"), QStringLiteral("qrc:/devices/wf-1000xm5.png"),
-                    maxTws, true),
+                    QStringLiteral("MDR v2"), QStringLiteral("qrc:/devices/wf-1000xm6-original.png"),
+                    maxTws),
         makeProfile(QStringLiteral("WF-1000XM5"), QStringLiteral("tws"),
                     QStringLiteral("MDR v2"), QStringLiteral("qrc:/devices/wf-1000xm5.png"),
                     maxTws),
         makeProfile(QStringLiteral("WF-C510"), QStringLiteral("tws"),
-                    QStringLiteral("MDR v2"), QStringLiteral("qrc:/devices/wf-c700n.png"),
-                    capabilities(true, true, false, false, false, false, false), true),
+                    QStringLiteral("MDR v2"), QStringLiteral("qrc:/devices/wf-c510-original.png"),
+                    capabilities(true, true, false, false, false, false, false)),
         makeProfile(QStringLiteral("WF-L910"), QStringLiteral("open-tws"),
-                    QStringLiteral("MDR v2"), QStringLiteral("qrc:/devices/linkbuds-s.png"),
-                    capabilities(true, false, true, true, true, true, true), true),
+                    QStringLiteral("MDR v2"), QStringLiteral("qrc:/devices/wf-l910-original.png"),
+                    capabilities(true, false, true, true, true, true, true)),
         makeProfile(QStringLiteral("WF-LS900N"), QStringLiteral("tws"),
                     QStringLiteral("MDR v2"), QStringLiteral("qrc:/devices/linkbuds-s.png"),
                     capabilities(true, true, true, true, false, true, false)),
@@ -149,14 +156,26 @@ void DeviceProfileRepository::apply(const DeviceProfile& profile,
     device.mBatteryCase.level = 64;
     device.mPlayTrackTitle = "Midnight Drive";
     device.mPlayTrackArtist = "SonyHeadphonesClient";
+    device.mPlayTrackAlbum = "Night Sessions";
     device.mPlayPause = PlaybackStatus::PLAY;
+    device.mAudioCodec = AudioCodec::LDAC;
+    device.mSafeListeningSoundPressure = 74;
+    device.mSafeListeningPreviewMode.overwrite(true);
+    device.mBatteryL.charging = BatteryChargingStatus::NOT_CHARGING;
+    device.mBatteryR.charging = BatteryChargingStatus::CHARGING;
+    device.mBatteryCase.charging = BatteryChargingStatus::NOT_CHARGING;
     device.mPlayVolume.overwrite(18);
     device.mNcAsmEnabled.overwrite(profile.capabilities.hasNoiseCancelling);
     device.mNcAsmMode.overwrite(NcAsmMode::NC);
     device.mNcAsmAmbientLevel.overwrite(10);
     device.mNcAsmFocusOnVoice.overwrite(true);
     device.mNcAsmAutoAsmEnabled.overwrite(false);
+    device.mNcAsmNoiseAdaptiveSensitivity.overwrite(NoiseAdaptiveSensitivity::STANDARD);
     device.mSpeakToChatEnabled.overwrite(profile.capabilities.hasSpeakToChat);
+    device.mSpeakToChatDetectSensitivity.overwrite(DetectSensitivity::AUTO);
+    device.mSpeakToModeOutTime.overwrite(ModeOutTime::MID);
+    device.mAutoVolumeEnabled.overwrite(false);
+    device.mGsParamBool1.overwrite(true);
     device.mEqAvailable.overwrite(profile.capabilities.hasEqualizer);
     device.mEqPresetId.overwrite(EqPresetId::CUSTOM);
     device.mEqClearBass.overwrite(2);
@@ -165,15 +184,26 @@ void DeviceProfileRepository::apply(const DeviceProfile& profile,
     device.mUpscalingEnabled.overwrite(profile.capabilities.hasDSEE);
     device.mAudioPriorityMode.overwrite(PriorMode::SOUND_QUALITY_PRIOR);
     device.mPowerAutoOff.overwrite(AutoPowerOffElements::POWER_OFF_IN_15_MIN);
+    device.mPowerAutoOffWearingDetection.overwrite(
+        AutoPowerOffWearingDetectionElements::POWER_OFF_IN_15_MIN);
     device.mAutoPauseEnabled.overwrite(profile.capabilities.hasAutoPause);
     device.mTouchFunctionLeft.overwrite(Preset::AMBIENT_SOUND_CONTROL);
     device.mTouchFunctionRight.overwrite(Preset::PLAYBACK_CONTROL);
+    device.mTouchFunctionOptions = {Preset::AMBIENT_SOUND_CONTROL, Preset::VOLUME_CONTROL,
+                                    Preset::PLAYBACK_CONTROL, Preset::TRACK_CONTROL,
+                                    Preset::VOICE_RECOGNITION, Preset::NO_FUNCTION};
     device.mNcAsmButtonFunction.overwrite(Function::NC_ASM_OFF);
     device.mHeadGestureEnabled.overwrite(profile.capabilities.hasHeadGesture);
     device.mBGMModeEnabled.overwrite(false);
+    device.mBGMModeRoomSize.overwrite(RoomSize::MIDDLE);
     device.mUpmixCinemaEnabled.overwrite(false);
     device.mVoiceGuidanceEnabled.overwrite(profile.capabilities.hasVoiceGuidance);
-    device.mVoiceGuidanceVolume.overwrite(3);
+    device.mVoiceGuidanceVolume.overwrite(0);
+    device.mPairedDevices = {
+        {"00:AA:BB:CC:DD:01", "Work laptop", true},
+        {"00:AA:BB:CC:DD:02", "Phone", true},
+    };
+    device.mPairedDevicesPlaybackDeviceID = 0;
 
     capabilitiesOut = profile.capabilities;
 }

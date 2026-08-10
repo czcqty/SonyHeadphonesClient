@@ -330,6 +330,8 @@ namespace mdr
         MDRProperty<int> mPlayVolume; // [0,30]
         MDRProperty<v2::t1::PlaybackControl> mPlayControl;
 
+        MDRProperty<bool> mAutoVolumeEnabled;
+
         MDRProperty<bool> mGsParamBool1, mGsParamBool2,
                           mGsParamBool3, mGsParamBool4;
 
@@ -345,6 +347,7 @@ namespace mdr
         MDRProperty<bool> mAutoPauseEnabled;
 
         MDRProperty<v2::t1::Preset> mTouchFunctionLeft, mTouchFunctionRight;
+        Vector<v2::t1::Preset> mTouchFunctionOptions;
 
         MDRProperty<bool> mSpeakToChatEnabled;
         MDRProperty<v2::t1::DetectSensitivity> mSpeakToChatDetectSensitivity;
@@ -362,6 +365,7 @@ namespace mdr
         MDRProperty<bool> mVoiceGuidanceEnabled;
         // Volume range [-2,2]
         MDRProperty<int> mVoiceGuidanceVolume;
+        v2::t2::VoiceGuidanceLanguage mVoiceGuidanceLanguage{};
 
         MDRProperty<bool> mPairingMode;
 

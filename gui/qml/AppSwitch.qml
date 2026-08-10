@@ -6,6 +6,8 @@ Switch {
     implicitWidth: 52
     implicitHeight: 32
     padding: 0
+    activeFocusOnTab: true
+    Accessible.role: Accessible.CheckBox
 
     indicator: Rectangle {
         x: 2

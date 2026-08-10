@@ -3,6 +3,7 @@ find_package(Qt6 REQUIRED COMPONENTS
     Qml
     Quick
     QuickControls2
+    Widgets
 )
 qt_standard_project_setup()
 
@@ -59,6 +60,9 @@ set(GUI_DEVICE_ASSETS
     assets/devices/mdr-xb950bt.png
     assets/devices/wf-1000xm4.png
     assets/devices/wf-1000xm5.png
+    assets/devices/wf-1000xm6-original.png
+    assets/devices/wf-c510-original.png
+    assets/devices/wf-l910-original.png
     assets/devices/wf-c700n.png
     assets/devices/wh-1000xm2.png
     assets/devices/wh-1000xm3.png
@@ -115,6 +119,7 @@ target_link_libraries(${GUI_APP_TARGET} PRIVATE
     Qt6::Qml
     Qt6::Quick
     Qt6::QuickControls2
+    Qt6::Widgets
     mdr
 )
 target_compile_definitions(${GUI_APP_TARGET} PRIVATE

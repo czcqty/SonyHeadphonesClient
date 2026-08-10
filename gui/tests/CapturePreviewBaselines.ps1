@@ -5,7 +5,9 @@ param(
     [Parameter(Mandatory = $true)]
     [string]$OutputDirectory,
 
-    [string]$Profile = "WH-1000XM6"
+    [string[]]$Profiles = @("WH-1000XM6", "WF-1000XM6", "WF-C510", "WF-L910"),
+
+    [string[]]$ViewportSizes = @("360x600", "412x780", "720x900")
 )
 
 $ErrorActionPreference = "Stop"
@@ -19,33 +21,39 @@ $locales = @("en", "zh_CN")
 $themes = @("light", "dark")
 $states = @("ready", "loading", "empty", "error", "disabled")
 
-foreach ($theme in $themes) {
-    foreach ($locale in $locales) {
-        foreach ($route in $routes) {
-            $path = Join-Path $resolvedOutput "$Profile-$route-ready-$locale-$theme.png"
-            & $resolvedExecutable `
-                --preview-profile $Profile `
-                --preview-route $route `
-                --preview-state ready `
-                --preview-theme $theme `
-                --locale $locale `
-                --capture $path
-            if ($LASTEXITCODE -ne 0) {
-                throw "Capture failed: $path"
-            }
-        }
+foreach ($profile in $Profiles) {
+    foreach ($viewportSize in $ViewportSizes) {
+        foreach ($theme in $themes) {
+            foreach ($locale in $locales) {
+                foreach ($route in $routes) {
+                    $path = Join-Path $resolvedOutput "$profile-$route-ready-$locale-$theme-$viewportSize.png"
+                    & $resolvedExecutable `
+                        --preview-profile $profile `
+                        --preview-route $route `
+                        --preview-state ready `
+                        --preview-theme $theme `
+                        --preview-size $viewportSize `
+                        --locale $locale `
+                        --capture $path
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Capture failed: $path"
+                    }
+                }
 
-        foreach ($state in $states) {
-            $path = Join-Path $resolvedOutput "$Profile-home-$state-$locale-$theme.png"
-            & $resolvedExecutable `
-                --preview-profile $Profile `
-                --preview-route home `
-                --preview-state $state `
-                --preview-theme $theme `
-                --locale $locale `
-                --capture $path
-            if ($LASTEXITCODE -ne 0) {
-                throw "Capture failed: $path"
+                foreach ($state in $states) {
+                    $path = Join-Path $resolvedOutput "$profile-home-$state-$locale-$theme-$viewportSize.png"
+                    & $resolvedExecutable `
+                        --preview-profile $profile `
+                        --preview-route home `
+                        --preview-state $state `
+                        --preview-theme $theme `
+                        --preview-size $viewportSize `
+                        --locale $locale `
+                        --capture $path
+                    if ($LASTEXITCODE -ne 0) {
+                        throw "Capture failed: $path"
+                    }
+                }
             }
         }
     }

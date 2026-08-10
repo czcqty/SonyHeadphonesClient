@@ -14,6 +14,13 @@ Item {
     width: parent ? parent.width : 0
     height: subtitle.length > 0 ? 76 : 64
     opacity: rowEnabled ? 1 : 0.38
+    activeFocusOnTab: rowEnabled
+    Accessible.role: switchVisible ? Accessible.CheckBox : Accessible.Button
+    Accessible.name: title
+    Accessible.description: subtitle
+    Accessible.checked: checked
+    Keys.onSpacePressed: switchVisible ? toggled(!checked) : activated()
+    Keys.onReturnPressed: switchVisible ? toggled(!checked) : activated()
 
     TapHandler {
         enabled: root.rowEnabled

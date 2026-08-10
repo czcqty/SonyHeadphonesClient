@@ -88,6 +88,48 @@ Page {
                 }
             }
 
+            Rectangle {
+                visible: appController.noiseControl.adaptiveSupported
+                width: parent.width
+                height: adaptiveColumn.implicitHeight + 36
+                radius: Tokens.cardRadius
+                color: Tokens.surfaceContainer
+
+                Column {
+                    id: adaptiveColumn
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 18
+                    spacing: 14
+
+                    Row {
+                        width: parent.width
+                        Text {
+                            width: parent.width - adaptiveSwitch.width
+                            text: qsTr("Adaptive noise control")
+                            color: Tokens.textPrimary
+                            font.pixelSize: Tokens.fontS
+                            font.bold: true
+                        }
+                        AppSwitch {
+                            id: adaptiveSwitch
+                            checked: appController.noiseControl.adaptiveEnabled
+                            onToggled: appController.noiseControl.setAdaptiveEnabled(checked)
+                            Accessible.name: qsTr("Adaptive noise control")
+                        }
+                    }
+                    ComboBox {
+                        width: parent.width
+                        enabled: appController.noiseControl.adaptiveEnabled
+                        model: [qsTr("Standard"), qsTr("High"), qsTr("Low")]
+                        currentIndex: appController.noiseControl.adaptiveSensitivity
+                        onActivated: index => appController.noiseControl.setAdaptiveSensitivity(index)
+                        Accessible.name: qsTr("Adaptive sensitivity")
+                    }
+                }
+            }
+
             Text {
                 visible: !appController.noiseControl.supported
                 width: parent.width

@@ -562,12 +562,40 @@ namespace mdr
             }
             return MDR_HEADPHONES_EVT_UNHANDLED;
         }
+        case AUTO_VOLUME:
+        {
+            if (self->mSupport.contains(MessageMdrV2FunctionType_Table1::AUTO_VOLUME))
+            {
+                SystemParamCommon res;
+                SystemParamCommon::Deserialize(cmd.data(), res, cmd.size());
+                self->mAutoVolumeEnabled.overwrite(
+                    res.settingValue == MessageMdrV2EnableDisable::ENABLE);
+                return MDR_HEADPHONES_EVT_OK;
+            }
+            return MDR_HEADPHONES_EVT_UNHANDLED;
+        }
         case ASSIGNABLE_SETTINGS:
         {
             if (self->mSupport.contains(MessageMdrV2FunctionType_Table1::ASSIGNABLE_SETTING))
             {
                 SystemParamAssignableSettings res;
                 SystemParamAssignableSettings::Deserialize(cmd.data(), res, cmd.size());
+                if (res.presets.size() == 2)
+                {
+                    self->mTouchFunctionLeft.overwrite(res.presets.value[0]);
+                    self->mTouchFunctionRight.overwrite(res.presets.value[1]);
+                }
+                return MDR_HEADPHONES_EVT_NCASM_BUTTON_MODE;
+            }
+            return MDR_HEADPHONES_EVT_UNHANDLED;
+        }
+        case ASSIGNABLE_SETTINGS_WITH_LIMITATION:
+        {
+            if (self->mSupport.contains(
+                MessageMdrV2FunctionType_Table1::ASSIGNABLE_SETTING_WITH_LIMITATION))
+            {
+                SystemParamAssignableSettingsWithLimit res;
+                SystemParamAssignableSettingsWithLimit::Deserialize(cmd.data(), res, cmd.size());
                 if (res.presets.size() == 2)
                 {
                     self->mTouchFunctionLeft.overwrite(res.presets.value[0]);
@@ -612,6 +640,29 @@ namespace mdr
         using enum SystemInquiredType;
         switch (base.type)
         {
+        case ASSIGNABLE_SETTINGS:
+        {
+            if (!self->mSupport.contains(MessageMdrV2FunctionType_Table1::ASSIGNABLE_SETTING))
+                return MDR_HEADPHONES_EVT_UNHANDLED;
+            SystemExtParamAssignableSettings res;
+            SystemExtParamAssignableSettings::Deserialize(cmd.data(), res, cmd.size());
+            self->mTouchFunctionOptions.clear();
+            for (const auto& item : res.presets)
+                self->mTouchFunctionOptions.push_back(item.preset);
+            return MDR_HEADPHONES_EVT_NCASM_BUTTON_MODE;
+        }
+        case ASSIGNABLE_SETTINGS_WITH_LIMITATION:
+        {
+            if (!self->mSupport.contains(
+                MessageMdrV2FunctionType_Table1::ASSIGNABLE_SETTING_WITH_LIMITATION))
+                return MDR_HEADPHONES_EVT_UNHANDLED;
+            SystemExtParamAssignableSettingsWithLimit res;
+            SystemExtParamAssignableSettingsWithLimit::Deserialize(cmd.data(), res, cmd.size());
+            self->mTouchFunctionOptions.clear();
+            for (const auto& item : res.presets)
+                self->mTouchFunctionOptions.push_back(item.preset);
+            return MDR_HEADPHONES_EVT_NCASM_BUTTON_MODE;
+        }
         case SMART_TALKING_MODE_TYPE2:
         {
             if (self->mSupport.contains(MessageMdrV2FunctionType_Table1::SMART_TALKING_MODE_TYPE2))

@@ -198,6 +198,64 @@ private slots:
         QVERIFY(controller.playback()->powerOff());
         QCOMPARE(controller.rejectedWriteCount(), 0);
     }
+
+    void playbackWritesAreCapabilityGated()
+    {
+        AppController controller(true);
+        QVERIFY(controller.applyProfile(QStringLiteral("WH-1000XM6")));
+        QVERIFY(controller.playback()->playbackSupported());
+        QVERIFY(controller.playback()->setVolume(31));
+        QCOMPARE(controller.playback()->volume(), 30);
+        QVERIFY(controller.playback()->nextTrack());
+
+        DeviceState unsupported;
+        PlaybackViewModel playback(&unsupported);
+        QVERIFY(!playback.setVolume(20));
+        QVERIFY(!playback.togglePlayback());
+        QCOMPARE(unsupported.rejectedWrites, 2);
+    }
+
+    void p1SettingsMapToProtocolProperties()
+    {
+        AppController controller(true);
+        QVERIFY(controller.applyProfile(QStringLiteral("WH-1000XM6")));
+        QVERIFY(controller.noiseControl()->setAdaptiveEnabled(true));
+        QVERIFY(controller.noiseControl()->setAdaptiveSensitivity(1));
+        QVERIFY(controller.settings()->setAdaptiveVolumeEnabled(true));
+        QVERIFY(controller.settings()->setSafeListeningEnabled(false));
+        QVERIFY(!controller.settings()->safeListeningEnabled());
+        QVERIFY(controller.settings()->setCaptureVoiceEnabled(false));
+        QVERIFY(controller.settings()->setSpeakToChatSensitivity(2));
+        QVERIFY(controller.settings()->setSpeakToChatModeOut(3));
+        QVERIFY(controller.settings()->setAutoPowerOffValue(0x03));
+        QVERIFY(controller.settings()->setCinemaModeEnabled(true));
+        QVERIFY(!controller.settings()->listeningModeEnabled());
+        QVERIFY(controller.settings()->setListeningModeEnabled(true));
+        QVERIFY(!controller.settings()->cinemaModeEnabled());
+        QCOMPARE(controller.rejectedWriteCount(), 0);
+    }
+
+    void fullEqPresetSelectionUsesDevicePresetId()
+    {
+        AppController controller(true);
+        QVERIFY(controller.applyProfile(QStringLiteral("WH-1000XM6")));
+        QVERIFY(controller.equalizer()->selectPreset(QStringLiteral("rock")));
+        QCOMPARE(controller.equalizer()->presetId(), QStringLiteral("rock"));
+        QVERIFY(!controller.equalizer()->selectPreset(QStringLiteral("not-a-preset")));
+        QCOMPARE(controller.rejectedWriteCount(), 1);
+    }
+
+    void multipointUsesReportedDevicesAndValidatesMac()
+    {
+        AppController controller(true);
+        QVERIFY(controller.applyProfile(QStringLiteral("WH-1000XM6")));
+        QCOMPARE(controller.deviceManager()->devices().size(), 2);
+        const auto first = controller.deviceManager()->devices().first().toMap();
+        QCOMPARE(first.value(QStringLiteral("name")).toString(), QStringLiteral("Work laptop"));
+        QVERIFY(controller.deviceManager()->disconnectDevice(first.value(QStringLiteral("mac")).toString()));
+        QVERIFY(!controller.deviceManager()->unpairDevice(QStringLiteral("invalid")));
+        QCOMPARE(controller.rejectedWriteCount(), 1);
+    }
 };
 
 QTEST_APPLESS_MAIN(ViewModelTests)

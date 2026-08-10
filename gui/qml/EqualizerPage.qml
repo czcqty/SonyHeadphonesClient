@@ -21,20 +21,19 @@ Page {
             width: parent.width - 32
             spacing: 18
 
-            RowLayout {
+            ComboBox {
                 width: parent.width
-                SegmentButton {
-                    Layout.fillWidth: true
-                    text: I18n.text("flat")
-                    selected: appController.equalizer.presetId === "flat"
-                    onClicked: appController.equalizer.selectPreset("flat")
+                model: appController.equalizer.presetOptions
+                textRole: "name"
+                function selectedIndex() {
+                    for (let index = 0; index < model.length; ++index)
+                        if (model[index].id === appController.equalizer.presetId)
+                            return index
+                    return 0
                 }
-                SegmentButton {
-                    Layout.fillWidth: true
-                    text: I18n.text("custom")
-                    selected: appController.equalizer.presetId !== "flat"
-                    onClicked: appController.equalizer.selectPreset("custom")
-                }
+                currentIndex: selectedIndex()
+                onActivated: index => appController.equalizer.selectPreset(model[index].id)
+                Accessible.name: I18n.text("equalizer")
             }
 
             Rectangle {

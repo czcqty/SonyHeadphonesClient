@@ -2,9 +2,9 @@ name: Build and test
 
 on:
   push:
-    branches: [rewrite]
+    branches: [main, rewrite]
   pull_request:
-    branches: [rewrite]
+    branches: [main, rewrite]
   workflow_dispatch:
 
 permissions:

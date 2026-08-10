@@ -22,11 +22,15 @@ Rectangle {
         flat: true
         font.pixelSize: Tokens.font2S
         onClicked: root.backRequested()
+        Accessible.name: I18n.text("back")
     }
 
     Text {
-        anchors.centerIn: parent
-        width: 264
+        anchors.left: backButton.visible ? backButton.right : parent.left
+        anchors.right: parent.right
+        anchors.leftMargin: backButton.visible ? 4 : 12
+        anchors.rightMargin: backButton.visible ? 68 : 12
+        anchors.verticalCenter: parent.verticalCenter
         text: root.title
         horizontalAlignment: Text.AlignHCenter
         color: Tokens.textPrimary

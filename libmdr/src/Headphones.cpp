@@ -50,7 +50,8 @@ namespace mdr
             dirty();
         dirty |= mNcAsmButtonFunction.dirty() || mNcAsmMode.dirty() || mNcAsmAutoAsmEnabled.dirty();
         dirty |= mNcAsmNoiseAdaptiveSensitivity.dirty() || mPowerAutoOff.dirty() || mPlayControl.dirty();
-        dirty |= mPowerAutoOffWearingDetection.dirty() || mPlayVolume.dirty() || mGsParamBool1.dirty();
+        dirty |= mPowerAutoOffWearingDetection.dirty() || mPlayVolume.dirty() || mAutoVolumeEnabled.dirty()
+            || mGsParamBool1.dirty();
         dirty |= mGsParamBool2.dirty() || mGsParamBool3.dirty() || mGsParamBool4.dirty();
         dirty |= mUpscalingEnabled.dirty();
         dirty |= mAudioPriorityMode.dirty() || mBGMModeEnabled.dirty() || mBGMModeRoomSize.dirty();

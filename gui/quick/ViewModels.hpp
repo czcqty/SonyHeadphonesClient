@@ -19,6 +19,10 @@ class PlaybackViewModel final : public QObject
     Q_OBJECT
     Q_PROPERTY(QString title READ title NOTIFY changed)
     Q_PROPERTY(QString artist READ artist NOTIFY changed)
+    Q_PROPERTY(QString album READ album NOTIFY changed)
+    Q_PROPERTY(QString firmware READ firmware NOTIFY changed)
+    Q_PROPERTY(QString codec READ codec NOTIFY changed)
+    Q_PROPERTY(QString alertMessage READ alertMessage NOTIFY changed)
     Q_PROPERTY(int volume READ volume NOTIFY changed)
     Q_PROPERTY(int batteryLeft READ batteryLeft NOTIFY changed)
     Q_PROPERTY(int batteryRight READ batteryRight NOTIFY changed)
@@ -26,12 +30,23 @@ class PlaybackViewModel final : public QObject
     Q_PROPERTY(bool hasRightBattery READ hasRightBattery NOTIFY changed)
     Q_PROPERTY(bool hasCaseBattery READ hasCaseBattery NOTIFY changed)
     Q_PROPERTY(bool powerOffSupported READ powerOffSupported NOTIFY changed)
+    Q_PROPERTY(bool playbackSupported READ playbackSupported NOTIFY changed)
+    Q_PROPERTY(bool volumeSupported READ volumeSupported NOTIFY changed)
+    Q_PROPERTY(bool safeListeningSupported READ safeListeningSupported NOTIFY changed)
+    Q_PROPERTY(int safeListeningPressure READ safeListeningPressure NOTIFY changed)
+    Q_PROPERTY(bool batteryLeftCharging READ batteryLeftCharging NOTIFY changed)
+    Q_PROPERTY(bool batteryRightCharging READ batteryRightCharging NOTIFY changed)
+    Q_PROPERTY(bool batteryCaseCharging READ batteryCaseCharging NOTIFY changed)
 
 public:
     explicit PlaybackViewModel(DeviceState* state, QObject* parent = nullptr);
 
     QString title() const;
     QString artist() const;
+    QString album() const;
+    QString firmware() const;
+    QString codec() const;
+    QString alertMessage() const;
     int volume() const;
     int batteryLeft() const;
     int batteryRight() const;
@@ -39,11 +54,18 @@ public:
     bool hasRightBattery() const;
     bool hasCaseBattery() const;
     bool powerOffSupported() const;
+    bool playbackSupported() const;
+    bool volumeSupported() const;
+    bool safeListeningSupported() const;
+    int safeListeningPressure() const;
+    bool batteryLeftCharging() const;
+    bool batteryRightCharging() const;
+    bool batteryCaseCharging() const;
 
-    Q_INVOKABLE void setVolume(int value);
-    Q_INVOKABLE void togglePlayback();
-    Q_INVOKABLE void previousTrack();
-    Q_INVOKABLE void nextTrack();
+    Q_INVOKABLE bool setVolume(int value);
+    Q_INVOKABLE bool togglePlayback();
+    Q_INVOKABLE bool previousTrack();
+    Q_INVOKABLE bool nextTrack();
     Q_INVOKABLE bool powerOff();
     void refresh();
 
@@ -62,6 +84,9 @@ class NoiseControlViewModel final : public QObject
     Q_PROPERTY(int mode READ mode NOTIFY changed)
     Q_PROPERTY(int ambientLevel READ ambientLevel NOTIFY changed)
     Q_PROPERTY(bool focusOnVoice READ focusOnVoice NOTIFY changed)
+    Q_PROPERTY(bool adaptiveSupported READ adaptiveSupported NOTIFY changed)
+    Q_PROPERTY(bool adaptiveEnabled READ adaptiveEnabled NOTIFY changed)
+    Q_PROPERTY(int adaptiveSensitivity READ adaptiveSensitivity NOTIFY changed)
 
 public:
     explicit NoiseControlViewModel(DeviceState* state, QObject* parent = nullptr);
@@ -70,10 +95,15 @@ public:
     int mode() const;
     int ambientLevel() const;
     bool focusOnVoice() const;
+    bool adaptiveSupported() const;
+    bool adaptiveEnabled() const;
+    int adaptiveSensitivity() const;
 
     Q_INVOKABLE bool setMode(int mode);
     Q_INVOKABLE bool setAmbientLevel(int level);
     Q_INVOKABLE bool setFocusOnVoice(bool enabled);
+    Q_INVOKABLE bool setAdaptiveEnabled(bool enabled);
+    Q_INVOKABLE bool setAdaptiveSensitivity(int value);
     void refresh();
 
 signals:
@@ -90,6 +120,7 @@ class EqualizerViewModel final : public QObject
     Q_PROPERTY(QString presetId READ presetId NOTIFY changed)
     Q_PROPERTY(QVariantList bands READ bands NOTIFY changed)
     Q_PROPERTY(int clearBass READ clearBass NOTIFY changed)
+    Q_PROPERTY(QVariantList presetOptions READ presetOptions CONSTANT)
 
 public:
     explicit EqualizerViewModel(DeviceState* state, QObject* parent = nullptr);
@@ -97,6 +128,7 @@ public:
     QString presetId() const;
     QVariantList bands() const;
     int clearBass() const;
+    QVariantList presetOptions() const;
 
     Q_INVOKABLE bool setBand(int index, int value);
     Q_INVOKABLE bool setClearBass(int value);
@@ -108,7 +140,6 @@ signals:
 
 private:
     DeviceState* m_state;
-    QString m_presetId = QStringLiteral("custom");
 };
 
 class SettingsViewModel final : public QObject
@@ -137,6 +168,19 @@ class SettingsViewModel final : public QObject
     Q_PROPERTY(bool headGestureEnabled READ headGestureEnabled NOTIFY changed)
     Q_PROPERTY(bool listeningModeSupported READ listeningModeSupported NOTIFY changed)
     Q_PROPERTY(bool listeningModeEnabled READ listeningModeEnabled NOTIFY changed)
+    Q_PROPERTY(bool adaptiveVolumeSupported READ adaptiveVolumeSupported NOTIFY changed)
+    Q_PROPERTY(bool adaptiveVolumeEnabled READ adaptiveVolumeEnabled NOTIFY changed)
+    Q_PROPERTY(bool safeListeningSupported READ safeListeningSupported NOTIFY changed)
+    Q_PROPERTY(bool safeListeningEnabled READ safeListeningEnabled NOTIFY changed)
+    Q_PROPERTY(bool captureVoiceSupported READ captureVoiceSupported NOTIFY changed)
+    Q_PROPERTY(bool captureVoiceEnabled READ captureVoiceEnabled NOTIFY changed)
+    Q_PROPERTY(int speakToChatSensitivity READ speakToChatSensitivity NOTIFY changed)
+    Q_PROPERTY(int speakToChatModeOut READ speakToChatModeOut NOTIFY changed)
+    Q_PROPERTY(int autoPowerOffValue READ autoPowerOffValue NOTIFY changed)
+    Q_PROPERTY(bool autoPowerOffWearingDetectionSupported READ autoPowerOffWearingDetectionSupported NOTIFY changed)
+    Q_PROPERTY(bool cinemaModeEnabled READ cinemaModeEnabled NOTIFY changed)
+    Q_PROPERTY(int listeningRoomSize READ listeningRoomSize NOTIFY changed)
+    Q_PROPERTY(QVariantList touchOptions READ touchOptions NOTIFY changed)
 
 public:
     explicit SettingsViewModel(DeviceState* state, QObject* parent = nullptr);
@@ -163,6 +207,19 @@ public:
     bool headGestureEnabled() const;
     bool listeningModeSupported() const;
     bool listeningModeEnabled() const;
+    bool adaptiveVolumeSupported() const;
+    bool adaptiveVolumeEnabled() const;
+    bool safeListeningSupported() const;
+    bool safeListeningEnabled() const;
+    bool captureVoiceSupported() const;
+    bool captureVoiceEnabled() const;
+    int speakToChatSensitivity() const;
+    int speakToChatModeOut() const;
+    int autoPowerOffValue() const;
+    bool autoPowerOffWearingDetectionSupported() const;
+    bool cinemaModeEnabled() const;
+    int listeningRoomSize() const;
+    QVariantList touchOptions() const;
 
     Q_INVOKABLE bool setDseeEnabled(bool enabled);
     Q_INVOKABLE bool setSpeakToChatEnabled(bool enabled);
@@ -176,6 +233,14 @@ public:
     Q_INVOKABLE bool setAutoPowerOffEnabled(bool enabled);
     Q_INVOKABLE bool setHeadGestureEnabled(bool enabled);
     Q_INVOKABLE bool setListeningModeEnabled(bool enabled);
+    Q_INVOKABLE bool setAdaptiveVolumeEnabled(bool enabled);
+    Q_INVOKABLE bool setSafeListeningEnabled(bool enabled);
+    Q_INVOKABLE bool setCaptureVoiceEnabled(bool enabled);
+    Q_INVOKABLE bool setSpeakToChatSensitivity(int value);
+    Q_INVOKABLE bool setSpeakToChatModeOut(int value);
+    Q_INVOKABLE bool setAutoPowerOffValue(int value);
+    Q_INVOKABLE bool setCinemaModeEnabled(bool enabled);
+    Q_INVOKABLE bool setListeningRoomSize(int value);
     void refresh();
 
 signals:
@@ -190,16 +255,21 @@ class DeviceManagerViewModel final : public QObject
     Q_OBJECT
     Q_PROPERTY(bool supported READ supported NOTIFY changed)
     Q_PROPERTY(bool pairingMode READ pairingMode NOTIFY changed)
+    Q_PROPERTY(bool sourceSwitchSupported READ sourceSwitchSupported NOTIFY changed)
     Q_PROPERTY(QVariantList devices READ devices NOTIFY changed)
 
 public:
     explicit DeviceManagerViewModel(DeviceState* state, QObject* parent = nullptr);
     bool supported() const;
     bool pairingMode() const;
+    bool sourceSwitchSupported() const;
     QVariantList devices() const;
 
     Q_INVOKABLE bool setPairingMode(bool enabled);
     Q_INVOKABLE bool switchDevice(const QString& mac);
+    Q_INVOKABLE bool connectDevice(const QString& mac);
+    Q_INVOKABLE bool disconnectDevice(const QString& mac);
+    Q_INVOKABLE bool unpairDevice(const QString& mac);
     void refresh();
 
 signals:

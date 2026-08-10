@@ -4,13 +4,7 @@ import QtQuick.Controls
 Page {
     background: Rectangle { color: Tokens.surface }
 
-    property var assignmentOptions: [
-        {text: I18n.text("ambient.control"), value: 0x00},
-        {text: I18n.text("volume.control"), value: 0x10},
-        {text: I18n.text("playback.control"), value: 0x20},
-        {text: I18n.text("track.control"), value: 0x21},
-        {text: I18n.text("no.function"), value: 0xff}
-    ]
+    property var assignmentOptions: appController.settings.touchOptions
     property var ncButtonOptions: [
         {text: I18n.text("nc.amb.off"), value: 0x01},
         {text: I18n.text("nc.amb"), value: 0x02},
@@ -51,7 +45,7 @@ Page {
             ComboBox {
                 width: parent.width
                 model: assignmentOptions
-                textRole: "text"
+                textRole: "name"
                 currentIndex: indexFor(assignmentOptions, appController.settings.touchLeft)
                 onActivated: index => appController.settings.setTouchLeft(assignmentOptions[index].value)
             }
@@ -65,7 +59,7 @@ Page {
             ComboBox {
                 width: parent.width
                 model: assignmentOptions
-                textRole: "text"
+                textRole: "name"
                 currentIndex: indexFor(assignmentOptions, appController.settings.touchRight)
                 onActivated: index => appController.settings.setTouchRight(assignmentOptions[index].value)
             }

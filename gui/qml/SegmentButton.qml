@@ -8,6 +8,9 @@ Button {
     implicitHeight: 48
     font.pixelSize: Tokens.font2S
     font.bold: selected
+    activeFocusOnTab: true
+    Accessible.role: Accessible.Button
+    Accessible.name: text
 
     background: Rectangle {
         radius: 12

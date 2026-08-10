@@ -47,9 +47,9 @@ Page {
 
                     Repeater {
                         model: [
-                            {label: I18n.text("left"), value: appController.playback.batteryLeft, show: true},
-                            {label: I18n.text("right"), value: appController.playback.batteryRight, show: appController.playback.hasRightBattery},
-                            {label: I18n.text("case"), value: appController.playback.batteryCase, show: appController.playback.hasCaseBattery}
+                            {label: I18n.text("left"), value: appController.playback.batteryLeft, charging: appController.playback.batteryLeftCharging, show: true},
+                            {label: I18n.text("right"), value: appController.playback.batteryRight, charging: appController.playback.batteryRightCharging, show: appController.playback.hasRightBattery},
+                            {label: I18n.text("case"), value: appController.playback.batteryCase, charging: appController.playback.batteryCaseCharging, show: appController.playback.hasCaseBattery}
                         ]
                         delegate: Column {
                             required property var modelData
@@ -63,7 +63,7 @@ Page {
                             }
                             Text {
                                 anchors.horizontalCenter: parent.horizontalCenter
-                                text: modelData.value + "%"
+                                text: modelData.value + "%" + (modelData.charging ? " ⚡" : "")
                                 color: Tokens.textPrimary
                                 font.pixelSize: Tokens.fontS
                                 font.bold: true
@@ -79,6 +79,7 @@ Page {
                 spacing: 12
 
                 Rectangle {
+                    visible: appController.playback.playbackSupported
                     width: parent.width
                     height: 56
                     radius: Tokens.cardRadius
@@ -159,6 +160,14 @@ Page {
                             font.pixelSize: Tokens.font2S
                             elide: Text.ElideRight
                         }
+                        Text {
+                            visible: appController.playback.album.length > 0
+                            width: parent.width
+                            text: appController.playback.album
+                            color: Tokens.textSecondary
+                            font.pixelSize: Tokens.font3S
+                            elide: Text.ElideRight
+                        }
 
                         RowLayout {
                             width: parent.width
@@ -181,12 +190,14 @@ Page {
                         }
 
                         Text {
+                            visible: appController.playback.volumeSupported
                             text: I18n.text("volume")
                             color: Tokens.textPrimary
                             font.pixelSize: Tokens.font2S
                             font.bold: true
                         }
                         AppSlider {
+                            visible: appController.playback.volumeSupported
                             width: parent.width
                             from: 0
                             to: 30
@@ -219,6 +230,46 @@ Page {
                             }
                         }
                     }
+                }
+
+                Rectangle {
+                    visible: appController.playback.safeListeningSupported
+                    width: parent.width
+                    height: 76
+                    radius: Tokens.cardRadius
+                    color: Tokens.surfaceContainer
+                    Text {
+                        anchors.left: parent.left
+                        anchors.leftMargin: 18
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: qsTr("Safe Listening") + "\n" + appController.playback.safeListeningPressure + " dB"
+                        color: Tokens.textPrimary
+                        font.pixelSize: Tokens.fontS
+                    }
+                    Accessible.role: Accessible.StaticText
+                    Accessible.name: qsTr("Safe Listening sound pressure")
+                    Accessible.description: appController.playback.safeListeningPressure + " dB"
+                }
+
+                Text {
+                    width: parent.width
+                    text: [appController.playback.codec,
+                           appController.playback.firmware.length > 0
+                               ? qsTr("Firmware") + " " + appController.playback.firmware : ""]
+                          .filter(value => value.length > 0).join(" · ")
+                    color: Tokens.textSecondary
+                    font.pixelSize: Tokens.font3S
+                    horizontalAlignment: Text.AlignHCenter
+                }
+
+                Text {
+                    visible: appController.playback.alertMessage.length > 0
+                    width: parent.width
+                    text: appController.playback.alertMessage
+                    color: Tokens.error
+                    font.pixelSize: Tokens.font3S
+                    wrapMode: Text.WordWrap
+                    Accessible.role: Accessible.AlertMessage
                 }
 
                 ShortcutCard {

@@ -24,14 +24,26 @@ namespace mdr
         using enum VoiceGuidanceInquiredType;
         switch (base.type)
         {
-        case MTK_TRANSFER_WO_DISCONNECTION_SUPPORT_LANGUAGE_SWITCH:
+        case MTK_TRANSFER_WO_DISCONNECTION_NOT_SUPPORT_LANGUAGE_SWITCH:
+        case ONLY_ON_OFF_SETTING:
         {
             VoiceGuidanceParamSettingMtk res;
             VoiceGuidanceParamSettingMtk::Deserialize(cmd.data(), res, cmd.size());
             self->mVoiceGuidanceEnabled.overwrite(res.settingValue == MessageMdrV2OnOffSettingValue::ON);
             return MDR_HEADPHONES_EVT_VOICE_GUIDANCE_ENABLE;
         }
+        case MTK_TRANSFER_WO_DISCONNECTION_SUPPORT_LANGUAGE_SWITCH:
+        case SUPPORT_LANGUAGE_SWITCH:
+        {
+            VoiceGuidanceParamSettingSupportLangSwitch res;
+            VoiceGuidanceParamSettingSupportLangSwitch::Deserialize(cmd.data(), res, cmd.size());
+            self->mVoiceGuidanceEnabled.overwrite(
+                res.settingValue == MessageMdrV2OnOffSettingValue::ON);
+            self->mVoiceGuidanceLanguage = res.languageValue;
+            return MDR_HEADPHONES_EVT_VOICE_GUIDANCE_ENABLE;
+        }
         case VOLUME:
+        case VOLUME_SETTING_FIXED_TO_5_STEPS:
         {
             VoiceGuidanceParamVolume res;
             VoiceGuidanceParamVolume::Deserialize(cmd.data(), res, cmd.size());

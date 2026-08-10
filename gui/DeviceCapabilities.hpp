@@ -7,6 +7,9 @@ struct DeviceCapabilities
     bool hasBatteryL = false;
     bool hasBatteryR = false;
     bool hasBatteryCase = false;
+    bool hasPlaybackControl = false;
+    bool hasPlaybackMetadata = false;
+    bool hasVolumeControl = false;
     bool hasSafeListening = false;
     bool hasPowerOff = false;
     bool hasNoiseCancelling = false;
@@ -18,7 +21,11 @@ struct DeviceCapabilities
     bool hasConnectionQuality = false;
     bool hasSpeakToChat = false;
     bool hasAdaptiveVolume = false;
+    bool hasCaptureVoice = false;
+    bool hasAutoPowerOffWearingDetection = false;
+    bool hasLimitedTouchFunction = false;
     bool hasMultipoint = false;
+    bool hasSourceSwitch = false;
     bool hasAutoPowerOff = false;
     bool hasAutoPause = false;
     bool hasTouchFunction = false;

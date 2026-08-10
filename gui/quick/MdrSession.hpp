@@ -49,6 +49,7 @@ private:
     void finishInitialization();
     void joinWorker();
     void failPermanently(const QString& errorCode, const QString& errorDetail);
+    bool scheduleReconnect(const QString& errorCode, const QString& errorDetail);
 
     DeviceState* m_stateData;
     std::unique_ptr<PlatformConnection> m_platform;
@@ -60,6 +61,9 @@ private:
     QString m_mac;
     bool m_usingLegacyProtocol = false;
     bool m_initDone = false;
+    bool m_everInitialized = false;
+    bool m_userDisconnect = false;
+    int m_reconnectAttempts = 0;
     quint64 m_operationGeneration = 0;
     std::thread m_workerThread;
     std::atomic<bool> m_scanInProgress{false};

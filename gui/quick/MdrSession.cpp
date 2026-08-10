@@ -69,9 +69,9 @@ MdrSession::~MdrSession()
 {
     m_pollTimer.stop();
     ++m_operationGeneration;
-    joinWorker();
     if (backendAvailable())
         mdrConnectionDisconnect(m_platform->connection);
+    joinWorker();
 }
 
 bool MdrSession::backendAvailable() const
@@ -143,10 +143,13 @@ void MdrSession::connectDevice(const QString& name, const QString& mac)
         m_scanInProgress = false;
     }
     ++m_operationGeneration;
+    m_userDisconnect = false;
+    m_reconnectAttempts = 0;
     m_name = name;
     m_mac = mac;
     m_usingLegacyProtocol = false;
     m_initDone = false;
+    m_everInitialized = false;
     m_state = State::Connecting;
     emit stateChanged(QStringLiteral("connecting"));
     startConnectionAttempt(MDR_SERVICE_UUID_XM5);
@@ -155,16 +158,19 @@ void MdrSession::connectDevice(const QString& name, const QString& mac)
 
 void MdrSession::disconnectDevice()
 {
+    m_userDisconnect = true;
     m_pollTimer.stop();
     ++m_operationGeneration;
+    if (backendAvailable())
+        mdrConnectionDisconnect(m_platform->connection);
     joinWorker();
     m_connectInProgress = false;
     m_scanInProgress = false;
-    if (backendAvailable())
-        mdrConnectionDisconnect(m_platform->connection);
     m_stateData->device = mdr::MDRHeadphones();
     m_state = State::Disconnected;
     m_initDone = false;
+    m_everInitialized = false;
+    m_reconnectAttempts = 0;
     emit stateChanged(QStringLiteral("disconnected"));
     emit deviceUpdated();
 }
@@ -282,8 +288,8 @@ bool MdrSession::retryWithLegacyProtocol()
 {
     if (m_usingLegacyProtocol || !backendAvailable())
         return false;
-    joinWorker();
     mdrConnectionDisconnect(m_platform->connection);
+    joinWorker();
     m_usingLegacyProtocol = true;
     m_state = State::Connecting;
     emit stateChanged(QStringLiteral("connecting"));
@@ -295,6 +301,8 @@ void MdrSession::connectionAttemptFailed(const QString& errorCode, const QString
 {
     if (!m_initDone && retryWithLegacyProtocol())
         return;
+    if (m_everInitialized && scheduleReconnect(errorCode, errorDetail))
+        return;
     failPermanently(errorCode, errorDetail);
 }
 
@@ -304,11 +312,44 @@ void MdrSession::finishInitialization()
         return;
 
     m_initDone = true;
+    m_everInitialized = true;
+    m_reconnectAttempts = 0;
     m_stateData->capabilities.probeFromDevice(m_stateData->device);
     m_syncElapsed.start();
     emit initializationCompleted(QString::fromStdString(m_stateData->device.mModelName));
     emit stateChanged(QStringLiteral("connected"));
     emit deviceUpdated();
+}
+
+bool MdrSession::scheduleReconnect(const QString& errorCode, const QString& errorDetail)
+{
+    if (m_userDisconnect || !backendAvailable() || m_reconnectAttempts >= 3)
+        return false;
+
+    ++m_reconnectAttempts;
+    const int delay = 500 * (1 << (m_reconnectAttempts - 1));
+    m_pollTimer.stop();
+    ++m_operationGeneration;
+    mdrConnectionDisconnect(m_platform->connection);
+    joinWorker();
+    m_connectInProgress = false;
+    m_stateData->device = mdr::MDRHeadphones();
+    m_state = State::Disconnected;
+    m_initDone = false;
+    emit stateChanged(QStringLiteral("reconnecting"));
+    emit errorOccurred(errorCode, errorDetail);
+
+    const quint64 generation = m_operationGeneration;
+    QTimer::singleShot(delay, this, [this, generation]() {
+        if (generation != m_operationGeneration || m_userDisconnect)
+            return;
+        m_usingLegacyProtocol = false;
+        m_state = State::Connecting;
+        emit stateChanged(QStringLiteral("connecting"));
+        startConnectionAttempt(MDR_SERVICE_UUID_XM5);
+        m_pollTimer.start();
+    });
+    return true;
 }
 
 void MdrSession::joinWorker()
@@ -328,6 +369,7 @@ void MdrSession::failPermanently(const QString& errorCode, const QString& errorD
     m_stateData->device = mdr::MDRHeadphones();
     m_state = State::Disconnected;
     m_initDone = false;
+    m_everInitialized = false;
     emit errorOccurred(errorCode, errorDetail);
     emit stateChanged(QStringLiteral("error"));
     emit connectionAbandoned(errorCode, errorDetail);

@@ -66,6 +66,7 @@ SonyHeadphonesClient
   --preview-route <route>
   --preview-state <state>
   --preview-theme <system|light|dark>
+  --preview-size <WIDTHxHEIGHT>
   --locale <en|zh_CN>
   [--capture <output.png>]
 ```
@@ -126,8 +127,9 @@ catalog, and are applied at runtime by `AppController`.
 
 ## Visual acceptance
 
-`CapturePreviewBaselines.ps1` produces deterministic captures at 412 × 780
-logical pixels. `SonyHeadphonesClient_visual_diff` compares equal-sized images,
+`CapturePreviewBaselines.ps1` produces deterministic captures at 360 × 600,
+412 × 780, and 720 × 900 logical pixels for the four primary profiles.
+`SonyHeadphonesClient_visual_diff` compares equal-sized images,
 supports repeatable `--ignore x,y,w,h` masks, and writes a red difference
 overlay.
 

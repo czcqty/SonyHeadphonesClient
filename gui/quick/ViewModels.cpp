@@ -1,24 +1,97 @@
 #include "ViewModels.hpp"
 
 #include <QVariantMap>
+#include <QRegularExpression>
+#include <QHash>
 #include <algorithm>
 
 using namespace mdr::v2::t1;
 
 namespace {
 
-bool isAssignablePreset(int value)
+QString touchPresetName(Preset value)
 {
-    switch (static_cast<Preset>(value)) {
-    case Preset::AMBIENT_SOUND_CONTROL:
-    case Preset::VOLUME_CONTROL:
-    case Preset::PLAYBACK_CONTROL:
-    case Preset::TRACK_CONTROL:
-    case Preset::NO_FUNCTION:
-        return true;
-    default:
-        return false;
+    switch (value) {
+    case Preset::AMBIENT_SOUND_CONTROL: return QObject::tr("Ambient sound control");
+    case Preset::VOLUME_CONTROL: return QObject::tr("Volume control");
+    case Preset::PLAYBACK_CONTROL: return QObject::tr("Playback control");
+    case Preset::TRACK_CONTROL: return QObject::tr("Track control");
+    case Preset::PLAYBACK_CONTROL_VOICE_ASSISTANT_LIMITATION: return QObject::tr("Playback / voice assistant");
+    case Preset::VOICE_RECOGNITION: return QObject::tr("Voice recognition");
+    case Preset::GOOGLE_ASSIST: return QStringLiteral("Google Assistant");
+    case Preset::AMAZON_ALEXA: return QStringLiteral("Amazon Alexa");
+    case Preset::MS: return QStringLiteral("Microsoft Teams");
+    case Preset::TEAMS: return QStringLiteral("Microsoft Teams");
+    case Preset::AMBIENT_SOUND_CONTROL_MIC: return QObject::tr("Ambient sound / microphone");
+    case Preset::CHAT_MIX: return QObject::tr("Chat mix");
+    case Preset::CUSTOM1: return QObject::tr("Custom 1");
+    case Preset::CUSTOM2: return QObject::tr("Custom 2");
+    case Preset::NO_FUNCTION: return QObject::tr("No function");
+    default: return QObject::tr("Device function %1").arg(QString::number(static_cast<int>(value), 16).toUpper());
     }
+}
+
+bool validMac(const QString& value)
+{
+    static const QRegularExpression pattern(
+        QStringLiteral("^(?:[0-9A-Fa-f]{2}:){5}[0-9A-Fa-f]{2}$"));
+    return pattern.match(value).hasMatch();
+}
+
+QString eqPresetName(EqPresetId value)
+{
+    switch (value) {
+    case EqPresetId::OFF: return QStringLiteral("flat");
+    case EqPresetId::ROCK: return QStringLiteral("rock");
+    case EqPresetId::POP: return QStringLiteral("pop");
+    case EqPresetId::JAZZ: return QStringLiteral("jazz");
+    case EqPresetId::DANCE: return QStringLiteral("dance");
+    case EqPresetId::EDM: return QStringLiteral("edm");
+    case EqPresetId::R_AND_B_HIP_HOP: return QStringLiteral("r-and-b");
+    case EqPresetId::ACOUSTIC: return QStringLiteral("acoustic");
+    case EqPresetId::BRIGHT: return QStringLiteral("bright");
+    case EqPresetId::EXCITED: return QStringLiteral("excited");
+    case EqPresetId::MELLOW: return QStringLiteral("mellow");
+    case EqPresetId::RELAXED: return QStringLiteral("relaxed");
+    case EqPresetId::VOCAL: return QStringLiteral("vocal");
+    case EqPresetId::TREBLE: return QStringLiteral("treble");
+    case EqPresetId::BASS: return QStringLiteral("bass");
+    case EqPresetId::SPEECH: return QStringLiteral("speech");
+    case EqPresetId::GAMING_EQ: return QStringLiteral("gaming");
+    case EqPresetId::HEAVY: return QStringLiteral("heavy");
+    case EqPresetId::CLEAR: return QStringLiteral("clear");
+    case EqPresetId::HARD: return QStringLiteral("hard");
+    case EqPresetId::SOFT: return QStringLiteral("soft");
+    case EqPresetId::USER_SETTING1: return QStringLiteral("user-1");
+    case EqPresetId::USER_SETTING2: return QStringLiteral("user-2");
+    case EqPresetId::USER_SETTING3: return QStringLiteral("user-3");
+    case EqPresetId::USER_SETTING4: return QStringLiteral("user-4");
+    case EqPresetId::USER_SETTING5: return QStringLiteral("user-5");
+    default: return QStringLiteral("custom");
+    }
+}
+
+EqPresetId eqPresetValue(const QString& id, bool* ok)
+{
+    static const QHash<QString, EqPresetId> values{
+        {QStringLiteral("flat"), EqPresetId::OFF}, {QStringLiteral("rock"), EqPresetId::ROCK},
+        {QStringLiteral("pop"), EqPresetId::POP}, {QStringLiteral("jazz"), EqPresetId::JAZZ},
+        {QStringLiteral("dance"), EqPresetId::DANCE}, {QStringLiteral("edm"), EqPresetId::EDM},
+        {QStringLiteral("r-and-b"), EqPresetId::R_AND_B_HIP_HOP}, {QStringLiteral("acoustic"), EqPresetId::ACOUSTIC},
+        {QStringLiteral("bright"), EqPresetId::BRIGHT}, {QStringLiteral("excited"), EqPresetId::EXCITED},
+        {QStringLiteral("mellow"), EqPresetId::MELLOW}, {QStringLiteral("relaxed"), EqPresetId::RELAXED},
+        {QStringLiteral("vocal"), EqPresetId::VOCAL}, {QStringLiteral("treble"), EqPresetId::TREBLE},
+        {QStringLiteral("bass"), EqPresetId::BASS}, {QStringLiteral("speech"), EqPresetId::SPEECH},
+        {QStringLiteral("gaming"), EqPresetId::GAMING_EQ}, {QStringLiteral("heavy"), EqPresetId::HEAVY},
+        {QStringLiteral("clear"), EqPresetId::CLEAR}, {QStringLiteral("hard"), EqPresetId::HARD},
+        {QStringLiteral("soft"), EqPresetId::SOFT}, {QStringLiteral("custom"), EqPresetId::CUSTOM},
+        {QStringLiteral("user-1"), EqPresetId::USER_SETTING1}, {QStringLiteral("user-2"), EqPresetId::USER_SETTING2},
+        {QStringLiteral("user-3"), EqPresetId::USER_SETTING3}, {QStringLiteral("user-4"), EqPresetId::USER_SETTING4},
+        {QStringLiteral("user-5"), EqPresetId::USER_SETTING5},
+    };
+    const auto it = values.constFind(id.toLower());
+    *ok = it != values.cend();
+    return *ok ? it.value() : EqPresetId::UNSPECIFIED;
 }
 
 } // namespace
@@ -30,6 +103,26 @@ PlaybackViewModel::PlaybackViewModel(DeviceState* state, QObject* parent)
 
 QString PlaybackViewModel::title() const { return QString::fromStdString(m_state->device.mPlayTrackTitle); }
 QString PlaybackViewModel::artist() const { return QString::fromStdString(m_state->device.mPlayTrackArtist); }
+QString PlaybackViewModel::album() const { return QString::fromStdString(m_state->device.mPlayTrackAlbum); }
+QString PlaybackViewModel::firmware() const { return QString::fromStdString(m_state->device.mFWVersion); }
+QString PlaybackViewModel::alertMessage() const
+{
+    if (!m_state->device.mLastInteractionMessage.empty())
+        return QString::fromStdString(m_state->device.mLastInteractionMessage);
+    return QString::number(static_cast<int>(m_state->device.mLastAlertMessage), 16).toUpper();
+}
+QString PlaybackViewModel::codec() const
+{
+    switch (m_state->device.mAudioCodec) {
+    case AudioCodec::SBC: return QStringLiteral("SBC");
+    case AudioCodec::AAC: return QStringLiteral("AAC");
+    case AudioCodec::LDAC: return QStringLiteral("LDAC");
+    case AudioCodec::APT_X: return QStringLiteral("aptX");
+    case AudioCodec::APT_X_HD: return QStringLiteral("aptX HD");
+    case AudioCodec::LC3: return QStringLiteral("LC3");
+    default: return {};
+    }
+}
 int PlaybackViewModel::volume() const { return m_state->device.mPlayVolume.desired; }
 int PlaybackViewModel::batteryLeft() const { return m_state->device.mBatteryL.level; }
 int PlaybackViewModel::batteryRight() const { return m_state->device.mBatteryR.level; }
@@ -37,30 +130,45 @@ int PlaybackViewModel::batteryCase() const { return m_state->device.mBatteryCase
 bool PlaybackViewModel::hasRightBattery() const { return m_state->capabilities.hasBatteryR; }
 bool PlaybackViewModel::hasCaseBattery() const { return m_state->capabilities.hasBatteryCase; }
 bool PlaybackViewModel::powerOffSupported() const { return m_state->capabilities.hasPowerOff; }
+bool PlaybackViewModel::playbackSupported() const { return m_state->capabilities.hasPlaybackControl; }
+bool PlaybackViewModel::volumeSupported() const { return m_state->capabilities.hasVolumeControl; }
+bool PlaybackViewModel::safeListeningSupported() const { return m_state->capabilities.hasSafeListening; }
+int PlaybackViewModel::safeListeningPressure() const { return m_state->device.mSafeListeningSoundPressure; }
+bool PlaybackViewModel::batteryLeftCharging() const { return m_state->device.mBatteryL.charging == BatteryChargingStatus::CHARGING; }
+bool PlaybackViewModel::batteryRightCharging() const { return m_state->device.mBatteryR.charging == BatteryChargingStatus::CHARGING; }
+bool PlaybackViewModel::batteryCaseCharging() const { return m_state->device.mBatteryCase.charging == BatteryChargingStatus::CHARGING; }
 
-void PlaybackViewModel::setVolume(int value)
+bool PlaybackViewModel::setVolume(int value)
 {
+    if (!volumeSupported()) { ++m_state->rejectedWrites; return false; }
     m_state->device.mPlayVolume.desired = std::clamp(value, 0, 30);
     emit changed();
+    return true;
 }
 
-void PlaybackViewModel::togglePlayback()
+bool PlaybackViewModel::togglePlayback()
 {
+    if (!playbackSupported()) { ++m_state->rejectedWrites; return false; }
     m_state->device.mPlayControl.desired = m_state->device.mPlayPause == PlaybackStatus::PLAY
         ? PlaybackControl::PAUSE : PlaybackControl::PLAY;
     emit changed();
+    return true;
 }
 
-void PlaybackViewModel::previousTrack()
+bool PlaybackViewModel::previousTrack()
 {
+    if (!playbackSupported()) { ++m_state->rejectedWrites; return false; }
     m_state->device.mPlayControl.desired = PlaybackControl::TRACK_DOWN;
     emit changed();
+    return true;
 }
 
-void PlaybackViewModel::nextTrack()
+bool PlaybackViewModel::nextTrack()
 {
+    if (!playbackSupported()) { ++m_state->rejectedWrites; return false; }
     m_state->device.mPlayControl.desired = PlaybackControl::TRACK_UP;
     emit changed();
+    return true;
 }
 
 bool PlaybackViewModel::powerOff()
@@ -91,6 +199,12 @@ int NoiseControlViewModel::mode() const
 }
 int NoiseControlViewModel::ambientLevel() const { return m_state->device.mNcAsmAmbientLevel.desired; }
 bool NoiseControlViewModel::focusOnVoice() const { return m_state->device.mNcAsmFocusOnVoice.desired; }
+bool NoiseControlViewModel::adaptiveSupported() const { return m_state->capabilities.hasAutoAsm; }
+bool NoiseControlViewModel::adaptiveEnabled() const { return m_state->device.mNcAsmAutoAsmEnabled.desired; }
+int NoiseControlViewModel::adaptiveSensitivity() const
+{
+    return static_cast<int>(m_state->device.mNcAsmNoiseAdaptiveSensitivity.desired);
+}
 
 bool NoiseControlViewModel::setMode(int value)
 {
@@ -126,6 +240,26 @@ bool NoiseControlViewModel::setFocusOnVoice(bool enabled)
     return true;
 }
 
+bool NoiseControlViewModel::setAdaptiveEnabled(bool enabled)
+{
+    if (!adaptiveSupported()) { ++m_state->rejectedWrites; return false; }
+    m_state->device.mNcAsmAutoAsmEnabled.desired = enabled;
+    emit changed();
+    return true;
+}
+
+bool NoiseControlViewModel::setAdaptiveSensitivity(int value)
+{
+    if (!m_state->capabilities.hasNoiseAdaptiveSensitivity || value < 0 || value > 2) {
+        ++m_state->rejectedWrites;
+        return false;
+    }
+    m_state->device.mNcAsmNoiseAdaptiveSensitivity.desired
+        = static_cast<NoiseAdaptiveSensitivity>(value);
+    emit changed();
+    return true;
+}
+
 void NoiseControlViewModel::refresh() { emit changed(); }
 
 EqualizerViewModel::EqualizerViewModel(DeviceState* state, QObject* parent)
@@ -134,7 +268,7 @@ EqualizerViewModel::EqualizerViewModel(DeviceState* state, QObject* parent)
 }
 
 bool EqualizerViewModel::supported() const { return m_state->capabilities.hasEqualizer; }
-QString EqualizerViewModel::presetId() const { return m_presetId; }
+QString EqualizerViewModel::presetId() const { return eqPresetName(m_state->device.mEqPresetId.desired); }
 QVariantList EqualizerViewModel::bands() const
 {
     QVariantList result;
@@ -143,6 +277,22 @@ QVariantList EqualizerViewModel::bands() const
     return result;
 }
 int EqualizerViewModel::clearBass() const { return m_state->device.mEqClearBass.desired; }
+QVariantList EqualizerViewModel::presetOptions() const
+{
+    const QStringList ids{QStringLiteral("flat"), QStringLiteral("rock"), QStringLiteral("pop"),
+        QStringLiteral("jazz"), QStringLiteral("dance"), QStringLiteral("edm"),
+        QStringLiteral("r-and-b"), QStringLiteral("acoustic"), QStringLiteral("bright"),
+        QStringLiteral("excited"), QStringLiteral("mellow"), QStringLiteral("relaxed"),
+        QStringLiteral("vocal"), QStringLiteral("treble"), QStringLiteral("bass"),
+        QStringLiteral("speech"), QStringLiteral("gaming"), QStringLiteral("heavy"),
+        QStringLiteral("clear"), QStringLiteral("hard"), QStringLiteral("soft"),
+        QStringLiteral("custom"), QStringLiteral("user-1"), QStringLiteral("user-2"),
+        QStringLiteral("user-3"), QStringLiteral("user-4"), QStringLiteral("user-5")};
+    QVariantList result;
+    for (const auto& id : ids)
+        result.push_back(QVariantMap{{QStringLiteral("id"), id}, {QStringLiteral("name"), id}});
+    return result;
+}
 
 bool EqualizerViewModel::setBand(int index, int value)
 {
@@ -151,7 +301,7 @@ bool EqualizerViewModel::setBand(int index, int value)
         return false;
     }
     m_state->device.mEqConfig.desired[static_cast<size_t>(index)] = std::clamp(value, -10, 10);
-    m_presetId = QStringLiteral("custom");
+    m_state->device.mEqPresetId.desired = EqPresetId::CUSTOM;
     emit changed();
     return true;
 }
@@ -163,7 +313,7 @@ bool EqualizerViewModel::setClearBass(int value)
         return false;
     }
     m_state->device.mEqClearBass.desired = std::clamp(value, -10, 10);
-    m_presetId = QStringLiteral("custom");
+    m_state->device.mEqPresetId.desired = EqPresetId::CUSTOM;
     emit changed();
     return true;
 }
@@ -174,10 +324,14 @@ bool EqualizerViewModel::selectPreset(const QString& presetId)
         ++m_state->rejectedWrites;
         return false;
     }
-    const QString normalized = presetId.compare(QStringLiteral("flat"), Qt::CaseInsensitive) == 0
-        ? QStringLiteral("flat") : QStringLiteral("custom");
-    m_presetId = normalized;
-    if (normalized == QStringLiteral("flat"))
+    bool valid = false;
+    const auto value = eqPresetValue(presetId, &valid);
+    if (!valid) {
+        ++m_state->rejectedWrites;
+        return false;
+    }
+    m_state->device.mEqPresetId.desired = value;
+    if (value == EqPresetId::OFF)
         m_state->device.mEqConfig.desired.assign(m_state->device.mEqConfig.desired.size(), 0);
     emit changed();
     return true;
@@ -219,12 +373,65 @@ bool SettingsViewModel::soundQualityPrior() const
 bool SettingsViewModel::autoPowerOffSupported() const { return m_state->capabilities.hasAutoPowerOff; }
 bool SettingsViewModel::autoPowerOffEnabled() const
 {
-    return m_state->device.mPowerAutoOff.desired != AutoPowerOffElements::POWER_OFF_DISABLE;
+    return autoPowerOffValue() != static_cast<int>(AutoPowerOffElements::POWER_OFF_DISABLE);
 }
 bool SettingsViewModel::headGestureSupported() const { return m_state->capabilities.hasHeadGesture; }
 bool SettingsViewModel::headGestureEnabled() const { return m_state->device.mHeadGestureEnabled.desired; }
 bool SettingsViewModel::listeningModeSupported() const { return m_state->capabilities.hasListeningMode; }
 bool SettingsViewModel::listeningModeEnabled() const { return m_state->device.mBGMModeEnabled.desired; }
+bool SettingsViewModel::adaptiveVolumeSupported() const { return m_state->capabilities.hasAdaptiveVolume; }
+bool SettingsViewModel::adaptiveVolumeEnabled() const { return m_state->device.mAutoVolumeEnabled.desired; }
+bool SettingsViewModel::safeListeningSupported() const { return m_state->capabilities.hasSafeListening; }
+bool SettingsViewModel::safeListeningEnabled() const { return m_state->device.mSafeListeningPreviewMode.desired; }
+bool SettingsViewModel::captureVoiceSupported() const { return m_state->capabilities.hasCaptureVoice; }
+bool SettingsViewModel::captureVoiceEnabled() const { return m_state->device.mGsParamBool1.desired; }
+int SettingsViewModel::speakToChatSensitivity() const
+{
+    return static_cast<int>(m_state->device.mSpeakToChatDetectSensitivity.desired);
+}
+int SettingsViewModel::speakToChatModeOut() const
+{
+    return static_cast<int>(m_state->device.mSpeakToModeOutTime.desired);
+}
+int SettingsViewModel::autoPowerOffValue() const
+{
+    return m_state->capabilities.hasAutoPowerOffWearingDetection
+        ? static_cast<int>(m_state->device.mPowerAutoOffWearingDetection.desired)
+        : static_cast<int>(m_state->device.mPowerAutoOff.desired);
+}
+bool SettingsViewModel::autoPowerOffWearingDetectionSupported() const
+{
+    return m_state->capabilities.hasAutoPowerOffWearingDetection;
+}
+bool SettingsViewModel::cinemaModeEnabled() const { return m_state->device.mUpmixCinemaEnabled.desired; }
+int SettingsViewModel::listeningRoomSize() const
+{
+    return static_cast<int>(m_state->device.mBGMModeRoomSize.desired);
+}
+QVariantList SettingsViewModel::touchOptions() const
+{
+    QVariantList result;
+    auto append = [&result](Preset value) {
+        if (value == Preset::QUICK_ACCESS || value == Preset::AMBIENT_SOUND_CONTROL_QUICK_ACCESS
+            || value == Preset::LISTENING_MODE_QUICK_ACCESS)
+            return;
+        const int raw = static_cast<int>(value);
+        for (const auto& item : result)
+            if (item.toMap().value(QStringLiteral("value")).toInt() == raw)
+                return;
+        result.push_back(QVariantMap{{QStringLiteral("value"), raw},
+                                     {QStringLiteral("name"), touchPresetName(value)}});
+    };
+    for (const auto value : m_state->device.mTouchFunctionOptions)
+        append(value);
+    if (result.isEmpty()) {
+        append(Preset::AMBIENT_SOUND_CONTROL); append(Preset::VOLUME_CONTROL);
+        append(Preset::PLAYBACK_CONTROL); append(Preset::TRACK_CONTROL); append(Preset::NO_FUNCTION);
+    }
+    append(m_state->device.mTouchFunctionLeft.desired);
+    append(m_state->device.mTouchFunctionRight.desired);
+    return result;
+}
 
 bool SettingsViewModel::setDseeEnabled(bool enabled)
 {
@@ -276,14 +483,17 @@ bool SettingsViewModel::setVoiceGuidanceVolume(int volume)
         ++m_state->rejectedWrites;
         return false;
     }
-    m_state->device.mVoiceGuidanceVolume.desired = std::clamp(volume, 1, 5);
+    m_state->device.mVoiceGuidanceVolume.desired = std::clamp(volume, -2, 2);
     emit changed();
     return true;
 }
 
 bool SettingsViewModel::setTouchLeft(int preset)
 {
-    if (!touchSupported() || !isAssignablePreset(preset)) {
+    const bool reported = std::ranges::any_of(touchOptions(), [preset](const QVariant& item) {
+        return item.toMap().value(QStringLiteral("value")).toInt() == preset;
+    });
+    if (!touchSupported() || !reported) {
         ++m_state->rejectedWrites;
         return false;
     }
@@ -294,7 +504,10 @@ bool SettingsViewModel::setTouchLeft(int preset)
 
 bool SettingsViewModel::setTouchRight(int preset)
 {
-    if (!touchSupported() || !isAssignablePreset(preset)) {
+    const bool reported = std::ranges::any_of(touchOptions(), [preset](const QVariant& item) {
+        return item.toMap().value(QStringLiteral("value")).toInt() == preset;
+    });
+    if (!touchSupported() || !reported) {
         ++m_state->rejectedWrites;
         return false;
     }
@@ -333,14 +546,9 @@ bool SettingsViewModel::setSoundQualityPrior(bool enabled)
 
 bool SettingsViewModel::setAutoPowerOffEnabled(bool enabled)
 {
-    if (!autoPowerOffSupported()) {
-        ++m_state->rejectedWrites;
-        return false;
-    }
-    m_state->device.mPowerAutoOff.desired = enabled
-        ? AutoPowerOffElements::POWER_OFF_IN_15_MIN : AutoPowerOffElements::POWER_OFF_DISABLE;
-    emit changed();
-    return true;
+    return setAutoPowerOffValue(enabled
+        ? static_cast<int>(AutoPowerOffElements::POWER_OFF_IN_15_MIN)
+        : static_cast<int>(AutoPowerOffElements::POWER_OFF_DISABLE));
 }
 
 bool SettingsViewModel::setHeadGestureEnabled(bool enabled)
@@ -367,6 +575,89 @@ bool SettingsViewModel::setListeningModeEnabled(bool enabled)
     return true;
 }
 
+bool SettingsViewModel::setAdaptiveVolumeEnabled(bool enabled)
+{
+    if (!adaptiveVolumeSupported()) { ++m_state->rejectedWrites; return false; }
+    m_state->device.mAutoVolumeEnabled.desired = enabled;
+    emit changed();
+    return true;
+}
+
+bool SettingsViewModel::setSafeListeningEnabled(bool enabled)
+{
+    if (!safeListeningSupported()) {
+        ++m_state->rejectedWrites;
+        return false;
+    }
+    m_state->device.mSafeListeningPreviewMode.desired = enabled;
+    emit changed();
+    return true;
+}
+
+bool SettingsViewModel::setCaptureVoiceEnabled(bool enabled)
+{
+    if (!captureVoiceSupported()) { ++m_state->rejectedWrites; return false; }
+    m_state->device.mGsParamBool1.desired = enabled;
+    emit changed();
+    return true;
+}
+
+bool SettingsViewModel::setSpeakToChatSensitivity(int value)
+{
+    if (!speakToChatSupported() || value < 0 || value > 2) {
+        ++m_state->rejectedWrites; return false;
+    }
+    m_state->device.mSpeakToChatDetectSensitivity.desired = static_cast<DetectSensitivity>(value);
+    emit changed();
+    return true;
+}
+
+bool SettingsViewModel::setSpeakToChatModeOut(int value)
+{
+    if (!speakToChatSupported() || value < 0 || value > 3) {
+        ++m_state->rejectedWrites; return false;
+    }
+    m_state->device.mSpeakToModeOutTime.desired = static_cast<ModeOutTime>(value);
+    emit changed();
+    return true;
+}
+
+bool SettingsViewModel::setAutoPowerOffValue(int value)
+{
+    if (!autoPowerOffSupported()) { ++m_state->rejectedWrites; return false; }
+    const bool common = value == 0x00 || value == 0x01 || value == 0x02
+        || value == 0x03 || value == 0x04 || value == 0x11;
+    const bool wearing = m_state->capabilities.hasAutoPowerOffWearingDetection && value == 0x10;
+    if (!common && !wearing) { ++m_state->rejectedWrites; return false; }
+    if (m_state->capabilities.hasAutoPowerOffWearingDetection)
+        m_state->device.mPowerAutoOffWearingDetection.desired
+            = static_cast<AutoPowerOffWearingDetectionElements>(value);
+    else
+        m_state->device.mPowerAutoOff.desired = static_cast<AutoPowerOffElements>(value);
+    emit changed();
+    return true;
+}
+
+bool SettingsViewModel::setCinemaModeEnabled(bool enabled)
+{
+    if (!listeningModeSupported()) { ++m_state->rejectedWrites; return false; }
+    m_state->device.mUpmixCinemaEnabled.desired = enabled;
+    if (enabled)
+        m_state->device.mBGMModeEnabled.desired = false;
+    emit changed();
+    return true;
+}
+
+bool SettingsViewModel::setListeningRoomSize(int value)
+{
+    if (!listeningModeSupported() || value < 0 || value > 2) {
+        ++m_state->rejectedWrites; return false;
+    }
+    m_state->device.mBGMModeRoomSize.desired = static_cast<RoomSize>(value);
+    emit changed();
+    return true;
+}
+
 void SettingsViewModel::refresh() { emit changed(); }
 
 DeviceManagerViewModel::DeviceManagerViewModel(DeviceState* state, QObject* parent)
@@ -376,16 +667,21 @@ DeviceManagerViewModel::DeviceManagerViewModel(DeviceState* state, QObject* pare
 
 bool DeviceManagerViewModel::supported() const { return m_state->capabilities.hasDeviceManagement; }
 bool DeviceManagerViewModel::pairingMode() const { return m_state->device.mPairingMode.desired; }
+bool DeviceManagerViewModel::sourceSwitchSupported() const { return m_state->capabilities.hasSourceSwitch; }
 QVariantList DeviceManagerViewModel::devices() const
 {
-    return {
-        QVariantMap{{QStringLiteral("nameId"), QStringLiteral("laptop")},
-                    {QStringLiteral("mac"), QStringLiteral("00:AA:BB:CC:DD:01")},
-                    {QStringLiteral("connected"), true}},
-        QVariantMap{{QStringLiteral("nameId"), QStringLiteral("phone")},
-                    {QStringLiteral("mac"), QStringLiteral("00:AA:BB:CC:DD:02")},
-                    {QStringLiteral("connected"), true}},
-    };
+    QVariantList result;
+    int index = 0;
+    for (const auto& device : m_state->device.mPairedDevices) {
+        result.push_back(QVariantMap{
+            {QStringLiteral("name"), QString::fromStdString(device.name)},
+            {QStringLiteral("mac"), QString::fromStdString(device.macAddress)},
+            {QStringLiteral("connected"), device.connected},
+            {QStringLiteral("playback"), index == m_state->device.mPairedDevicesPlaybackDeviceID},
+        });
+        ++index;
+    }
+    return result;
 }
 
 bool DeviceManagerViewModel::setPairingMode(bool enabled)
@@ -401,11 +697,35 @@ bool DeviceManagerViewModel::setPairingMode(bool enabled)
 
 bool DeviceManagerViewModel::switchDevice(const QString& mac)
 {
-    if (!supported()) {
+    if (!supported() || !m_state->capabilities.hasSourceSwitch || !validMac(mac)) {
         ++m_state->rejectedWrites;
         return false;
     }
     m_state->device.mMultipointDeviceMac.desired = mac.toStdString();
+    emit changed();
+    return true;
+}
+
+bool DeviceManagerViewModel::connectDevice(const QString& mac)
+{
+    if (!supported() || !validMac(mac)) { ++m_state->rejectedWrites; return false; }
+    m_state->device.mPairedDeviceConnectMac.desired = mac.toStdString();
+    emit changed();
+    return true;
+}
+
+bool DeviceManagerViewModel::disconnectDevice(const QString& mac)
+{
+    if (!supported() || !validMac(mac)) { ++m_state->rejectedWrites; return false; }
+    m_state->device.mPairedDeviceDisconnectMac.desired = mac.toStdString();
+    emit changed();
+    return true;
+}
+
+bool DeviceManagerViewModel::unpairDevice(const QString& mac)
+{
+    if (!supported() || !validMac(mac)) { ++m_state->rejectedWrites; return false; }
+    m_state->device.mPairedDeviceUnpairMac.desired = mac.toStdString();
     emit changed();
     return true;
 }

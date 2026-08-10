@@ -13,6 +13,12 @@ Rectangle {
     radius: Tokens.cardRadius
     color: Tokens.surfaceContainer
     opacity: available ? 1 : 0.38
+    activeFocusOnTab: available
+    Accessible.role: Accessible.Button
+    Accessible.name: title
+    Accessible.description: subtitle
+    Keys.onSpacePressed: appController.currentRoute = root.route
+    Keys.onReturnPressed: appController.currentRoute = root.route
 
     TapHandler {
         enabled: root.available

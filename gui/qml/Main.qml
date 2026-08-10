@@ -5,10 +5,8 @@ ApplicationWindow {
     id: window
     width: Tokens.windowWidth
     height: Tokens.windowHeight
-    minimumWidth: Tokens.windowWidth
-    maximumWidth: Tokens.windowWidth
-    minimumHeight: Tokens.windowHeight
-    maximumHeight: Tokens.windowHeight
+    minimumWidth: 360
+    minimumHeight: 600
     visible: true
     title: "SonyHeadphonesClient"
     color: Tokens.surface
@@ -29,7 +27,10 @@ ApplicationWindow {
     }
 
     Loader {
-        anchors.fill: parent
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        anchors.horizontalCenter: parent.horizontalCenter
+        width: Math.min(parent.width, 720)
         sourceComponent: {
             switch (appController.currentRoute) {
             case "connection": return connectionPage

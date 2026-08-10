@@ -3,6 +3,8 @@ import QtQuick.Controls
 
 Slider {
     id: control
+    activeFocusOnTab: true
+    Accessible.role: Accessible.Slider
 
     background: Rectangle {
         x: control.orientation === Qt.Horizontal

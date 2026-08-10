@@ -36,8 +36,8 @@ Page {
             }
             AppSlider {
                 width: parent.width
-                from: 1
-                to: 5
+                from: -2
+                to: 2
                 stepSize: 1
                 value: appController.settings.voiceGuidanceVolume
                 onMoved: appController.settings.setVoiceGuidanceVolume(Math.round(value))

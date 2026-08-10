@@ -50,6 +50,7 @@ SonyHeadphonesClient.exe `
   --preview-profile WH-1000XM6 `
   --preview-route home `
   --preview-state ready `
+  --preview-size 412x780 `
   --locale zh_CN
 ```
 
@@ -66,6 +67,8 @@ ready, loading, empty, error, disabled
 ```
 
 Add `--capture <path.png>` to save the window as a deterministic PNG and exit.
+`--preview-size` accepts a viewport of at least `360x600`; the capture target
+covers compact, default, and wide layouts for the four primary device profiles.
 Available profile identifiers are documented in
 [the GUI developer notes](gui/README.md).
 
