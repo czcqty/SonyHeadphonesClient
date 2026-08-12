@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: package-release-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   BUILD_TYPE: Release
   QT_VERSION: 6.8.3
@@ -206,8 +210,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${GITHUB_REF_NAME}" dist/* \
+          notes="Unsigned Windows, macOS, and Linux packages. Windows SmartScreen and macOS Gatekeeper may display security warnings."
+          if ! gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            if ! gh release create "${GITHUB_REF_NAME}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --verify-tag \
+              --title "SonyHeadphonesClient ${GITHUB_REF_NAME}" \
+              --notes "${notes}"; then
+              # Another run may have created the release between view and create.
+              gh release view "${GITHUB_REF_NAME}" --repo "${GITHUB_REPOSITORY}" >/dev/null
+            fi
+          fi
+          gh release edit "${GITHUB_REF_NAME}" \
             --repo "${GITHUB_REPOSITORY}" \
-            --verify-tag \
             --title "SonyHeadphonesClient ${GITHUB_REF_NAME}" \
-            --notes "Unsigned Windows, macOS, and Linux packages. Windows SmartScreen and macOS Gatekeeper may display security warnings."
+            --notes "${notes}"
+          gh release upload "${GITHUB_REF_NAME}" dist/* \
+            --repo "${GITHUB_REPOSITORY}" \
+            --clobber
