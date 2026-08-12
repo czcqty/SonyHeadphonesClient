@@ -1,5 +1,4 @@
 import QtQuick
-import QtQuick.Controls
 
 Item {
     id: root
@@ -21,16 +20,6 @@ Item {
     Accessible.checked: checked
     Keys.onSpacePressed: switchVisible ? toggled(!checked) : activated()
     Keys.onReturnPressed: switchVisible ? toggled(!checked) : activated()
-
-    TapHandler {
-        enabled: root.rowEnabled
-        onTapped: {
-            if (root.switchVisible)
-                root.toggled(!root.checked)
-            else
-                root.activated()
-        }
-    }
 
     Column {
         anchors.left: parent.left
@@ -55,6 +44,16 @@ Item {
             font.pixelSize: Tokens.font3S
             elide: Text.ElideRight
         }
+    }
+
+    MouseArea {
+        anchors.left: parent.left
+        anchors.right: root.switchVisible ? toggle.left : parent.right
+        anchors.top: parent.top
+        anchors.bottom: parent.bottom
+        enabled: root.rowEnabled
+        cursorShape: Qt.PointingHandCursor
+        onClicked: root.switchVisible ? root.toggled(!root.checked) : root.activated()
     }
 
     AppSwitch {

@@ -21,9 +21,12 @@ Page {
             width: parent.width - 32
             spacing: 18
 
-            ComboBox {
+            AppComboBox {
                 width: parent.width
-                model: appController.equalizer.presetOptions
+                model: appController.equalizer.presetOptions.map(option => ({
+                    id: option.id,
+                    name: I18n.presetName(option.id)
+                }))
                 textRole: "name"
                 function selectedIndex() {
                     for (let index = 0; index < model.length; ++index)

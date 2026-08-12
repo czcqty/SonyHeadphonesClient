@@ -5,11 +5,17 @@ import HeadphonesClient
 TestCase {
     name: "PreviewContract"
     when: windowShown
+    width: 360
+    height: 240
+    visible: true
 
     Item {
         id: controls
-        width: 140
-        height: 64
+        width: 320
+        height: 180
+
+        property int settingToggleCount: 0
+        property bool lastSettingValue: false
 
         LanguageToggle {
             id: languageToggle
@@ -27,6 +33,19 @@ TestCase {
             id: translatedSample
             visible: false
             text: I18n.text("equalizer")
+        }
+
+        SettingRow {
+            id: settingRow
+            y: 80
+            width: 280
+            title: "Test setting"
+            switchVisible: true
+            checked: false
+            onToggled: checked => {
+                controls.settingToggleCount += 1
+                controls.lastSettingValue = checked
+            }
         }
     }
 
@@ -53,5 +72,19 @@ TestCase {
         compare(languageToggle.text, "EN")
         compare(translatedSample.text, "均衡器")
         compare(themeToggle.x, 68)
+    }
+
+    function test_setting_switch_click_emits_once() {
+        controls.settingToggleCount = 0
+        controls.lastSettingValue = false
+        mouseClick(controls, settingRow.x + 24, settingRow.y + settingRow.height / 2)
+        compare(controls.settingToggleCount, 1)
+        compare(controls.lastSettingValue, true)
+
+        controls.settingToggleCount = 0
+        mouseClick(controls, settingRow.x + settingRow.width - 26,
+                   settingRow.y + settingRow.height / 2)
+        compare(controls.settingToggleCount, 1)
+        compare(controls.lastSettingValue, true)
     }
 }

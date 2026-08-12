@@ -196,6 +196,7 @@ private slots:
         AppController controller(true);
         QVERIFY(controller.applyProfile(QStringLiteral("generic-v1")));
         QVERIFY(controller.playback()->powerOff());
+        QVERIFY(controller.playback()->powerOffPending());
         QCOMPARE(controller.rejectedWriteCount(), 0);
     }
 

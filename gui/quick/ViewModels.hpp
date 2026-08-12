@@ -30,6 +30,7 @@ class PlaybackViewModel final : public QObject
     Q_PROPERTY(bool hasRightBattery READ hasRightBattery NOTIFY changed)
     Q_PROPERTY(bool hasCaseBattery READ hasCaseBattery NOTIFY changed)
     Q_PROPERTY(bool powerOffSupported READ powerOffSupported NOTIFY changed)
+    Q_PROPERTY(bool powerOffPending READ powerOffPending NOTIFY changed)
     Q_PROPERTY(bool playbackSupported READ playbackSupported NOTIFY changed)
     Q_PROPERTY(bool volumeSupported READ volumeSupported NOTIFY changed)
     Q_PROPERTY(bool safeListeningSupported READ safeListeningSupported NOTIFY changed)
@@ -54,6 +55,7 @@ public:
     bool hasRightBattery() const;
     bool hasCaseBattery() const;
     bool powerOffSupported() const;
+    bool powerOffPending() const;
     bool playbackSupported() const;
     bool volumeSupported() const;
     bool safeListeningSupported() const;

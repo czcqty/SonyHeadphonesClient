@@ -107,7 +107,7 @@ Page {
                         width: parent.width
                         Text {
                             width: parent.width - adaptiveSwitch.width
-                            text: qsTr("Adaptive noise control")
+                            text: I18n.text("adaptive.noise")
                             color: Tokens.textPrimary
                             font.pixelSize: Tokens.fontS
                             font.bold: true
@@ -116,16 +116,16 @@ Page {
                             id: adaptiveSwitch
                             checked: appController.noiseControl.adaptiveEnabled
                             onToggled: appController.noiseControl.setAdaptiveEnabled(checked)
-                            Accessible.name: qsTr("Adaptive noise control")
+                            Accessible.name: I18n.text("adaptive.noise")
                         }
                     }
-                    ComboBox {
+                    AppComboBox {
                         width: parent.width
                         enabled: appController.noiseControl.adaptiveEnabled
-                        model: [qsTr("Standard"), qsTr("High"), qsTr("Low")]
+                        model: [I18n.text("standard"), I18n.text("high"), I18n.text("low")]
                         currentIndex: appController.noiseControl.adaptiveSensitivity
                         onActivated: index => appController.noiseControl.setAdaptiveSensitivity(index)
-                        Accessible.name: qsTr("Adaptive sensitivity")
+                        Accessible.name: I18n.text("adaptive.sensitivity")
                     }
                 }
             }

@@ -38,6 +38,7 @@ set(GUI_QML_FILES
     qml/Tokens.qml
     qml/AppSlider.qml
     qml/AppSwitch.qml
+    qml/AppComboBox.qml
     qml/SegmentButton.qml
     qml/SettingRow.qml
     qml/Toolbar.qml
@@ -135,43 +136,46 @@ if(WIN32)
         OUTPUT_NAME "SonyHeadphonesClient"
     )
 
-    # vcpkg's applocal step copies linked Qt DLLs, but dynamically discovered
-    # QML modules and the platform plugin still need Qt's directory layout.
-    # Deploy the development runtime beside the executable so the CLion target
-    # runs without custom Qt environment variables.
-    get_filename_component(_GUI_QT_PREFIX "${Qt6_DIR}/../.." ABSOLUTE)
-    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-        set(_GUI_QT_RUNTIME_BIN "${_GUI_QT_PREFIX}/debug/bin")
-        set(_GUI_QT_RUNTIME_ROOT "${_GUI_QT_PREFIX}/debug/Qt6")
-        set(_GUI_QT_WINDOWS_PLUGIN
-            "${_GUI_QT_RUNTIME_ROOT}/plugins/platforms/qwindowsd.dll")
-    else()
-        set(_GUI_QT_RUNTIME_BIN "${_GUI_QT_PREFIX}/bin")
-        set(_GUI_QT_RUNTIME_ROOT "${_GUI_QT_PREFIX}/Qt6")
-        set(_GUI_QT_WINDOWS_PLUGIN
-            "${_GUI_QT_RUNTIME_ROOT}/plugins/platforms/qwindows.dll")
+    # vcpkg's applocal step copies linked Qt DLLs, but its dynamically
+    # discovered QML modules and platform plugin still need Qt's directory
+    # layout. This layout is specific to vcpkg: a regular Qt installation
+    # (including install-qt-action in CI) stores these files directly below
+    # the Qt prefix and is deployed by qt_generate_deploy_qml_app_script().
+    if(DEFINED VCPKG_TARGET_TRIPLET)
+        get_filename_component(_GUI_QT_PREFIX "${Qt6_DIR}/../.." ABSOLUTE)
+        if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+            set(_GUI_QT_RUNTIME_BIN "${_GUI_QT_PREFIX}/debug/bin")
+            set(_GUI_QT_RUNTIME_ROOT "${_GUI_QT_PREFIX}/debug/Qt6")
+            set(_GUI_QT_WINDOWS_PLUGIN
+                "${_GUI_QT_RUNTIME_ROOT}/plugins/platforms/qwindowsd.dll")
+        else()
+            set(_GUI_QT_RUNTIME_BIN "${_GUI_QT_PREFIX}/bin")
+            set(_GUI_QT_RUNTIME_ROOT "${_GUI_QT_PREFIX}/Qt6")
+            set(_GUI_QT_WINDOWS_PLUGIN
+                "${_GUI_QT_RUNTIME_ROOT}/plugins/platforms/qwindows.dll")
+        endif()
+
+        file(GLOB _GUI_QT_RUNTIME_DLLS CONFIGURE_DEPENDS
+            "${_GUI_QT_RUNTIME_BIN}/Qt6*.dll")
+
+        add_custom_command(TARGET ${GUI_APP_TARGET} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/platforms"
+            COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/Qt6/qml"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    "${_GUI_QT_WINDOWS_PLUGIN}"
+                    "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/platforms/"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${_GUI_QT_RUNTIME_ROOT}/qml/QtQuick"
+                    "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/Qt6/qml/QtQuick"
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                    ${_GUI_QT_RUNTIME_DLLS}
+                    "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>"
+            COMMENT "Deploying Qt Quick development runtime"
+            VERBATIM
+        )
     endif()
-
-    file(GLOB _GUI_QT_RUNTIME_DLLS CONFIGURE_DEPENDS
-        "${_GUI_QT_RUNTIME_BIN}/Qt6*.dll")
-
-    add_custom_command(TARGET ${GUI_APP_TARGET} POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-                "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/platforms"
-        COMMAND ${CMAKE_COMMAND} -E make_directory
-                "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/Qt6/qml"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${_GUI_QT_WINDOWS_PLUGIN}"
-                "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/platforms/"
-        COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${_GUI_QT_RUNTIME_ROOT}/qml/QtQuick"
-                "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/Qt6/qml/QtQuick"
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                ${_GUI_QT_RUNTIME_DLLS}
-                "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>"
-        COMMENT "Deploying Qt Quick development runtime"
-        VERBATIM
-    )
 elseif(APPLE)
     set_source_files_properties(assets/icons/app-icon.icns PROPERTIES
         MACOSX_PACKAGE_LOCATION "Resources"

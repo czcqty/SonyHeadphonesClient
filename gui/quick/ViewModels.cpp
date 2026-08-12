@@ -130,6 +130,7 @@ int PlaybackViewModel::batteryCase() const { return m_state->device.mBatteryCase
 bool PlaybackViewModel::hasRightBattery() const { return m_state->capabilities.hasBatteryR; }
 bool PlaybackViewModel::hasCaseBattery() const { return m_state->capabilities.hasBatteryCase; }
 bool PlaybackViewModel::powerOffSupported() const { return m_state->capabilities.hasPowerOff; }
+bool PlaybackViewModel::powerOffPending() const { return m_state->device.mShutdown.desired; }
 bool PlaybackViewModel::playbackSupported() const { return m_state->capabilities.hasPlaybackControl; }
 bool PlaybackViewModel::volumeSupported() const { return m_state->capabilities.hasVolumeControl; }
 bool PlaybackViewModel::safeListeningSupported() const { return m_state->capabilities.hasSafeListening; }

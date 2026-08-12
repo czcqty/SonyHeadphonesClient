@@ -12,7 +12,7 @@ permissions:
 
 env:
   BUILD_TYPE: RelWithDebInfo
-  QT_VERSION: 6.8.*
+  QT_VERSION: 6.8.3
 
 jobs:
   desktop:
@@ -21,7 +21,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        include:
+          - os: ubuntu-22.04
+            qt_arch: linux_gcc_64
+          - os: macos-14
+            qt_arch: clang_64
+          - os: windows-2022
+            qt_arch: win64_msvc2022_64
 
     steps:
       - name: Check out source
@@ -33,10 +39,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libbluetooth-dev libdbus-1-dev
 
+      - name: Select compatible Xcode
+        if: runner.os == 'macOS'
+        run: sudo xcode-select --switch /Applications/Xcode_15.4.app/Contents/Developer
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ env.QT_VERSION }}
+          arch: ${{ matrix.qt_arch }}
           cache: true
 
       - name: Configure
@@ -47,7 +58,9 @@ jobs:
           -DMDR_ENABLE_CODEGEN=OFF
 
       - name: Build
-        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+        # The GUI, QML test module, and C++ tests compile several Qt-heavy
+        # translation units. Keep hosted runners below their memory limit.
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
 
       - name: Test
         run: >

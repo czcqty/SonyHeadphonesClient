@@ -42,7 +42,7 @@ Page {
                 font.pixelSize: Tokens.fontS
                 font.bold: true
             }
-            ComboBox {
+            AppComboBox {
                 width: parent.width
                 model: assignmentOptions
                 textRole: "name"
@@ -56,7 +56,7 @@ Page {
                 font.pixelSize: Tokens.fontS
                 font.bold: true
             }
-            ComboBox {
+            AppComboBox {
                 width: parent.width
                 model: assignmentOptions
                 textRole: "name"
@@ -71,7 +71,7 @@ Page {
                 font.pixelSize: Tokens.fontS
                 font.bold: true
             }
-            ComboBox {
+            AppComboBox {
                 visible: appController.settings.ncButtonSupported
                 width: parent.width
                 model: ncButtonOptions

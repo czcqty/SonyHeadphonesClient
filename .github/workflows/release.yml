@@ -43,7 +43,7 @@ jobs:
 
   windows:
     needs: validate
-    runs-on: windows-latest
+    runs-on: windows-2022
     steps:
       - name: Check out source
         uses: actions/checkout@v6
@@ -67,7 +67,7 @@ jobs:
 
       - name: Build and test
         run: |
-          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
           ctest --test-dir build -C ${{ env.BUILD_TYPE }} --output-on-failure
 
       - name: Package EXE installer
@@ -110,7 +110,7 @@ jobs:
 
       - name: Build and test
         run: |
-          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
           ctest --test-dir build -C ${{ env.BUILD_TYPE }} --output-on-failure
 
       - name: Verify universal executable
@@ -155,7 +155,7 @@ jobs:
 
       - name: Build and test
         run: |
-          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel
+          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
           ctest --test-dir build -C ${{ env.BUILD_TYPE }} --output-on-failure
 
       - name: Download linuxdeploy

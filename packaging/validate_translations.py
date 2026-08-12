@@ -12,11 +12,18 @@ from pathlib import Path
 def main() -> None:
     root = Path(__file__).resolve().parents[1]
     qml = (root / "gui" / "qml" / "I18n.qml").read_text(encoding="utf-8")
-    source_tokens = re.findall(r'qsTr\("((?:\\.|[^"\\])*)"', qml)
-    qml_sources = {json.loads(f'"{token}"') for token in source_tokens}
+    qml_files = list((root / "gui" / "qml").glob("*.qml"))
+    quick_cpp_files = list((root / "gui" / "quick").glob("*.cpp"))
+    source_tokens = []
+    for path in qml_files:
+        source_tokens.extend(re.findall(
+            r'qsTr\("((?:\\.|[^"\\])*)"', path.read_text(encoding="utf-8")))
+    for path in quick_cpp_files:
+        source_tokens.extend(re.findall(
+            r'QObject::tr\("((?:\\.|[^"\\])*)"', path.read_text(encoding="utf-8")))
+    translatable_sources = {json.loads(f'"{token}"') for token in source_tokens}
     defined_keys = set(re.findall(r'case "([^"]+)":', qml))
 
-    qml_files = list((root / "gui" / "qml").glob("*.qml"))
     used_keys = set()
     for path in qml_files:
         contents = path.read_text(encoding="utf-8")
@@ -37,9 +44,9 @@ def main() -> None:
         text = "".join(translation.itertext()).strip()
         translations[source] = (text, unfinished)
 
-    missing = sorted(qml_sources - translations.keys())
+    missing = sorted(translatable_sources - translations.keys())
     invalid = sorted(
-        source for source in qml_sources
+        source for source in translatable_sources
         if source in translations
         and (not translations[source][0] or translations[source][1]))
     if missing or invalid:
@@ -48,7 +55,7 @@ def main() -> None:
 
     forbidden = ("Headphones Client", "耳机客户端")
     gui_files = qml_files
-    gui_files += list((root / "gui" / "quick").glob("*.cpp"))
+    gui_files += quick_cpp_files
     for path in gui_files:
         contents = path.read_text(encoding="utf-8")
         for name in forbidden:

@@ -72,20 +72,20 @@ Page {
                 }
                 SettingRow {
                     visible: appController.settings.listeningModeSupported
-                    title: qsTr("Cinema mode")
+                    title: I18n.text("cinema.mode")
                     switchVisible: true
                     checked: appController.settings.cinemaModeEnabled
                     onToggled: checked => appController.settings.setCinemaModeEnabled(checked)
                 }
-                ComboBox {
+                AppComboBox {
                     visible: appController.settings.listeningModeSupported
                              && appController.settings.listeningModeEnabled
                     width: parent.width - 32
                     x: 16
-                    model: [qsTr("Small room"), qsTr("Medium room"), qsTr("Large room")]
+                    model: [I18n.text("room.small"), I18n.text("room.medium"), I18n.text("room.large")]
                     currentIndex: appController.settings.listeningRoomSize
                     onActivated: index => appController.settings.setListeningRoomSize(index)
-                    Accessible.name: qsTr("Listening mode room size")
+                    Accessible.name: I18n.text("room.size")
                 }
                 SettingRow {
                     visible: appController.settings.speakToChatSupported
@@ -94,37 +94,37 @@ Page {
                     checked: appController.settings.speakToChatEnabled
                     onToggled: checked => appController.settings.setSpeakToChatEnabled(checked)
                 }
-                ComboBox {
+                AppComboBox {
                     visible: appController.settings.speakToChatSupported
                              && appController.settings.speakToChatEnabled
                     width: parent.width - 32
                     x: 16
-                    model: [qsTr("Automatic sensitivity"), qsTr("High sensitivity"), qsTr("Low sensitivity")]
+                    model: [I18n.text("sensitivity.auto"), I18n.text("sensitivity.high"), I18n.text("sensitivity.low")]
                     currentIndex: appController.settings.speakToChatSensitivity
                     onActivated: index => appController.settings.setSpeakToChatSensitivity(index)
-                    Accessible.name: qsTr("Speak-to-Chat sensitivity")
+                    Accessible.name: I18n.text("speak.sensitivity")
                 }
-                ComboBox {
+                AppComboBox {
                     visible: appController.settings.speakToChatSupported
                              && appController.settings.speakToChatEnabled
                     width: parent.width - 32
                     x: 16
-                    model: [qsTr("Fast close"), qsTr("Normal close"), qsTr("Slow close"), qsTr("Do not close")]
+                    model: [I18n.text("close.fast"), I18n.text("close.normal"), I18n.text("close.slow"), I18n.text("close.never")]
                     currentIndex: appController.settings.speakToChatModeOut
                     onActivated: index => appController.settings.setSpeakToChatModeOut(index)
-                    Accessible.name: qsTr("Speak-to-Chat close time")
+                    Accessible.name: I18n.text("speak.close.time")
                 }
                 SettingRow {
                     visible: appController.settings.adaptiveVolumeSupported
-                    title: qsTr("Adaptive volume")
+                    title: I18n.text("adaptive.volume")
                     switchVisible: true
                     checked: appController.settings.adaptiveVolumeEnabled
                     onToggled: checked => appController.settings.setAdaptiveVolumeEnabled(checked)
                 }
                 SettingRow {
                     visible: appController.settings.safeListeningSupported
-                    title: qsTr("Safe Listening")
-                    subtitle: qsTr("Reduce prolonged high-volume exposure")
+                    title: I18n.text("safe.listening")
+                    subtitle: I18n.text("safe.listening.description")
                     switchVisible: true
                     checked: appController.settings.safeListeningEnabled
                     onToggled: checked => appController.settings.setSafeListeningEnabled(checked)
@@ -152,17 +152,17 @@ Page {
                     visible: appController.settings.autoPowerOffSupported
                     title: I18n.text("auto.power")
                 }
-                ComboBox {
+                AppComboBox {
                     visible: appController.settings.autoPowerOffSupported
                     width: parent.width - 32
                     x: 16
                     property var options: [
-                        {name: qsTr("5 minutes"), value: 0x00},
-                        {name: qsTr("15 minutes"), value: 0x04},
-                        {name: qsTr("30 minutes"), value: 0x01},
-                        {name: qsTr("60 minutes"), value: 0x02},
-                        {name: qsTr("180 minutes"), value: 0x03},
-                        {name: qsTr("When removed"), value: 0x10},
+                        {name: I18n.text("minutes.5"), value: 0x00},
+                        {name: I18n.text("minutes.15"), value: 0x04},
+                        {name: I18n.text("minutes.30"), value: 0x01},
+                        {name: I18n.text("minutes.60"), value: 0x02},
+                        {name: I18n.text("minutes.180"), value: 0x03},
+                        {name: I18n.text("when.removed"), value: 0x10},
                         {name: I18n.text("off"), value: 0x11}
                     ]
                     model: options.filter(item => item.value !== 0x10
@@ -187,7 +187,7 @@ Page {
                 }
                 SettingRow {
                     visible: appController.settings.captureVoiceSupported
-                    title: qsTr("Capture voice during calls")
+                    title: I18n.text("capture.voice")
                     switchVisible: true
                     checked: appController.settings.captureVoiceEnabled
                     onToggled: checked => appController.settings.setCaptureVoiceEnabled(checked)

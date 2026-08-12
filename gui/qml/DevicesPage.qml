@@ -41,7 +41,7 @@ Page {
                         Row {
                             spacing: 8
                             Button {
-                                text: modelData.connected ? qsTr("Disconnect") : qsTr("Connect")
+                                text: modelData.connected ? I18n.text("disconnect") : I18n.text("connect")
                                 onClicked: modelData.connected
                                     ? appController.deviceManager.disconnectDevice(modelData.mac)
                                     : appController.deviceManager.connectDevice(modelData.mac)
@@ -50,11 +50,11 @@ Page {
                             Button {
                                 visible: appController.deviceManager.sourceSwitchSupported
                                          && modelData.connected && !modelData.playback
-                                text: qsTr("Use for playback")
+                                text: I18n.text("use.for.playback")
                                 onClicked: appController.deviceManager.switchDevice(modelData.mac)
                             }
                             Button {
-                                text: qsTr("Unpair")
+                                text: I18n.text("unpair")
                                 onClicked: appController.deviceManager.unpairDevice(modelData.mac)
                             }
                         }

@@ -3,6 +3,7 @@ import QtQuick.Controls
 import QtQuick.Layouts
 
 Page {
+    id: root
     background: Rectangle { color: Tokens.surface }
 
     Flickable {
@@ -209,10 +210,12 @@ Page {
                         Button {
                             id: powerOffButton
                             visible: appController.playback.powerOffSupported
+                            enabled: !appController.playback.powerOffPending
                             width: parent.width
                             height: 48
-                            text: I18n.text("power.off")
-                            onClicked: appController.playback.powerOff()
+                            text: appController.playback.powerOffPending
+                                ? I18n.text("powering.off") : I18n.text("power.off")
+                            onClicked: powerOffDialog.open()
 
                             background: Rectangle {
                                 radius: Tokens.cardRadius
@@ -223,7 +226,7 @@ Page {
 
                             contentItem: Text {
                                 text: powerOffButton.text
-                                color: Tokens.error
+                                color: powerOffButton.enabled ? Tokens.error : Tokens.disabled
                                 font.pixelSize: Tokens.fontS
                                 horizontalAlignment: Text.AlignHCenter
                                 verticalAlignment: Text.AlignVCenter
@@ -242,12 +245,12 @@ Page {
                         anchors.left: parent.left
                         anchors.leftMargin: 18
                         anchors.verticalCenter: parent.verticalCenter
-                        text: qsTr("Safe Listening") + "\n" + appController.playback.safeListeningPressure + " dB"
+                        text: I18n.text("safe.listening") + "\n" + appController.playback.safeListeningPressure + " dB"
                         color: Tokens.textPrimary
                         font.pixelSize: Tokens.fontS
                     }
                     Accessible.role: Accessible.StaticText
-                    Accessible.name: qsTr("Safe Listening sound pressure")
+                    Accessible.name: I18n.text("safe.listening.pressure")
                     Accessible.description: appController.playback.safeListeningPressure + " dB"
                 }
 
@@ -255,7 +258,7 @@ Page {
                     width: parent.width
                     text: [appController.playback.codec,
                            appController.playback.firmware.length > 0
-                               ? qsTr("Firmware") + " " + appController.playback.firmware : ""]
+                               ? I18n.text("firmware") + " " + appController.playback.firmware : ""]
                           .filter(value => value.length > 0).join(" · ")
                     color: Tokens.textSecondary
                     font.pixelSize: Tokens.font3S
@@ -266,7 +269,7 @@ Page {
                     visible: appController.playback.alertMessage.length > 0
                     width: parent.width
                     text: appController.playback.alertMessage
-                    color: Tokens.error
+                                color: powerOffButton.enabled ? Tokens.error : Tokens.disabled
                     font.pixelSize: Tokens.font3S
                     wrapMode: Text.WordWrap
                     Accessible.role: Accessible.AlertMessage
@@ -280,6 +283,56 @@ Page {
                 }
 
                 Item { width: 1; height: 88 }
+            }
+        }
+    }
+
+    Dialog {
+        id: powerOffDialog
+        anchors.centerIn: parent
+        width: Math.min(parent.width - 48, 360)
+        modal: true
+        closePolicy: Popup.CloseOnEscape | Popup.CloseOnPressOutside
+        padding: 20
+
+        background: Rectangle {
+            radius: Tokens.cardRadius
+            color: Tokens.surfaceContainerHigh
+            border.width: 1
+            border.color: Tokens.outlineVariant
+        }
+
+        contentItem: Column {
+            spacing: 12
+            Text {
+                width: parent.width
+                text: I18n.text("power.off.confirm.title")
+                color: Tokens.textPrimary
+                font.pixelSize: Tokens.fontM
+                font.bold: true
+                wrapMode: Text.WordWrap
+            }
+            Text {
+                width: parent.width
+                text: I18n.text("power.off.confirm.description")
+                color: Tokens.textSecondary
+                font.pixelSize: Tokens.font2S
+                wrapMode: Text.WordWrap
+            }
+            Row {
+                anchors.right: parent.right
+                spacing: 8
+                Button {
+                    text: I18n.text("cancel")
+                    onClicked: powerOffDialog.close()
+                }
+                Button {
+                    text: I18n.text("power.off.action")
+                    onClicked: {
+                        powerOffDialog.close()
+                        appController.playback.powerOff()
+                    }
+                }
             }
         }
     }
