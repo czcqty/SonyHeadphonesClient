@@ -26,6 +26,8 @@ def main() -> None:
         'CPACK_PACKAGE_VENDOR "czcqty"',
         'CPACK_NSIS_DISPLAY_NAME "SonyHeadphonesClient"',
         '"SonyHeadphonesClient" "SonyHeadphonesClient"',
+        'CPACK_CREATE_DESKTOP_LINKS "SonyHeadphonesClient"',
+        "CPACK_NSIS_MODIFY_PATH ON",
     )
     gui_cmake = require(
         root / "gui" / "CMakeLists.txt",

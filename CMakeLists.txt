@@ -74,6 +74,11 @@ if(WIN32)
     set(CPACK_NSIS_PACKAGE_NAME "SonyHeadphonesClient")
     set(CPACK_PACKAGE_EXECUTABLES
         "SonyHeadphonesClient" "SonyHeadphonesClient")
+    # CPack exposes the desktop-shortcut checkbox on its NSIS install-options
+    # page. The page is enabled by CPACK_NSIS_MODIFY_PATH, while this list
+    # connects the checkbox to the executable shortcut.
+    set(CPACK_CREATE_DESKTOP_LINKS "SonyHeadphonesClient")
+    set(CPACK_NSIS_MODIFY_PATH ON)
     set(CPACK_NSIS_MUI_ICON "${CMAKE_SOURCE_DIR}/gui/assets/icons/app-icon.ico")
     set(CPACK_NSIS_MUI_UNIICON "${CMAKE_SOURCE_DIR}/gui/assets/icons/app-icon.ico")
     set(CPACK_NSIS_INSTALLED_ICON_NAME "bin/SonyHeadphonesClient.exe")
