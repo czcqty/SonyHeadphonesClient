@@ -98,9 +98,10 @@ deterministic capture.
 
 ## Windows development runtime
 
-The CMake target copies Qt Quick runtime DLLs, the Windows platform plugin, and
-the required `QtQuick` QML tree beside the executable after linking. This makes
-the CLion Debug target runnable without `QT_PLUGIN_PATH` or `QML_IMPORT_PATH`.
+The CMake target copies only the Basic-style Qt Quick runtime DLLs, QML plugins,
+and Windows platform plugin beside the executable after linking. This makes the
+CLion Debug target runnable without `QT_PLUGIN_PATH` or `QML_IMPORT_PATH` while
+avoiding deployment of unrelated Qt modules and control styles.
 
 This post-build deployment is for development. Release packaging should use a
 Release build, include the MSVC redistributable, and be tested on a machine

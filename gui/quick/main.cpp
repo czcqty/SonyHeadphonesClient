@@ -7,7 +7,6 @@
 #include <QMenu>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
-#include <QQuickStyle>
 #include <QQuickWindow>
 #include <QShortcut>
 #include <QSystemTrayIcon>
@@ -58,7 +57,6 @@ private:
 
 int main(int argc, char* argv[])
 {
-    QQuickStyle::setStyle(QStringLiteral("Basic"));
     QApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("SonyHeadphonesClient"));
     app.setApplicationDisplayName(QStringLiteral("SonyHeadphonesClient"));

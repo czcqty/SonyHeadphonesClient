@@ -44,7 +44,9 @@ def main() -> None:
     workflow = require(
         root / ".github" / "workflows" / "release.yml",
         "SonyHeadphonesClient-${{ needs.validate.outputs.version }}-windows-x64-setup.exe",
-        "SonyHeadphonesClient-${{ needs.validate.outputs.version }}-macos-universal.dmg",
+        "- arch: arm64",
+        "- arch: x86_64",
+        "SonyHeadphonesClient-${{ needs.validate.outputs.version }}-macos-${{ matrix.arch }}.dmg",
         "SonyHeadphonesClient-${{ needs.validate.outputs.version }}-x86_64.AppImage",
     )
     main_cpp = require(

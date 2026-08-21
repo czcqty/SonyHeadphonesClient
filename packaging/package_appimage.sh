@@ -20,7 +20,7 @@ esac
 
 cmake -E remove_directory "$appdir"
 mkdir -p "$output_dir"
-cmake --install "$build_dir" --config Release --prefix "$appdir/usr"
+cmake --install "$build_dir" --config Release --prefix "$appdir/usr" --strip
 
 export ARCH=x86_64
 export VERSION="$version"

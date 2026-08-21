@@ -1,13 +1,51 @@
 cmake_minimum_required(VERSION 3.31 FATAL_ERROR)
 project(
     SonyHeadphonesClient
-    VERSION 2.0.3
+    VERSION 2.0.4
     LANGUAGES C CXX
 )
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
+
+option(MDR_OPTIMIZE_RELEASE_SIZE
+    "Optimize release binaries for package size" ON)
+if(MDR_OPTIMIZE_RELEASE_SIZE)
+    if(CMAKE_CONFIGURATION_TYPES OR CMAKE_BUILD_TYPE MATCHES "^(Release|MinSizeRel)$")
+        include(CheckIPOSupported)
+        check_ipo_supported(RESULT MDR_IPO_SUPPORTED OUTPUT MDR_IPO_ERROR
+            LANGUAGES C CXX)
+        if(MDR_IPO_SUPPORTED)
+            set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+        else()
+            message(WARNING "Release IPO/LTO is unavailable: ${MDR_IPO_ERROR}")
+        endif()
+    endif()
+
+    if(MSVC)
+        add_compile_options(
+            "$<$<CONFIG:Release>:/Os>"
+            "$<$<CONFIG:Release>:/Gy>"
+            "$<$<CONFIG:Release>:/Gw>"
+        )
+        add_link_options(
+            "$<$<CONFIG:Release>:/OPT:REF>"
+            "$<$<CONFIG:Release>:/OPT:ICF>"
+        )
+    else()
+        add_compile_options(
+            "$<$<CONFIG:Release>:-Os>"
+            "$<$<CONFIG:Release>:-ffunction-sections>"
+            "$<$<CONFIG:Release>:-fdata-sections>"
+        )
+        if(APPLE)
+            add_link_options("$<$<CONFIG:Release>:-Wl,-dead_strip>")
+        else()
+            add_link_options("$<$<CONFIG:Release>:-Wl,--gc-sections>")
+        endif()
+    endif()
+endif()
 
 option(MDR_BUILD_WITH_ASAN "Build with Address Sanitizer enabled" OFF)
 if (MDR_BUILD_WITH_ASAN)
@@ -87,8 +125,17 @@ if(WIN32)
     set(CPACK_NSIS_ENABLE_UNINSTALL_BEFORE_INSTALL ON)
 elseif(APPLE)
     set(CPACK_GENERATOR "DragNDrop")
+    set(_MDR_MACOS_PACKAGE_ARCH "${CMAKE_OSX_ARCHITECTURES}")
+    if(NOT _MDR_MACOS_PACKAGE_ARCH)
+        set(_MDR_MACOS_PACKAGE_ARCH "${CMAKE_SYSTEM_PROCESSOR}")
+    endif()
+    if(_MDR_MACOS_PACKAGE_ARCH MATCHES ";")
+        set(_MDR_MACOS_PACKAGE_ARCH "universal")
+    endif()
+    string(REPLACE ";" "-" _MDR_MACOS_PACKAGE_ARCH
+        "${_MDR_MACOS_PACKAGE_ARCH}")
     set(CPACK_PACKAGE_FILE_NAME
-        "SonyHeadphonesClient-${PROJECT_VERSION}-macos-universal")
+        "SonyHeadphonesClient-${PROJECT_VERSION}-macos-${_MDR_MACOS_PACKAGE_ARCH}")
     set(CPACK_DMG_VOLUME_NAME "SonyHeadphonesClient")
 else()
     # Linux releases use the dedicated AppImage packaging step. Keep CPack's

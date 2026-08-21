@@ -115,10 +115,10 @@ On Windows, run the commands from a Visual Studio Developer PowerShell or
 Developer Command Prompt. Set `CMAKE_PREFIX_PATH` or use a package-manager
 toolchain when Qt is not on CMake's search path.
 
-The Windows development build deploys its Qt Quick modules, platform plugin,
-and Qt DLLs beside the executable so the CLion target runs without custom Qt
-plugin environment variables. A distributable release still requires normal
-release packaging and the MSVC redistributable.
+The Windows development build deploys the Basic-style Qt Quick modules,
+platform plugin, and their required Qt DLLs beside the executable so the CLion
+target runs without custom Qt plugin environment variables. A distributable
+release still requires normal release packaging and the MSVC redistributable.
 
 Generated protocol sources are committed. Enable `MDR_ENABLE_CODEGEN` only when
 LLVM/libclang is installed and protocol generation is intentionally required.
@@ -136,7 +136,7 @@ The package identity is `io.github.czcqty.SonyHeadphonesClient`; the product,
 display, and executable names are all `SonyHeadphonesClient`.
 
 - Windows x64 uses the CPack NSIS generator and produces an EXE installer.
-- macOS builds `x86_64;arm64` and uses the CPack DragNDrop generator for DMG.
+- macOS publishes separate `x86_64` and `arm64` CPack DragNDrop DMGs.
 - Linux x86_64 uses `packaging/package_appimage.sh` and linuxdeploy.
 
 Run `cpack --config build/CPackConfig.cmake -C Release -B dist` after a Release
@@ -171,6 +171,7 @@ Windows route/state/locale/theme preview matrix.
 | `MDR_BUILD_WITH_ASAN` | `OFF` | Enable AddressSanitizer on supported compilers |
 | `MDR_DEBUG` | `OFF` | Enable additional `libmdr` diagnostics |
 | `MDR_ENABLE_CODEGEN` | `ON` | Enable LLVM/libclang protocol regeneration |
+| `MDR_OPTIMIZE_RELEASE_SIZE` | `ON` | Enable Release size flags, dead-code elimination, and IPO/LTO when supported |
 
 ## Repository layout
 

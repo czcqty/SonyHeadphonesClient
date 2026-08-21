@@ -136,46 +136,81 @@ if(WIN32)
         OUTPUT_NAME "SonyHeadphonesClient"
     )
 
-    # vcpkg's applocal step copies linked Qt DLLs, but its dynamically
-    # discovered QML modules and platform plugin still need Qt's directory
-    # layout. This layout is specific to vcpkg: a regular Qt installation
-    # (including install-qt-action in CI) stores these files directly below
-    # the Qt prefix and is deployed by qt_generate_deploy_qml_app_script().
+    # vcpkg has no windeployqt target, so keep development builds runnable by
+    # deploying only the QML modules and plugin dependencies selected by the
+    # application's compile-time Basic style. vcpkg's applocal step supplies
+    # the executable's other transitive runtime dependencies.
     if(DEFINED VCPKG_TARGET_TRIPLET)
         get_filename_component(_GUI_QT_PREFIX "${Qt6_DIR}/../.." ABSOLUTE)
         if(CMAKE_BUILD_TYPE STREQUAL "Debug")
             set(_GUI_QT_RUNTIME_BIN "${_GUI_QT_PREFIX}/debug/bin")
             set(_GUI_QT_RUNTIME_ROOT "${_GUI_QT_PREFIX}/debug/Qt6")
-            set(_GUI_QT_WINDOWS_PLUGIN
-                "${_GUI_QT_RUNTIME_ROOT}/plugins/platforms/qwindowsd.dll")
+            set(_GUI_QT_DEBUG_POSTFIX "d")
         else()
             set(_GUI_QT_RUNTIME_BIN "${_GUI_QT_PREFIX}/bin")
             set(_GUI_QT_RUNTIME_ROOT "${_GUI_QT_PREFIX}/Qt6")
-            set(_GUI_QT_WINDOWS_PLUGIN
-                "${_GUI_QT_RUNTIME_ROOT}/plugins/platforms/qwindows.dll")
+            set(_GUI_QT_DEBUG_POSTFIX "")
         endif()
 
-        file(GLOB _GUI_QT_RUNTIME_DLLS CONFIGURE_DEPENDS
-            "${_GUI_QT_RUNTIME_BIN}/Qt6*.dll")
+        set(_GUI_QT_QML_PLUGINS
+            "QtQml|qmlplugin"
+            "QtQml/Models|modelsplugin"
+            "QtQml/WorkerScript|workerscriptplugin"
+            "QtQuick|qtquick2plugin"
+            "QtQuick/Controls/Basic|qtquickcontrols2basicstyleplugin"
+            "QtQuick/Controls/Basic/impl|qtquickcontrols2basicstyleimplplugin"
+            "QtQuick/Controls/impl|qtquickcontrols2implplugin"
+            "QtQuick/Layouts|qquicklayoutsplugin"
+            "QtQuick/Shapes|qmlshapesplugin"
+            "QtQuick/Templates|qtquicktemplates2plugin"
+        )
+        set(_GUI_QT_QML_RUNTIME_LIBRARIES
+            Qt6QuickControls2
+            Qt6QuickControls2Basic
+            Qt6QuickControls2BasicStyleImpl
+            Qt6QuickControls2Impl
+            Qt6QuickLayouts
+            Qt6QuickShapes
+            Qt6QuickTemplates2
+        )
 
-        add_custom_command(TARGET ${GUI_APP_TARGET} POST_BUILD
+        set(_GUI_QT_DEPLOY_COMMANDS
             COMMAND ${CMAKE_COMMAND} -E make_directory
                     "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/platforms"
-            COMMAND ${CMAKE_COMMAND} -E make_directory
-                    "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/Qt6/qml"
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    "${_GUI_QT_WINDOWS_PLUGIN}"
+                    "${_GUI_QT_RUNTIME_ROOT}/plugins/platforms/qwindows${_GUI_QT_DEBUG_POSTFIX}.dll"
                     "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/platforms/"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                    "${_GUI_QT_RUNTIME_ROOT}/qml/QtQuick"
-                    "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/Qt6/qml/QtQuick"
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                    ${_GUI_QT_RUNTIME_DLLS}
-                    "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>"
-            COMMENT "Deploying Qt Quick development runtime"
+        )
+        foreach(_qml_plugin IN LISTS _GUI_QT_QML_PLUGINS)
+            string(REPLACE "|" ";" _qml_plugin_parts "${_qml_plugin}")
+            list(GET _qml_plugin_parts 0 _qml_module)
+            list(GET _qml_plugin_parts 1 _qml_plugin_name)
+            set(_qml_source "${_GUI_QT_RUNTIME_ROOT}/qml/${_qml_module}")
+            set(_qml_destination
+                "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/Qt6/qml/${_qml_module}")
+            list(APPEND _GUI_QT_DEPLOY_COMMANDS
+                COMMAND ${CMAKE_COMMAND} -E make_directory "${_qml_destination}"
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${_qml_source}/qmldir"
+                        "${_qml_source}/${_qml_plugin_name}${_GUI_QT_DEBUG_POSTFIX}.dll"
+                        "${_qml_destination}/"
+            )
+        endforeach()
+        foreach(_runtime_library IN LISTS _GUI_QT_QML_RUNTIME_LIBRARIES)
+            list(APPEND _GUI_QT_DEPLOY_COMMANDS
+                COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                        "${_GUI_QT_RUNTIME_BIN}/${_runtime_library}${_GUI_QT_DEBUG_POSTFIX}.dll"
+                        "$<TARGET_FILE_DIR:${GUI_APP_TARGET}>/"
+            )
+        endforeach()
+
+        add_custom_command(TARGET ${GUI_APP_TARGET} POST_BUILD
+            ${_GUI_QT_DEPLOY_COMMANDS}
+            COMMENT "Deploying minimal Qt Quick Basic development runtime"
             VERBATIM
         )
     endif()
+
 elseif(APPLE)
     set_source_files_properties(assets/icons/app-icon.icns PROPERTIES
         MACOSX_PACKAGE_LOCATION "Resources"
@@ -222,6 +257,7 @@ endif()
 qt_generate_deploy_qml_app_script(
     TARGET ${GUI_APP_TARGET}
     OUTPUT_SCRIPT _GUI_DEPLOY_SCRIPT
+    NO_TRANSLATIONS
     NO_UNSUPPORTED_PLATFORM_ERROR
 )
 install(SCRIPT ${_GUI_DEPLOY_SCRIPT})
@@ -298,7 +334,7 @@ if(BUILD_TESTING)
     set_target_properties(${GUI_QML_TEST_TARGET}
         PROPERTIES WIN32_EXECUTABLE FALSE)
     target_compile_definitions(${GUI_QML_TEST_TARGET} PRIVATE
-        QUICK_TEST_SOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}/tests/qml"
+        QUICK_TEST_SOURCE_DIR="${CMAKE_SOURCE_DIR}/tests/qml"
     )
     target_include_directories(${GUI_QML_TEST_TARGET} PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
@@ -320,7 +356,7 @@ if(BUILD_TESTING)
     )
     add_test(NAME gui-qml-quicktest
         COMMAND ${GUI_QML_TEST_TARGET}
-                -input "${CMAKE_CURRENT_SOURCE_DIR}/tests/qml")
+                -input "${CMAKE_SOURCE_DIR}/tests/qml")
     set_tests_properties(gui-qml-quicktest PROPERTIES ENVIRONMENT
         "QT_QPA_PLATFORM=offscreen;QT_PLUGIN_PATH=${_GUI_QT_PLUGIN_ROOT};${_GUI_TEST_FONT_ENV}")
     if(WIN32)

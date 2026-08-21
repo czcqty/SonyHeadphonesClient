@@ -86,9 +86,17 @@ jobs:
 
   macos:
     needs: validate
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: arm64
+            runner: macos-14
+          - arch: x86_64
+            runner: macos-14-large
     # Qt 6.8.3's prebuilt macOS package still references the AGL framework,
     # which is absent from the newest Xcode SDK used by macos-latest.
-    runs-on: macos-14
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Check out source
         uses: actions/checkout@v6
@@ -103,12 +111,12 @@ jobs:
           arch: clang_64
           cache: true
 
-      - name: Configure universal build
+      - name: Configure ${{ matrix.arch }} build
         shell: bash
         run: >
           cmake -S . -B build
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-          '-DCMAKE_OSX_ARCHITECTURES=x86_64;arm64'
+          -DCMAKE_OSX_ARCHITECTURES=${{ matrix.arch }}
           -DBUILD_TESTING=ON
           -DMDR_ENABLE_CODEGEN=OFF
 
@@ -117,8 +125,11 @@ jobs:
           cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
           ctest --test-dir build -C ${{ env.BUILD_TYPE }} --output-on-failure
 
-      - name: Verify universal executable
-        run: lipo build/gui/SonyHeadphonesClient.app/Contents/MacOS/SonyHeadphonesClient -verify_arch x86_64 arm64
+      - name: Verify architecture and strip symbols
+        run: |
+          executable=build/gui/SonyHeadphonesClient.app/Contents/MacOS/SonyHeadphonesClient
+          lipo "$executable" -verify_arch ${{ matrix.arch }}
+          strip -x "$executable"
 
       - name: Package DMG
         run: cpack --config build/CPackConfig.cmake -C ${{ env.BUILD_TYPE }} -B dist
@@ -126,8 +137,8 @@ jobs:
       - name: Upload macOS package
         uses: actions/upload-artifact@v4
         with:
-          name: macos-package
-          path: dist/SonyHeadphonesClient-${{ needs.validate.outputs.version }}-macos-universal.dmg
+          name: macos-${{ matrix.arch }}-package
+          path: dist/SonyHeadphonesClient-${{ needs.validate.outputs.version }}-macos-${{ matrix.arch }}.dmg
           if-no-files-found: error
 
   linux:
