@@ -91,12 +91,13 @@ jobs:
       matrix:
         include:
           - arch: arm64
-            runner: macos-14
           - arch: x86_64
-            runner: macos-14-large
     # Qt 6.8.3's prebuilt macOS package still references the AGL framework,
     # which is absent from the newest Xcode SDK used by macos-latest.
-    runs-on: ${{ matrix.runner }}
+    # The standard macos-14 runner is arm64. Qt's clang_64 package is
+    # universal, so it can also cross-compile the x86_64 release without the
+    # paid macos-14-large runner.
+    runs-on: macos-14
     steps:
       - name: Check out source
         uses: actions/checkout@v6
@@ -120,10 +121,12 @@ jobs:
           -DBUILD_TESTING=ON
           -DMDR_ENABLE_CODEGEN=OFF
 
-      - name: Build and test
-        run: |
-          cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
-          ctest --test-dir build -C ${{ env.BUILD_TYPE }} --output-on-failure
+      - name: Build
+        run: cmake --build build --config ${{ env.BUILD_TYPE }} --parallel 2
+
+      - name: Test native build
+        if: matrix.arch == 'arm64'
+        run: ctest --test-dir build -C ${{ env.BUILD_TYPE }} --output-on-failure
 
       - name: Verify architecture and strip symbols
         run: |
