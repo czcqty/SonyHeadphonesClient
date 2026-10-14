@@ -19,6 +19,20 @@ private slots:
         QCOMPARE(PanelController::anchoredPosition(work, QRect(-600, 0, 20, 20), size).y(), 30);
     }
 
+    void escapeDismissalKeepsFallbackReachable()
+    {
+        QWindow window;
+        PanelController fallback(&window, false, [] { return QRect(); });
+        fallback.dismiss();
+        QVERIFY(window.isVisible());
+        QWindow trayWindow;
+        PanelController tray(&trayWindow, true, [] { return QRect(); });
+        tray.show();
+        QVERIFY(trayWindow.isVisible());
+        tray.dismiss();
+        QVERIFY(!trayWindow.isVisible());
+    }
+
     void noTrayKeepsFallbackReachable()
     {
         QWindow window;

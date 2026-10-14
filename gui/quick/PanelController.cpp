@@ -82,3 +82,10 @@ void PanelController::checkFocus()
     m_window->hide();
     m_lastDismiss.start();
 }
+
+void PanelController::dismiss()
+{
+    if (!m_trayAvailable) return;
+    m_window->hide();
+    m_lastDismiss.start();
+}

@@ -1,8 +1,8 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 
 Page {
-    background: Rectangle { color: Tokens.surface }
+    background: Item {}
 
     Column {
         anchors.fill: parent
@@ -17,6 +17,7 @@ Page {
             height: parent.height - Tokens.toolbarHeight
 
             Flickable {
+        ScrollBar.vertical: AppScrollBar {}
                 anchors.fill: parent
                 anchors.bottomMargin: connectionError.visible ? connectionError.height + 32 : 0
                 contentWidth: width
@@ -48,18 +49,18 @@ Page {
                                 anchors.leftMargin: 16
                                 anchors.verticalCenter: parent.verticalCenter
                                 spacing: 4
-                                Text {
+                                Text { font.family: Tokens.fontFamily;
                                     text: modelData.name
                                     color: Tokens.textPrimary
                                     font.pixelSize: Tokens.fontS
                                 }
-                                Text {
+                                Text { font.family: Tokens.fontFamily;
                                     text: modelData.mac
                                     color: Tokens.textSecondary
                                     font.pixelSize: Tokens.font3S
                                 }
                             }
-                            Button {
+                            AppButton {
                                 anchors.right: parent.right
                                 anchors.rightMargin: 8
                                 anchors.verticalCenter: parent.verticalCenter
@@ -70,7 +71,7 @@ Page {
                         }
                     }
 
-                    Button {
+                    AppButton {
                         width: parent.width
                         height: 48
                         text: I18n.text("scan")
@@ -84,18 +85,18 @@ Page {
                 visible: appController.connection.state === "scanning"
                 anchors.centerIn: parent
                 spacing: 12
-                BusyIndicator {
+                AppBusyIndicator {
                     anchors.horizontalCenter: parent.horizontalCenter
                     running: parent.visible
                 }
-                Text {
+                Text { font.family: Tokens.fontFamily;
                     text: I18n.text("scanning")
                     color: Tokens.textPrimary
                     font.pixelSize: Tokens.fontS
                 }
             }
 
-            Text {
+            Text { font.family: Tokens.fontFamily;
                 id: connectionError
                 visible: appController.connection.errorCode.length > 0
                 anchors.left: parent.left

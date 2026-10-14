@@ -14,6 +14,7 @@ TestCase {
         width: 320
         height: 180
 
+        property int sliderMoveCount: 0
         property int settingToggleCount: 0
         property bool lastSettingValue: false
 
@@ -33,6 +34,14 @@ TestCase {
             id: translatedSample
             visible: false
             text: I18n.text("equalizer")
+        }
+
+        AppSlider {
+            id: testSlider
+            y: 145
+            width: 280
+            from: 0; to: 30; stepSize: 1; value: 10
+            onMoved: controls.sliderMoveCount++
         }
 
         SettingRow {
@@ -64,7 +73,19 @@ TestCase {
 
     Component { id: panelComponent; Main {} }
 
-    function test_panel_pages_load_in_compact_window() {
+    function test_panel_pages_load_in_compact_window_data() {
+        let rows = []
+        for (const desktop of ["windows", "macos", "kde", "gnome", "xfce", "linux"])
+            for (const mode of ["light", "dark"])
+                for (const locale of ["en", "zh_CN"])
+                    rows.push({tag: desktop + "-" + mode + "-" + locale, desktop, mode, locale})
+        return rows
+    }
+
+    function test_panel_pages_load_in_compact_window(data) {
+        appController.appearance.setPreviewDesktop(data.desktop)
+        appController.appearance.themeMode = data.mode
+        appController.locale = data.locale
         appController.applyProfile("generic-max")
         const panel = createTemporaryObject(panelComponent, null, {width: 360, height: 480})
         verify(panel !== null)
@@ -77,6 +98,32 @@ TestCase {
             compare(loader.item.width, 360)
             verify(loader.item.height <= 480)
         }
+    }
+
+    function test_slider_keyboard_emits_once() {
+        controls.sliderMoveCount = 0
+        testSlider.forceActiveFocus()
+        keyClick(Qt.Key_Right)
+        compare(controls.sliderMoveCount, 1)
+        compare(testSlider.value, 11)
+    }
+
+    function test_theme_selector_can_restore_system() {
+        appController.appearance.themeMode = "dark"
+        tryCompare(themeToggle, "currentIndex", 2)
+        themeToggle.activated(0)
+        compare(appController.appearance.themeMode, "system")
+        tryCompare(themeToggle, "currentIndex", 0)
+    }
+
+    function test_disabled_setting_ignores_keyboard() {
+        controls.settingToggleCount = 0
+        settingRow.rowEnabled = false
+        settingRow.forceActiveFocus()
+        keyClick(Qt.Key_Space)
+        keyClick(Qt.Key_Return)
+        compare(controls.settingToggleCount, 0)
+        settingRow.rowEnabled = true
     }
 
     function test_language_toggle_is_live_and_does_not_overlap_theme() {

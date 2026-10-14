@@ -1,12 +1,13 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 import QtQuick.Layouts
 
 Page {
     id: root
-    background: Rectangle { color: Tokens.surface }
+    background: Item {}
 
     Flickable {
+        ScrollBar.vertical: AppScrollBar {}
         id: scroll
         anchors.fill: parent
         contentWidth: width
@@ -57,13 +58,13 @@ Page {
                             required property var modelData
                             visible: modelData.show
                             spacing: 4
-                            Text {
+                            Text { font.family: Tokens.fontFamily;
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: modelData.label
                                 color: Tokens.textSecondary
                                 font.pixelSize: Tokens.font3S
                             }
-                            Text {
+                            Text { font.family: Tokens.fontFamily;
                                 anchors.horizontalCenter: parent.horizontalCenter
                                 text: modelData.value + "%" + (modelData.charging ? " ⚡" : "")
                                 color: Tokens.textPrimary
@@ -94,14 +95,14 @@ Page {
                         anchors.margins: 12
                         spacing: 12
 
-                        Text {
+                        Text { font.family: Tokens.fontFamily;
                             width: parent.width
                             text: I18n.text("playback")
                             color: Tokens.textPrimary
                             font.pixelSize: Tokens.fontS
                             font.bold: true
                         }
-                        Text {
+                        Text { font.family: Tokens.fontFamily;
                             width: parent.width
                             visible: appController.playback.title.length > 0
                             text: appController.playback.title
@@ -110,7 +111,7 @@ Page {
                             font.bold: true
                             elide: Text.ElideRight
                         }
-                        Text {
+                        Text { font.family: Tokens.fontFamily;
                             width: parent.width
                             visible: appController.playback.artist.length > 0
                             text: appController.playback.artist
@@ -118,7 +119,7 @@ Page {
                             font.pixelSize: Tokens.font2S
                             elide: Text.ElideRight
                         }
-                        Text {
+                        Text { font.family: Tokens.fontFamily;
                             visible: appController.playback.album.length > 0
                             width: parent.width
                             text: appController.playback.album
@@ -131,24 +132,24 @@ Page {
                             visible: appController.playback.playbackSupported
                             width: parent.width
                             spacing: 8
-                            Button {
+                            AppButton {
                                 Layout.fillWidth: true
                                 text: I18n.text("previous")
                                 onClicked: appController.playback.previousTrack()
                             }
-                            Button {
+                            AppButton {
                                 Layout.fillWidth: true
                                 text: I18n.text("play.pause")
                                 onClicked: appController.playback.togglePlayback()
                             }
-                            Button {
+                            AppButton {
                                 Layout.fillWidth: true
                                 text: I18n.text("next")
                                 onClicked: appController.playback.nextTrack()
                             }
                         }
 
-                        Text {
+                        Text { font.family: Tokens.fontFamily;
                             visible: appController.playback.volumeSupported
                             text: I18n.text("volume")
                             color: Tokens.textPrimary
@@ -173,7 +174,7 @@ Page {
                     width: parent.width
                     spacing: 8
                     visible: appController.noiseControl.supported || appController.noiseControl.ambientSupported
-                    Text { text: I18n.text("noise"); color: Tokens.textPrimary; font.bold: true }
+                    Text { font.family: Tokens.fontFamily; text: I18n.text("noise"); color: Tokens.textPrimary; font.bold: true }
                     RowLayout {
                         width: parent.width
                         Repeater {
@@ -216,7 +217,7 @@ Page {
                     height: 76
                     radius: Tokens.cardRadius
                     color: Tokens.surfaceContainer
-                    Text {
+                    Text { font.family: Tokens.fontFamily;
                         anchors.left: parent.left
                         anchors.leftMargin: 18
                         anchors.verticalCenter: parent.verticalCenter
@@ -229,7 +230,7 @@ Page {
                     Accessible.description: appController.playback.safeListeningPressure + " dB"
                 }
 
-                Text {
+                Text { font.family: Tokens.fontFamily;
                     width: parent.width
                     text: [appController.playback.codec,
                            appController.playback.firmware.length > 0
@@ -240,7 +241,7 @@ Page {
                     horizontalAlignment: Text.AlignHCenter
                 }
 
-                Text {
+                Text { font.family: Tokens.fontFamily;
                     visible: appController.playback.alertMessage.length > 0
                     width: parent.width
                     text: appController.playback.alertMessage
@@ -257,7 +258,7 @@ Page {
                     route: "devices"
                 }
 
-                        Button {
+                        AppButton {
                             id: powerOffButton
                             visible: appController.playback.powerOffSupported
                             enabled: !appController.playback.powerOffPending
@@ -267,20 +268,8 @@ Page {
                                 ? I18n.text("powering.off") : I18n.text("power.off")
                             onClicked: powerOffDialog.open()
 
-                            background: Rectangle {
-                                radius: Tokens.cardRadius
-                                color: "transparent"
-                                border.width: 1
-                                border.color: Tokens.error
-                            }
+                            destructive: true
 
-                            contentItem: Text {
-                                text: powerOffButton.text
-                                color: powerOffButton.enabled ? Tokens.error : Tokens.disabled
-                                font.pixelSize: Tokens.fontS
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
                         }
                 Item { width: 1; height: 12 }
             }
@@ -304,7 +293,7 @@ Page {
 
         contentItem: Column {
             spacing: 12
-            Text {
+            Text { font.family: Tokens.fontFamily;
                 width: parent.width
                 text: I18n.text("power.off.confirm.title")
                 color: Tokens.textPrimary
@@ -312,7 +301,7 @@ Page {
                 font.bold: true
                 wrapMode: Text.WordWrap
             }
-            Text {
+            Text { font.family: Tokens.fontFamily;
                 width: parent.width
                 text: I18n.text("power.off.confirm.description")
                 color: Tokens.textSecondary
@@ -322,11 +311,11 @@ Page {
             Row {
                 anchors.right: parent.right
                 spacing: 8
-                Button {
+                AppButton {
                     text: I18n.text("cancel")
                     onClicked: powerOffDialog.close()
                 }
-                Button {
+                AppButton {
                     text: I18n.text("power.off.action")
                     onClicked: {
                         powerOffDialog.close()

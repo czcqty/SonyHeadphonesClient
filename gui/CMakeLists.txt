@@ -15,6 +15,10 @@ set(GUI_QML_TEST_TARGET ${PROJECT_NAME}_qml_tests)
 set(GUI_BACKEND_TEST_TARGET ${PROJECT_NAME}_backend_tests)
 set(GUI_VISUAL_DIFF_TARGET ${PROJECT_NAME}_visual_diff)
 
+# Shared presentation service is linked by the app and both UI test targets.
+qt_add_library(platform_appearance STATIC quick/PlatformAppearance.cpp quick/PlatformAppearance.hpp)
+target_link_libraries(platform_appearance PUBLIC Qt6::Gui)
+
 set(GUI_SOURCES
     quick/main.cpp
     quick/PanelController.cpp
@@ -35,6 +39,9 @@ set(GUI_HEADERS
 )
 
 set(GUI_QML_FILES
+    qml/AppButton.qml
+    qml/AppScrollBar.qml
+    qml/AppBusyIndicator.qml
     qml/Main.qml
     qml/I18n.qml
     qml/Tokens.qml
@@ -122,6 +129,7 @@ target_link_libraries(${GUI_APP_TARGET} PRIVATE
     Qt6::Qml
     Qt6::Quick
     Qt6::QuickControls2
+    platform_appearance
     Qt6::Widgets
     mdr
 )
@@ -140,7 +148,7 @@ if(WIN32)
 
     # vcpkg has no windeployqt target, so keep development builds runnable by
     # deploying only the QML modules and plugin dependencies selected by the
-    # application's compile-time Basic style. vcpkg's applocal step supplies
+    # application's official Windows style and fallback styles. vcpkg's applocal step supplies
     # the executable's other transitive runtime dependencies.
     if(DEFINED VCPKG_TARGET_TRIPLET)
         get_filename_component(_GUI_QT_PREFIX "${Qt6_DIR}/../.." ABSOLUTE)
@@ -159,6 +167,12 @@ if(WIN32)
             "QtQml/Models|modelsplugin"
             "QtQml/WorkerScript|workerscriptplugin"
             "QtQuick|qtquick2plugin"
+            "QtQuick/Controls|qtquickcontrols2plugin"
+            "QtQuick/Controls/Windows|qtquickcontrols2windowsstyleplugin"
+            "QtQuick/Controls/Windows/impl|qtquickcontrols2windowsstyleimplplugin"
+            "QtQuick/Controls/Fusion|qtquickcontrols2fusionstyleplugin"
+            "QtQuick/Controls/Fusion/impl|qtquickcontrols2fusionstyleimplplugin"
+            "QtQuick/NativeStyle|qtquickcontrols2nativestyleplugin"
             "QtQuick/Controls/Basic|qtquickcontrols2basicstyleplugin"
             "QtQuick/Controls/Basic/impl|qtquickcontrols2basicstyleimplplugin"
             "QtQuick/Controls/impl|qtquickcontrols2implplugin"
@@ -168,6 +182,9 @@ if(WIN32)
         )
         set(_GUI_QT_QML_RUNTIME_LIBRARIES
             Qt6QuickControls2
+            Qt6QuickControls2WindowsStyleImpl
+            Qt6QuickControls2Fusion
+            Qt6QuickControls2FusionStyleImpl
             Qt6QuickControls2Basic
             Qt6QuickControls2BasicStyleImpl
             Qt6QuickControls2Impl
@@ -208,7 +225,7 @@ if(WIN32)
 
         add_custom_command(TARGET ${GUI_APP_TARGET} POST_BUILD
             ${_GUI_QT_DEPLOY_COMMANDS}
-            COMMENT "Deploying minimal Qt Quick Basic development runtime"
+            COMMENT "Deploying official Qt Quick Windows/Fusion development runtime"
             VERBATIM
         )
     endif()
@@ -275,6 +292,13 @@ if(BUILD_TESTING)
         set(_GUI_TEST_FONT_ENV "QT_QPA_FONTDIR=$ENV{WINDIR}/Fonts")
     endif()
 
+    qt_add_executable(SonyHeadphonesClient_appearance_tests tests/AppearanceTests.cpp)
+    set_target_properties(SonyHeadphonesClient_appearance_tests PROPERTIES WIN32_EXECUTABLE FALSE)
+    target_link_libraries(SonyHeadphonesClient_appearance_tests PRIVATE Qt6::Test platform_appearance)
+    add_test(NAME gui-platform-appearance COMMAND SonyHeadphonesClient_appearance_tests)
+    set_tests_properties(gui-platform-appearance PROPERTIES ENVIRONMENT
+        "QT_QPA_PLATFORM=offscreen;QT_PLUGIN_PATH=${_GUI_QT_PLUGIN_ROOT};${_GUI_TEST_FONT_ENV}")
+
     qt_add_executable(${GUI_VIEWMODEL_TEST_TARGET}
         tests/ViewModelTests.cpp
         quick/AppController.cpp
@@ -292,6 +316,7 @@ if(BUILD_TESTING)
     target_link_libraries(${GUI_VIEWMODEL_TEST_TARGET} PRIVATE
         Qt6::Test
         Qt6::Core
+        platform_appearance
         Qt6::Gui
         mdr
     )
@@ -365,6 +390,7 @@ if(BUILD_TESTING)
         Qt6::Quick
         Qt6::Qml
         Qt6::QuickControls2
+        platform_appearance
         mdr
     )
     add_test(NAME gui-qml-quicktest
@@ -394,6 +420,7 @@ if(BUILD_TESTING)
             ${GUI_VIEWMODEL_TEST_TARGET}
             ${GUI_BACKEND_TEST_TARGET}
             SonyHeadphonesClient_panel_tests
+            SonyHeadphonesClient_appearance_tests
             ${GUI_QML_TEST_TARGET}
         USES_TERMINAL
     )

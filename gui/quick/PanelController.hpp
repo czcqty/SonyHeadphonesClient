@@ -20,6 +20,8 @@ public:
     void checkFocus();
     static QPoint anchoredPosition(const QRect& available, const QRect& anchor,
                                    const QSize& panelSize);
+public slots:
+    void dismiss();
 private:
     QWindow* m_window;
     bool m_trayAvailable;

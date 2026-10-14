@@ -1,8 +1,8 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 
 Page {
-    background: Rectangle { color: Tokens.surface }
+    background: Item {}
 
     property var assignmentOptions: appController.settings.touchOptions
     property var ncButtonOptions: [
@@ -21,6 +21,7 @@ Page {
     }
 
     Flickable {
+        ScrollBar.vertical: AppScrollBar {}
         anchors.fill: parent
         contentWidth: width
         contentHeight: pageContent.height + 12
@@ -44,7 +45,7 @@ Page {
                 width: parent.width - 32
                 spacing: 24
 
-                Text {
+                Text { font.family: Tokens.fontFamily;
                     text: I18n.text("left")
                     color: Tokens.textPrimary
                     font.pixelSize: Tokens.fontS
@@ -58,7 +59,7 @@ Page {
                     onActivated: index => appController.settings.setTouchLeft(assignmentOptions[index].value)
                 }
 
-                Text {
+                Text { font.family: Tokens.fontFamily;
                     text: I18n.text("right")
                     color: Tokens.textPrimary
                     font.pixelSize: Tokens.fontS
@@ -72,7 +73,7 @@ Page {
                     onActivated: index => appController.settings.setTouchRight(assignmentOptions[index].value)
                 }
 
-                Text {
+                Text { font.family: Tokens.fontFamily;
                     visible: appController.settings.ncButtonSupported
                     text: I18n.text("nc.button")
                     color: Tokens.textPrimary

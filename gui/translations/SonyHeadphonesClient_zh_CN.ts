@@ -3,6 +3,10 @@
 <TS version="2.1" language="zh_CN" sourcelanguage="en">
   <context>
     <name>I18n</name>
+    <message><source>Light</source><translation>浅色</translation></message>
+    <message><source>Dark</source><translation>深色</translation></message>
+    <message><source>Follow system</source><translation>跟随系统</translation></message>
+    <message><source>Appearance</source><translation>外观</translation></message>
     <message><source>Quit</source><translation>退出</translation></message>
     <message><source>Headphone behavior</source><translation>耳机行为</translation></message>
     <message><source>All device settings</source><translation>所有设备设置</translation></message>

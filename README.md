@@ -61,10 +61,23 @@ Linux targets KDE Plasma, GNOME, and Xfce. A working tray host is required for
 tray operation: GNOME needs compatible AppIndicator/KStatusNotifierItem support
 (often a distribution-provided extension), and Xfce needs its panel tray plugin.
 Nothing is installed or enabled automatically. Without a tray at startup the
-compact window stays visible on focus loss. Desktop-specific colors, spacing,
-and system fonts provide a native-looking Qt UI, not native system controls.
-Real desktop/compositor validation remains necessary, especially Wayland popup
-placement and GNOME activation behavior.
+compact window stays visible on focus loss.
+
+All Qt pages use official Qt Quick Controls styles without custom control skins:
+Windows uses Qt's Windows style, macOS uses Qt's macOS style, and Linux uses Qt's
+default Fusion style. Qt does not ship separate GNOME, KDE or Xfce Quick Controls
+styles. Installed desktop styles may be selected with `QT_QUICK_CONTROLS_STYLE`;
+the application does not override that selection. System fonts and palettes are
+provided by Qt. These styles are not a WinUI/AppKit frontend.
+
+Appearance offers Follow system / Light / Dark using Qt's color-scheme API on
+Qt 6.8+ where supported by the platform. Qt 6.5-6.7 continues to follow the system
+and preserves the preference for a newer runtime. Existing dark-mode preferences
+are migrated. Escape dismisses the tray panel after any open popup is closed.
+
+The legacy `--preview-desktop` option enables isolated preview mode and records
+desktop metadata only. It no longer simulates another operating system's controls;
+native styles must be inspected on their actual host operating system.
 
 ## Deterministic preview
 
@@ -140,7 +153,7 @@ On Windows, run the commands from a Visual Studio Developer PowerShell or
 Developer Command Prompt. Set `CMAKE_PREFIX_PATH` or use a package-manager
 toolchain when Qt is not on CMake's search path.
 
-The Windows development build deploys the Basic-style Qt Quick modules,
+The Windows development build deploys the official Windows style and its Fusion/Basic dependencies,
 platform plugin, and their required Qt DLLs beside the executable so the CLion
 target runs without custom Qt plugin environment variables. A distributable
 release still requires normal release packaging and the MSVC redistributable.

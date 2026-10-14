@@ -4,6 +4,8 @@ import QtQuick
 QtObject {
     function text(key) {
         switch (key) {
+        case "theme.system": return qsTr("Follow system")
+        case "theme.choose": return qsTr("Appearance")
         case "quit": return qsTr("Quit")
         case "behavior": return qsTr("Headphone behavior")
         case "all.settings": return qsTr("All device settings")
@@ -59,8 +61,8 @@ QtObject {
         case "scan": return qsTr("Scan for headphones")
         case "scanning": return qsTr("Scanning for headphones…")
         case "connecting": return qsTr("Connecting…")
-        case "theme.light": return qsTr("Switch to light mode")
-        case "theme.dark": return qsTr("Switch to dark mode")
+        case "theme.light": return qsTr("Light")
+        case "theme.dark": return qsTr("Dark")
         case "language.english": return qsTr("Switch to English")
         case "language.chinese": return qsTr("Switch to Simplified Chinese")
         case "empty": return qsTr("No headphones found")

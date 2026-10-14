@@ -16,7 +16,8 @@ AppController::AppController(bool previewMode, QObject* parent)
       m_settings(&m_state, this),
       m_deviceManager(&m_state, this),
       m_connection(this),
-      m_previewMode(previewMode)
+      m_previewMode(previewMode),
+      m_appearance(previewMode, this)
 {
     QSettings settings;
     if (m_previewMode) {
@@ -30,25 +31,10 @@ AppController::AppController(bool previewMode, QObject* parent)
             ? QStringLiteral("zh_CN") : QStringLiteral("en");
     }
 
-    if (!m_previewMode && settings.contains(QStringLiteral("appearance/darkMode"))) {
-        m_darkMode = settings.value(QStringLiteral("appearance/darkMode")).toBool();
-        m_themeOverridden = true;
-    } else if (qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
-        m_darkMode = QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-    }
-
-    if (qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
-        connect(QGuiApplication::styleHints(), &QStyleHints::colorSchemeChanged,
-                this, [this](Qt::ColorScheme scheme) {
-                    if (m_themeOverridden)
-                        return;
-                    const bool dark = scheme == Qt::ColorScheme::Dark;
-                    if (m_darkMode == dark)
-                        return;
-                    m_darkMode = dark;
-                    emit darkModeChanged();
-                });
-    }
+    connect(&m_appearance, &PlatformAppearance::changed, this, [this] {
+        emit darkModeChanged();
+        emit appearanceChanged();
+    });
 
     applyProfile(QStringLiteral("WH-1000XM6"));
     m_connection.setSelectedDevice(modelName(), deviceImage());
@@ -76,20 +62,7 @@ AppController::AppController(bool previewMode, QObject* parent)
 
 AppController::~AppController() = default;
 
-QString AppController::desktopStyle() const
-{
-#if defined(_WIN32)
-    return QStringLiteral("windows");
-#elif defined(__APPLE__)
-    return QStringLiteral("macos");
-#else
-    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP").toLower();
-    if (desktop.contains(QStringLiteral("kde"))) return QStringLiteral("kde");
-    if (desktop.contains(QStringLiteral("gnome"))) return QStringLiteral("gnome");
-    if (desktop.contains(QStringLiteral("xfce"))) return QStringLiteral("xfce");
-    return QStringLiteral("linux");
-#endif
-}
+QString AppController::desktopStyle() const { return m_appearance.desktop(); }
 
 QString AppController::currentProfile() const { return m_profile ? m_profile->id : QString(); }
 QString AppController::modelName() const { return m_profile ? m_profile->modelName : QString(); }
@@ -196,13 +169,7 @@ void AppController::setCurrentRoute(const QString& route)
 
 void AppController::toggleDarkMode()
 {
-    m_darkMode = !m_darkMode;
-    m_themeOverridden = true;
-    if (!m_previewMode) {
-        QSettings settings;
-        settings.setValue(QStringLiteral("appearance/darkMode"), m_darkMode);
-    }
-    emit darkModeChanged();
+    m_appearance.setThemeMode(darkMode() ? QStringLiteral("light") : QStringLiteral("dark"));
 }
 
 void AppController::toggleLocale()
@@ -248,26 +215,7 @@ void AppController::setPreviewState(const QString& state)
 
 void AppController::setPreviewTheme(const QString& theme)
 {
-    const QString normalized = theme.toLower();
-    if (normalized == QStringLiteral("system")) {
-        m_themeOverridden = false;
-        if (qobject_cast<QGuiApplication*>(QCoreApplication::instance())) {
-            const bool dark = QGuiApplication::styleHints()->colorScheme() == Qt::ColorScheme::Dark;
-            if (m_darkMode != dark) {
-                m_darkMode = dark;
-                emit darkModeChanged();
-            }
-        }
-        return;
-    }
-    if (normalized != QStringLiteral("light") && normalized != QStringLiteral("dark"))
-        return;
-    m_themeOverridden = true;
-    const bool dark = normalized == QStringLiteral("dark");
-    if (m_darkMode == dark)
-        return;
-    m_darkMode = dark;
-    emit darkModeChanged();
+    m_appearance.setThemeMode(theme.toLower());
 }
 
 void AppController::refreshViewModels()

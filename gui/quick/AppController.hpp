@@ -6,6 +6,7 @@
 
 #include "DeviceProfileRepository.hpp"
 #include "ViewModels.hpp"
+#include "PlatformAppearance.hpp"
 
 class MdrSession;
 
@@ -16,7 +17,8 @@ class AppController final : public QObject
     Q_PROPERTY(QString locale READ locale WRITE setLocale NOTIFY localeChanged)
     Q_PROPERTY(QString previewState READ previewState WRITE setPreviewState NOTIFY previewStateChanged)
     Q_PROPERTY(bool previewMode READ previewMode CONSTANT)
-    Q_PROPERTY(QString desktopStyle READ desktopStyle CONSTANT)
+    Q_PROPERTY(QString desktopStyle READ desktopStyle NOTIFY appearanceChanged)
+    Q_PROPERTY(PlatformAppearance* appearance READ appearance CONSTANT)
     Q_PROPERTY(bool darkMode READ darkMode NOTIFY darkModeChanged)
     Q_PROPERTY(QString currentProfile READ currentProfile NOTIFY profileChanged)
     Q_PROPERTY(QString modelName READ modelName NOTIFY profileChanged)
@@ -41,7 +43,8 @@ public:
     QString previewState() const { return m_previewState; }
     bool previewMode() const { return m_previewMode; }
     QString desktopStyle() const;
-    bool darkMode() const { return m_darkMode; }
+    bool darkMode() const { return m_appearance.dark(); }
+    PlatformAppearance* appearance() { return &m_appearance; }
     QString currentProfile() const;
     QString modelName() const;
     QString deviceFamily() const;
@@ -74,6 +77,7 @@ public:
     void setPreviewTheme(const QString& theme);
 
 signals:
+    void appearanceChanged();
     void currentRouteChanged();
     void localeChanged();
     void previewStateChanged();
@@ -104,8 +108,7 @@ private:
     QString m_locale = QStringLiteral("en");
     QString m_previewState = QStringLiteral("ready");
     bool m_previewMode = false;
-    bool m_darkMode = false;
-    bool m_themeOverridden = false;
+    PlatformAppearance m_appearance;
     QStringList m_routeHistory;
     std::unique_ptr<MdrSession> m_session;
 };

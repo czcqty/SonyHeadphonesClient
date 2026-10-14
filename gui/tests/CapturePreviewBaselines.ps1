@@ -7,6 +7,8 @@ param(
 
     [string[]]$Profiles = @("WH-1000XM6", "WF-1000XM6", "WF-C510", "WF-L910"),
 
+    [string[]]$Desktops = @("windows", "macos", "kde", "gnome", "xfce"),
+
     [string[]]$ViewportSizes = @("360x480", "412x600", "720x900")
 )
 
@@ -21,13 +23,15 @@ $locales = @("en", "zh_CN")
 $themes = @("light", "dark")
 $states = @("ready", "loading", "empty", "error", "disabled")
 
+foreach ($desktop in $Desktops) {
 foreach ($profile in $Profiles) {
     foreach ($viewportSize in $ViewportSizes) {
         foreach ($theme in $themes) {
             foreach ($locale in $locales) {
                 foreach ($route in $routes) {
-                    $path = Join-Path $resolvedOutput "$profile-$route-ready-$locale-$theme-$viewportSize.png"
+                    $path = Join-Path $resolvedOutput "$desktop-$profile-$route-ready-$locale-$theme-$viewportSize.png"
                     & $resolvedExecutable `
+                        --preview-desktop $desktop `
                         --preview-profile $profile `
                         --preview-route $route `
                         --preview-state ready `
@@ -41,8 +45,9 @@ foreach ($profile in $Profiles) {
                 }
 
                 foreach ($state in $states) {
-                    $path = Join-Path $resolvedOutput "$profile-home-$state-$locale-$theme-$viewportSize.png"
+                    $path = Join-Path $resolvedOutput "$desktop-$profile-home-$state-$locale-$theme-$viewportSize.png"
                     & $resolvedExecutable `
+                        --preview-desktop $desktop `
                         --preview-profile $profile `
                         --preview-route home `
                         --preview-state $state `
@@ -57,4 +62,6 @@ foreach ($profile in $Profiles) {
             }
         }
     }
+}
+
 }

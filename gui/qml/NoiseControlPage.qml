@@ -1,11 +1,12 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 import QtQuick.Layouts
 
 Page {
-    background: Rectangle { color: Tokens.surface }
+    background: Item {}
 
     Flickable {
+        ScrollBar.vertical: AppScrollBar {}
         anchors.fill: parent
         contentWidth: width
         contentHeight: pageContent.height + 12
@@ -63,7 +64,7 @@ Page {
                         anchors.margins: 18
                         spacing: 18
 
-                        Text {
+                        Text { font.family: Tokens.fontFamily;
                             text: I18n.text("ambient.level")
                             color: Tokens.textPrimary
                             font.pixelSize: Tokens.fontS
@@ -80,7 +81,7 @@ Page {
                         Row {
                             width: parent.width
                             spacing: 12
-                            Text {
+                            Text { font.family: Tokens.fontFamily;
                                 width: parent.width - focusSwitch.width - 12
                                 anchors.verticalCenter: parent.verticalCenter
                                 text: I18n.text("focus.voice")
@@ -113,7 +114,7 @@ Page {
 
                         Row {
                             width: parent.width
-                            Text {
+                            Text { font.family: Tokens.fontFamily;
                                 width: parent.width - adaptiveSwitch.width
                                 text: I18n.text("adaptive.noise")
                                 color: Tokens.textPrimary
@@ -138,7 +139,7 @@ Page {
                     }
                 }
 
-                Text {
+                Text { font.family: Tokens.fontFamily;
                     visible: !appController.noiseControl.supported
                     width: parent.width
                     text: I18n.text("unavailable")

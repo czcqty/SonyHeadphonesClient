@@ -1,10 +1,11 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 
 Page {
-    background: Rectangle { color: Tokens.surface }
+    background: Item {}
 
     Flickable {
+        ScrollBar.vertical: AppScrollBar {}
         anchors.fill: parent
         contentWidth: width
         contentHeight: pageContent.height + 12
@@ -38,13 +39,13 @@ Page {
                             anchors.top: parent.top
                             anchors.margins: 12
                             spacing: 6
-                            Text {
+                            Text { font.family: Tokens.fontFamily;
                                 text: modelData.name.length > 0 ? modelData.name : modelData.mac
                                 color: Tokens.textPrimary
                                 font.pixelSize: Tokens.fontS
                                 font.bold: modelData.playback
                             }
-                            Text {
+                            Text { font.family: Tokens.fontFamily;
                                 text: (modelData.connected ? I18n.text("connected") + " · " : "") + modelData.mac
                                 color: Tokens.textSecondary
                                 font.pixelSize: Tokens.font3S
@@ -52,20 +53,20 @@ Page {
                             Flow {
                                 width: parent.width
                                 spacing: 8
-                                Button {
+                                AppButton {
                                     text: modelData.connected ? I18n.text("disconnect") : I18n.text("connect")
                                     onClicked: modelData.connected
                                         ? appController.deviceManager.disconnectDevice(modelData.mac)
                                         : appController.deviceManager.connectDevice(modelData.mac)
                                     Accessible.name: text + " " + modelData.name
                                 }
-                                Button {
+                                AppButton {
                                     visible: appController.deviceManager.sourceSwitchSupported
                                              && modelData.connected && !modelData.playback
                                     text: I18n.text("use.for.playback")
                                     onClicked: appController.deviceManager.switchDevice(modelData.mac)
                                 }
-                                Button {
+                                AppButton {
                                     text: I18n.text("unpair")
                                     onClicked: appController.deviceManager.unpairDevice(modelData.mac)
                                 }

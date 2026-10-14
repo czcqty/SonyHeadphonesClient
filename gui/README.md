@@ -22,6 +22,8 @@ and persistent settings remain in the existing session and ViewModels.
 
 ## Structure
 
+- `quick/PlatformAppearance.*` owns desktop appearance, system notifications,
+  three-state theme preferences through Qt system APIs.
 - `quick/AppController.*` owns route, locale preference, preview state, profile selection,
   connection state, and the domain ViewModels.
 - `quick/MdrSession.*` owns asynchronous device scan/connect, MDR v2-to-v1
@@ -65,6 +67,7 @@ Preview profiles are deterministic fixtures, not evidence of hardware validation
 
 ```text
 SonyHeadphonesClient
+  --preview-desktop <windows|macos|kde|gnome|xfce|linux>
   --preview-profile <profile>
   --preview-route <route>
   --preview-state <state>
@@ -101,10 +104,17 @@ deterministic capture.
 
 ## Windows development runtime
 
-The CMake target copies only the Basic-style Qt Quick runtime DLLs, QML plugins,
-and Windows platform plugin beside the executable after linking. This makes the
-CLion Debug target runnable without `QT_PLUGIN_PATH` or `QML_IMPORT_PATH` while
-avoiding deployment of unrelated Qt modules and control styles.
+The CMake target copies Qt's Windows style, its Fusion/Basic fallbacks, native
+style plugin and Windows platform plugin beside the executable. `AppButton`,
+`AppSwitch`, `AppSlider`, `AppComboBox`, `AppScrollBar` and `AppBusyIndicator` are
+thin API wrappers around official Qt Quick Controls. They do not override
+backgrounds, handles, indicators, delegates or content items. Radio buttons,
+item delegates and toolbars likewise use the official controls.
+
+The application leaves style selection to Qt (`Windows`, `macOS`, or `Fusion`
+on Linux) and honors `QT_QUICK_CONTROLS_STYLE`. No independent Adwaita/Breeze/Xfce
+skin is maintained. Manual color-scheme overrides require Qt 6.8+ and platform
+support; earlier supported Qt releases retain system appearance.
 
 This post-build deployment is for development. Release packaging should use a
 Release build, include the MSVC redistributable, and be tested on a machine
@@ -152,3 +162,15 @@ verification.
 focus, dismissal on outside focus, and work-area clamping. QML tests instantiate
 the internal pages at 360 × 480. These offscreen tests do not emulate an actual
 Windows/macOS shell, GNOME extension, KDE/Xfce panel, or physical headset.
+
+## Desktop appearance validation
+
+`gui-platform-appearance` covers preference migration, preview isolation,
+desktop metadata and live Qt color-scheme notifications. QML tests instantiate
+all pages using the host's official style. `--preview-desktop` is retained for
+CLI compatibility, but does not emulate a foreign system's style. Capture on
+each target OS; Windows screenshots cannot validate macOS or Linux appearance.
+
+UI policy: prefer official controls and installed style providers. Add custom
+drawing only when an application-specific visualization needs it, not to replace
+a standard button, slider, switch or menu.

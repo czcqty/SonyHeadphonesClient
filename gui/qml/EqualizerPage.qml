@@ -1,11 +1,12 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 import QtQuick.Layouts
 
 Page {
-    background: Rectangle { color: Tokens.surface }
+    background: Item {}
 
     Flickable {
+        ScrollBar.vertical: AppScrollBar {}
         anchors.fill: parent
         contentWidth: width
         contentHeight: pageContent.height + 12
@@ -66,7 +67,7 @@ Page {
                                 Layout.fillWidth: true
                                 Layout.fillHeight: true
 
-                                Text {
+                                Text { font.family: Tokens.fontFamily;
                                     Layout.alignment: Qt.AlignHCenter
                                     text: appController.equalizer.bands[index]
                                     color: Tokens.textPrimary
@@ -81,7 +82,7 @@ Page {
                                     value: appController.equalizer.bands[index]
                                     onMoved: appController.equalizer.setBand(index, Math.round(value))
                                 }
-                                Text {
+                                Text { font.family: Tokens.fontFamily;
                                     Layout.alignment: Qt.AlignHCenter
                                     text: modelData
                                     color: Tokens.textSecondary
@@ -92,7 +93,7 @@ Page {
                     }
                 }
 
-                Text {
+                Text { font.family: Tokens.fontFamily;
                     text: I18n.text("clear.bass")
                     color: Tokens.textPrimary
                     font.pixelSize: Tokens.font2S

@@ -12,6 +12,7 @@
 #include <QShortcut>
 #include <QSystemTrayIcon>
 #include <QTimer>
+#include <QSurfaceFormat>
 #include <QTranslator>
 
 #include "AppController.hpp"
@@ -56,6 +57,9 @@ private:
 
 int main(int argc, char* argv[])
 {
+    QSurfaceFormat format = QSurfaceFormat::defaultFormat();
+    format.setAlphaBufferSize(8);
+    QSurfaceFormat::setDefaultFormat(format);
     QApplication app(argc, argv);
     app.setApplicationName(QStringLiteral("SonyHeadphonesClient"));
     app.setApplicationDisplayName(QStringLiteral("SonyHeadphonesClient"));
@@ -75,14 +79,21 @@ int main(int argc, char* argv[])
     parser.addOption({QStringLiteral("preview-size"), QStringLiteral("Viewport size in WIDTHxHEIGHT form"), QStringLiteral("size"), QStringLiteral("412x600")});
     parser.addOption({QStringLiteral("locale"), QStringLiteral("Interface locale (en or zh_CN)"), QStringLiteral("locale")});
     parser.addOption({QStringLiteral("capture"), QStringLiteral("Save a deterministic window capture and exit"), QStringLiteral("path")});
+    parser.addOption({QStringLiteral("preview-desktop"), QStringLiteral("Legacy preview metadata; controls use the host Qt style (windows, macos, kde, gnome, xfce, linux)"), QStringLiteral("desktop")});
     parser.process(app);
 
-    const bool previewMode = parser.isSet(QStringLiteral("preview-profile"))
+    const bool previewMode = parser.isSet(QStringLiteral("preview-desktop"))
+        || parser.isSet(QStringLiteral("preview-profile"))
         || parser.isSet(QStringLiteral("preview-route"))
         || parser.isSet(QStringLiteral("preview-state"))
         || parser.isSet(QStringLiteral("preview-theme"))
         || parser.isSet(QStringLiteral("preview-size"));
     AppController controller(previewMode);
+    if (parser.isSet(QStringLiteral("preview-desktop"))
+        && !controller.appearance()->setPreviewDesktop(parser.value(QStringLiteral("preview-desktop")))) {
+        qCritical("Invalid --preview-desktop; expected windows, macos, kde, gnome, xfce, or linux");
+        return EXIT_FAILURE;
+    }
     if (parser.isSet(QStringLiteral("preview-profile")))
         controller.applyProfile(parser.value(QStringLiteral("preview-profile")));
     if (previewMode || parser.isSet(QStringLiteral("preview-route")))
@@ -144,7 +155,9 @@ int main(int argc, char* argv[])
     if (window && !previewMode) {
         panel = std::make_unique<PanelController>(window, hasTray,
             [&tray] { return tray ? tray->geometry() : QRect(); });
+        QObject::connect(window, SIGNAL(dismissRequested()), panel.get(), SLOT(dismiss()));
     }
+    controller.appearance()->attachWindow(window);
     const auto toggleWindow = [&panel]() { if (panel) panel->toggle(); };
 
     if (window && !previewMode) {

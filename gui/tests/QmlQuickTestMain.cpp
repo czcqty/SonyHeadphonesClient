@@ -16,7 +16,6 @@ class QuickTestSetup final : public QObject
 public slots:
     void applicationAvailable()
     {
-        QQuickStyle::setStyle(QStringLiteral("Basic"));
         QCoreApplication::setApplicationName(QStringLiteral("SonyHeadphonesClient"));
         QCoreApplication::setOrganizationName(QStringLiteral("czcqty"));
     }

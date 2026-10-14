@@ -1,9 +1,9 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 
 Page {
     property bool soundOptions: true
-    background: Rectangle { color: Tokens.surface }
+    background: Item {}
 
     Column {
         anchors.fill: parent
@@ -15,6 +15,7 @@ Page {
         }
 
         Flickable {
+        ScrollBar.vertical: AppScrollBar {}
             width: parent.width
             height: parent.height - Tokens.toolbarHeight
             contentWidth: width
@@ -26,7 +27,7 @@ Page {
                 id: settingsColumn
                 width: parent.width
 
-                Text {
+                Text { font.family: Tokens.fontFamily;
                     visible: false
                     width: parent.width
                     height: 48
@@ -132,7 +133,7 @@ Page {
                     onToggled: checked => appController.settings.setSafeListeningEnabled(checked)
                 }
 
-                Text {
+                Text { font.family: Tokens.fontFamily;
                     visible: false
                     width: parent.width
                     height: 48

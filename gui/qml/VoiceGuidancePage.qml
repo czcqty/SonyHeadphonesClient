@@ -1,10 +1,11 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 
 Page {
-    background: Rectangle { color: Tokens.surface }
+    background: Item {}
 
     Flickable {
+        ScrollBar.vertical: AppScrollBar {}
         anchors.fill: parent
         contentWidth: width
         contentHeight: pageContent.height + 12
@@ -36,7 +37,7 @@ Page {
                 width: parent.width - 32
                 spacing: 14
 
-                Text {
+                Text { font.family: Tokens.fontFamily;
                         text: I18n.text("voice.volume")
                     color: Tokens.textPrimary
                     font.pixelSize: Tokens.fontS

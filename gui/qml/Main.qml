@@ -1,32 +1,22 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 import QtQuick.Layouts
 
 ApplicationWindow {
     id: window
+    signal dismissRequested()
+    Shortcut {
+        sequence: "Escape"
+        enabled: window.visible && (!window.Overlay.overlay || !window.Overlay.overlay.children.some(child => child.visible))
+        onActivated: window.dismissRequested()
+    }
     width: Tokens.windowWidth
     height: Tokens.windowHeight
     minimumWidth: 360
     minimumHeight: 480
     visible: appController.previewMode
     title: "SonyHeadphonesClient"
-    color: Tokens.surface
-    font.family: Qt.application.font.family
-    palette.window: Tokens.surface
-    palette.windowText: Tokens.textPrimary
-    palette.base: Tokens.surfaceContainer
-    palette.alternateBase: Tokens.surfaceContainerHigh
-    palette.text: Tokens.textPrimary
-    palette.button: Tokens.surfaceContainerHighest
-    palette.buttonText: Tokens.textPrimary
-    palette.highlight: Tokens.primary
-    palette.highlightedText: Tokens.primaryText
-
-    Binding {
-        target: Tokens
-        property: "darkMode"
-        value: appController.darkMode
-    }
+    font: appController.appearance.systemFont
 
     Loader {
         objectName: "panelRouteLoader"
@@ -71,12 +61,12 @@ ApplicationWindow {
             width: parent.width - 64
             spacing: 18
 
-            BusyIndicator {
+            AppBusyIndicator {
                 anchors.horizontalCenter: parent.horizontalCenter
                 visible: appController.previewState === "loading"
                 running: visible
             }
-            Text {
+            Text { font.family: Tokens.fontFamily;
                 width: parent.width
                 horizontalAlignment: Text.AlignHCenter
                 wrapMode: Text.WordWrap
@@ -95,7 +85,7 @@ ApplicationWindow {
                     }
                 }
             }
-            Button {
+            AppButton {
                 anchors.horizontalCenter: parent.horizontalCenter
                 visible: appController.previewState === "empty" || appController.previewState === "error"
                 text: I18n.text("retry")
@@ -112,7 +102,7 @@ ApplicationWindow {
         height: 28
         color: Tokens.primaryContainer
         z: 101
-        Text {
+        Text { font.family: Tokens.fontFamily;
             anchors.centerIn: parent
             text: I18n.text("reference.blocked")
             color: Tokens.textPrimary
@@ -127,22 +117,25 @@ ApplicationWindow {
 
     footer: ToolBar {
         height: 48
-        background: Rectangle { color: Tokens.surfaceContainer; border.color: Tokens.outlineVariant }
         RowLayout {
             anchors.fill: parent
             anchors.leftMargin: 8
             anchors.rightMargin: 8
-            LanguageToggle { Layout.preferredWidth: 36; Layout.preferredHeight: 36 }
-            ThemeToggle { Layout.preferredWidth: 36; Layout.preferredHeight: 36 }
+            LanguageToggle { Layout.preferredWidth: 36; Layout.preferredHeight: Tokens.controlHeight }
+            ThemeToggle { Layout.preferredWidth: 116; Layout.preferredHeight: Tokens.controlHeight }
             Item { Layout.fillWidth: true }
-            Button {
+            AppButton {
                 text: I18n.text("disconnect")
                 visible: appController.connection.state === "connected"
+                leftPadding: 6; rightPadding: 6
+                implicitWidth: implicitContentWidth + 12
                 flat: true
                 onClicked: appController.disconnectDevice()
             }
-            Button {
+            AppButton {
                 text: I18n.text("quit")
+                leftPadding: 6; rightPadding: 6
+                implicitWidth: implicitContentWidth + 12
                 flat: true
                 onClicked: Qt.quit()
             }

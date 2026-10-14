@@ -1,30 +1,20 @@
 import QtQuick
-import QtQuick.Controls.Basic
 
-Button {
+AppComboBox {
     id: control
-    width: 48
-    height: 48
-    padding: 0
-    text: appController.darkMode ? "☀" : "☾"
-    Accessible.name: appController.darkMode
-        ? I18n.text("theme.light") : I18n.text("theme.dark")
-    ToolTip.visible: hovered
-    ToolTip.text: Accessible.name
-    onClicked: appController.toggleDarkMode()
-
-    background: Rectangle {
-        radius: width / 2
-        color: control.down ? Tokens.primaryContainer : Tokens.surfaceContainerHighest
-        border.width: 1
-        border.color: Tokens.outlineVariant
+    width: 116
+    height: Tokens.controlHeight
+    implicitWidth: 116
+    model: [I18n.text("theme.system"), I18n.text("theme.light"), I18n.text("theme.dark")]
+    function syncSelection() {
+        currentIndex = ["system", "light", "dark"].indexOf(appController.appearance.themeMode)
     }
-
-    contentItem: Text {
-        text: control.text
-        color: Tokens.textPrimary
-        font.pixelSize: 22
-        horizontalAlignment: Text.AlignHCenter
-        verticalAlignment: Text.AlignVCenter
+    Component.onCompleted: syncSelection()
+    onModelChanged: Qt.callLater(syncSelection)
+    Connections {
+        target: appController.appearance
+        function onChanged() { control.syncSelection() }
     }
+    Accessible.name: I18n.text("theme.choose")
+    onActivated: index => appController.appearance.themeMode = ["system", "light", "dark"][index]
 }

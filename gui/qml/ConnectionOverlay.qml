@@ -1,5 +1,5 @@
 import QtQuick
-import QtQuick.Controls.Basic
+import QtQuick.Controls
 
 Item {
     id: root
@@ -30,7 +30,7 @@ Item {
         mipmap: true
     }
 
-    Text {
+    Text { font.family: Tokens.fontFamily;
         id: statusText
         anchors.top: hero.bottom
         anchors.topMargin: 18
@@ -41,7 +41,7 @@ Item {
             text: I18n.text("connecting")
     }
 
-    BusyIndicator {
+    AppBusyIndicator {
         anchors.top: statusText.bottom
         anchors.topMargin: 12
         anchors.horizontalCenter: parent.horizontalCenter
@@ -93,12 +93,12 @@ Item {
             easing.type: Easing.OutCubic
         }
         ParallelAnimation {
-            NumberAnimation { target: hero; property: "x"; to: 16; duration: 420; easing.type: Easing.OutCubic }
-            NumberAnimation { target: hero; property: "y"; to: 14; duration: 420; easing.type: Easing.OutCubic }
-            NumberAnimation { target: hero; property: "width"; to: 40; duration: 420; easing.type: Easing.OutCubic }
-            NumberAnimation { target: hero; property: "height"; to: 40; duration: 420; easing.type: Easing.OutCubic }
+            NumberAnimation { target: hero; property: "x"; to: 16; duration: Tokens.reducedMotion ? 0 : 420; easing.type: Easing.OutCubic }
+            NumberAnimation { target: hero; property: "y"; to: 14; duration: Tokens.reducedMotion ? 0 : 420; easing.type: Easing.OutCubic }
+            NumberAnimation { target: hero; property: "width"; to: 40; duration: Tokens.reducedMotion ? 0 : 420; easing.type: Easing.OutCubic }
+            NumberAnimation { target: hero; property: "height"; to: 40; duration: Tokens.reducedMotion ? 0 : 420; easing.type: Easing.OutCubic }
         }
-        NumberAnimation { target: root; property: "opacity"; from: 1; to: 0; duration: 120 }
+        NumberAnimation { target: root; property: "opacity"; from: 1; to: 0; duration: Tokens.duration }
         ScriptAction {
             script: {
                 root.transitionRunning = false
