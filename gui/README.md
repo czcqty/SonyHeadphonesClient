@@ -1,7 +1,9 @@
 # Qt Quick desktop client
 
-This directory contains the project's only desktop GUI: a compact tray-first Qt
-Quick/QML application backed by C++ ViewModels and `libmdr`.
+This directory contains the transitional compact tray-first Qt Quick/QML
+application. It links the shared Qt Core backend in `backend/`. Native adapters
+live on their [dedicated branches](../docs/branches.md); Qt Quick stays available
+until the [migration gates](../docs/backend-migration.md) pass.
 
 See the root README for tray lifecycle, supported desktop prerequisites, and
 compact-panel navigation. `PanelController` owns window presentation; protocol
@@ -26,13 +28,13 @@ and persistent settings remain in the existing session and ViewModels.
   three-state theme preferences through Qt system APIs.
 - `quick/AppController.*` owns route, locale preference, preview state, profile selection,
   connection state, and the domain ViewModels.
-- `quick/MdrSession.*` owns asynchronous device scan/connect, MDR v2-to-v1
+- `../backend/MdrSession.*` owns asynchronous device scan/connect, MDR v2-to-v1
   fallback, polling, synchronization, and dirty-property commits.
-- `quick/ViewModels.*` exposes typed `Q_PROPERTY` values and capability-gated
+- `../backend/ViewModels.*` exposes typed `Q_PROPERTY` values and capability-gated
   write operations to QML.
-- `quick/DeviceProfileRepository.*` provides deterministic device profiles for
+- `../backend/DeviceProfileRepository.*` provides deterministic device profiles for
   UI development without hardware.
-- `DeviceCapabilities.*` maps protocol support tables to features available to
+- `../backend/DeviceCapabilities.*` maps protocol support tables to features available to
   both the session and ViewModels.
 - `qml/` contains routes, reusable controls, the translation singleton, and
   the measured design-token singleton.
@@ -41,8 +43,12 @@ and persistent settings remain in the existing session and ViewModels.
 - `assets/icons/` contains the canonical SVG product icon and its generated
   PNG, ICO, and ICNS variants.
 - `assets/devices/` contains device artwork.
-- `tests/` contains ViewModel, backend, QuickTest, capture, and visual-diff
-  tooling.
+- `tests/` contains ViewModel, appearance, panel, QuickTest runner, capture, and
+  visual-diff tooling. QML test cases live in `../tests/qml/`; backend and MDR
+  regressions live in `../backend/tests/`.
+
+The old backend header paths under `quick/` and `DeviceCapabilities.hpp` are
+compatibility forwarding headers, not independent implementations.
 
 The data flow is:
 
@@ -50,7 +56,8 @@ The data flow is:
 platform Bluetooth
   → libmdr
   → MdrSession
-  → AppController / typed ViewModels
+  → DeviceService / typed ViewModels (shared backend)
+  → AppController (Qt Quick adapter)
   → QML
 ```
 
