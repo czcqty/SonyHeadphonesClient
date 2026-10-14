@@ -26,3 +26,12 @@ The smoke check verifies page creation, zero startup writes, state refresh, and
 one command for a toggle/slider commit. Xfce panel integration, actual desktop
 scaling, accessibility and live hardware acceptance remain separate checks.
 See the common README for remaining feature-parity and packaging work.
+
+## Local verification (2026-10-14)
+
+Ubuntu 24.04 WSL: GTK 3.24.41 and libxfce4ui 4.18.4 start successfully. The Xvfb
+test passes with GTK criticals treated as fatal, covering nine pages, native
+dialog actions, zero startup writes and single toggle/slider commits. GTK's
+legacy StatusIcon reports its expected deprecation warnings. The shared C++
+Windows host ran in simulation via WSL pipes; Linux Bluetooth, an actual Xfce
+panel and Wayland tray behavior were not validated.

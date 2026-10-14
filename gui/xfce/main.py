@@ -5,6 +5,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'native'))
 import gi
 gi.require_version('Gtk', '3.0')
+gi.require_version('Gdk', '3.0')
 gi.require_version('Libxfce4ui', '2.0')
 from gi.repository import Gdk, GLib, Gtk, Libxfce4ui
 from client import CATALOG, Client, choices, command, enabled, options, title, value
@@ -14,12 +15,15 @@ class App:
     def __init__(self, args):
         self.args, self.bindings, self.syncing, self.client = args, [], False, None
         self.exit_code = 0
-        self.window = Libxfce4ui.TitledDialog(title='Sound Connect')
+        self.window = Libxfce4ui.TitledDialog.new()
+        self.window.set_title('Sound Connect')
         self.window.set_subtitle(self.tr('Headphone settings', '耳机设置'))
         self.window.set_default_size(860, 650)
         self.window.connect('delete-event', self.close_main)
-        self.window.add_button(self.tr('Quick controls', '快捷控制'), 1)
-        self.window.add_button(self.tr('Close', '关闭'), Gtk.ResponseType.CLOSE)
+        # Required by libxfce4ui 4.18; a compatibility no-op on 4.20+.
+        self.window.create_action_area()
+        self.quick_button = self.window.add_button(self.tr('Quick controls', '快捷控制'), 1)
+        self.close_button = self.window.add_button(self.tr('Close', '关闭'), Gtk.ResponseType.CLOSE)
         self.window.connect('response', lambda _, response: self.show_quick() if response == 1 else self.close_main())
         area = self.window.get_content_area(); area.set_spacing(10); area.set_border_width(12)
         self.status = Gtk.Label(xalign=0, wrap=True); area.pack_start(self.status, False, False, 0)
@@ -185,6 +189,7 @@ class App:
             assert self.client.state.get('app', {}).get('previewMode'), self.client.error
             assert self.client.sent == 0, 'Startup caused device writes'
             assert self.notebook.get_n_pages() == len(CATALOG['pages'])
+            assert self.quick_button is not None and self.close_button is not None
             for index in range(self.notebook.get_n_pages()):
                 self.notebook.set_current_page(index)
             toggle = next(b for b in self.bindings if b['field']['key'] == 'dseeEnabled')
