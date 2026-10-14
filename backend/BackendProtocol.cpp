@@ -61,6 +61,7 @@ QJsonObject BackendProtocol::snapshot() const
     QJsonObject state{{"type", "state"}, {"version", Version},
         {"app", properties(&m_service)}, {"connection", properties(m_service.connection())}};
     for (const auto& group : groups) state.insert(group, properties(target(group)));
+    state.insert("preferences", m_preferences.snapshot());
     return state;
 }
 
@@ -82,6 +83,8 @@ QJsonObject BackendProtocol::describe() const
         if (QByteArray(name) == "connectDevice") args = {"QString", "QString"};
         list.append(QJsonObject{{"target", "app"}, {"method", name}, {"args", args}});
     }
+    for (const auto& name : {"setLocale", "setThemeMode"})
+        list.append(QJsonObject{{"target", "preferences"}, {"method", name}, {"args", QJsonArray{"QString"}}});
     return {{"version", Version}, {"commands", list},
             {"profiles", QJsonArray::fromStringList(m_service.availableProfiles())},
             {"successMeaning", "accepted"}};
@@ -105,6 +108,12 @@ QJsonObject BackendProtocol::execute(const QJsonObject& request)
     const auto group = request.value("target").toString();
     const auto name = request.value("method").toString().toLatin1();
     const auto args = request.value("args").toArray();
+    if (group == "preferences") {
+        if (name != "setLocale" && name != "setThemeMode") return result("invalid-command");
+        if (args.size() != 1 || !args[0].isString()) return result("invalid-arguments");
+        return result(m_preferences.set(name == "setLocale" ? "locale" : "themeMode", args[0].toString())
+            ? QString() : QStringLiteral("preference-save-failed"));
+    }
     if (group == "app") {
         if (name == "describe" && args.isEmpty()) {
             auto reply = result({}); reply.insert("contract", describe()); return reply;

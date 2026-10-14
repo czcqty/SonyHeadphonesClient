@@ -123,7 +123,13 @@ by_id['devices']['fields'] += [field('choice', en, zh, 'deviceManager', method=m
         ('Connect paired device', '连接已配对设备', 'connectDevice', 'supported'),
         ('Disconnect paired device', '断开已配对设备', 'disconnectDevice', 'supported'),
         ('Unpair device', '取消设备配对', 'unpairDevice', 'supported')]]
+pages.append(page('application', 'App settings', '应用设置', [
+    choice('Language', '语言', 'preferences', 'locale', 'setLocale', '',
+           [('en', 'English', 'English'), ('zh_CN', '简体中文', '简体中文')]),
+    choice('Appearance', '外观', 'preferences', 'themeMode', 'setThemeMode', '',
+           [('system', 'Follow system', '跟随系统'), ('light', 'Light', '浅色'), ('dark', 'Dark', '深色')])]))
 catalog = dict(version=1, pages=pages,
+               messages=json.loads(Path(__file__).with_name('messages.json').read_text(encoding='utf-8')),
                quick=page('quick', 'Quick controls', '快捷控制', [pages[0]['fields'][0], pages[0]['fields'][1], volume, noise, play]))
 if __name__ == '__main__':
     Path(__file__).with_name('catalog.json').write_text(json.dumps(catalog, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
