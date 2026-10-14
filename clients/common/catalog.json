@@ -1005,8 +1005,800 @@
           "valueKey": "mac"
         }
       ]
+    },
+    {
+      "id": "application",
+      "label": {
+        "en": "App settings",
+        "zh_CN": "应用设置"
+      },
+      "fields": [
+        {
+          "kind": "choice",
+          "label": {
+            "en": "Language",
+            "zh_CN": "语言"
+          },
+          "group": "preferences",
+          "key": "locale",
+          "method": "setLocale",
+          "capability": "",
+          "options": [
+            {
+              "value": "en",
+              "label": {
+                "en": "English",
+                "zh_CN": "English"
+              }
+            },
+            {
+              "value": "zh_CN",
+              "label": {
+                "en": "简体中文",
+                "zh_CN": "简体中文"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "choice",
+          "label": {
+            "en": "Appearance",
+            "zh_CN": "外观"
+          },
+          "group": "preferences",
+          "key": "themeMode",
+          "method": "setThemeMode",
+          "capability": "",
+          "options": [
+            {
+              "value": "system",
+              "label": {
+                "en": "Follow system",
+                "zh_CN": "跟随系统"
+              }
+            },
+            {
+              "value": "light",
+              "label": {
+                "en": "Light",
+                "zh_CN": "浅色"
+              }
+            },
+            {
+              "value": "dark",
+              "label": {
+                "en": "Dark",
+                "zh_CN": "深色"
+              }
+            }
+          ]
+        }
+      ]
     }
   ],
+  "messages": {
+    "Light": {
+      "en": "Light",
+      "zh_CN": "浅色"
+    },
+    "Dark": {
+      "en": "Dark",
+      "zh_CN": "深色"
+    },
+    "Follow system": {
+      "en": "Follow system",
+      "zh_CN": "跟随系统"
+    },
+    "Appearance": {
+      "en": "Appearance",
+      "zh_CN": "外观"
+    },
+    "Quit": {
+      "en": "Quit",
+      "zh_CN": "退出"
+    },
+    "Headphone behavior": {
+      "en": "Headphone behavior",
+      "zh_CN": "耳机行为"
+    },
+    "All device settings": {
+      "en": "All device settings",
+      "zh_CN": "所有设备设置"
+    },
+    "Shortcuts": {
+      "en": "Shortcuts",
+      "zh_CN": "快捷方式"
+    },
+    "Edit": {
+      "en": "Edit",
+      "zh_CN": "编辑"
+    },
+    "Ambient Sound Control": {
+      "en": "Ambient Sound Control",
+      "zh_CN": "环境声控制"
+    },
+    "Noise Canceling": {
+      "en": "Noise Canceling",
+      "zh_CN": "降噪"
+    },
+    "Ambient Sound": {
+      "en": "Ambient Sound",
+      "zh_CN": "环境声"
+    },
+    "Off": {
+      "en": "Off",
+      "zh_CN": "关闭"
+    },
+    "On": {
+      "en": "On",
+      "zh_CN": "开启"
+    },
+    "Equalizer": {
+      "en": "Equalizer",
+      "zh_CN": "均衡器"
+    },
+    "Custom": {
+      "en": "Custom",
+      "zh_CN": "自定义"
+    },
+    "Now playing": {
+      "en": "Now playing",
+      "zh_CN": "正在播放"
+    },
+    "Previous": {
+      "en": "Previous",
+      "zh_CN": "上一曲"
+    },
+    "Play / Pause": {
+      "en": "Play / Pause",
+      "zh_CN": "播放 / 暂停"
+    },
+    "Next": {
+      "en": "Next",
+      "zh_CN": "下一曲"
+    },
+    "Power off headphones": {
+      "en": "Power off headphones",
+      "zh_CN": "关闭耳机电源"
+    },
+    "Powering off…": {
+      "en": "Powering off…",
+      "zh_CN": "正在关闭电源…"
+    },
+    "Power off": {
+      "en": "Power off",
+      "zh_CN": "关机"
+    },
+    "Power off the headphones?": {
+      "en": "Power off the headphones?",
+      "zh_CN": "是否关闭耳机电源？"
+    },
+    "The Bluetooth connection will be closed.": {
+      "en": "The Bluetooth connection will be closed.",
+      "zh_CN": "蓝牙连接将会断开。"
+    },
+    "Cancel": {
+      "en": "Cancel",
+      "zh_CN": "取消"
+    },
+    "Volume": {
+      "en": "Volume",
+      "zh_CN": "音量"
+    },
+    "Sound": {
+      "en": "Sound",
+      "zh_CN": "声音"
+    },
+    "System": {
+      "en": "System",
+      "zh_CN": "系统"
+    },
+    "Manage connected devices": {
+      "en": "Manage connected devices",
+      "zh_CN": "管理已连接的设备"
+    },
+    "DSEE Extreme": {
+      "en": "DSEE Extreme",
+      "zh_CN": "DSEE Extreme"
+    },
+    "Speak-to-Chat": {
+      "en": "Speak-to-Chat",
+      "zh_CN": "说话时聊天"
+    },
+    "Pause when headphones are removed": {
+      "en": "Pause when headphones are removed",
+      "zh_CN": "取下耳机时暂停"
+    },
+    "Change touch sensor function": {
+      "en": "Change touch sensor function",
+      "zh_CN": "更改触摸传感器功能"
+    },
+    "Volume Control": {
+      "en": "Volume Control",
+      "zh_CN": "音量控制"
+    },
+    "Playback Control": {
+      "en": "Playback Control",
+      "zh_CN": "播放控制"
+    },
+    "Track Control": {
+      "en": "Track Control",
+      "zh_CN": "曲目控制"
+    },
+    "No function": {
+      "en": "No function",
+      "zh_CN": "无功能"
+    },
+    "Noise Canceling button cycle": {
+      "en": "Noise Canceling button cycle",
+      "zh_CN": "降噪按钮循环"
+    },
+    "Noise Canceling / Ambient Sound / Off": {
+      "en": "Noise Canceling / Ambient Sound / Off",
+      "zh_CN": "降噪 / 环境声 / 关闭"
+    },
+    "Noise Canceling / Ambient Sound": {
+      "en": "Noise Canceling / Ambient Sound",
+      "zh_CN": "降噪 / 环境声"
+    },
+    "Noise Canceling / Off": {
+      "en": "Noise Canceling / Off",
+      "zh_CN": "降噪 / 关闭"
+    },
+    "Ambient Sound / Off": {
+      "en": "Ambient Sound / Off",
+      "zh_CN": "环境声 / 关闭"
+    },
+    "Notification & Voice Guide": {
+      "en": "Notification & Voice Guide",
+      "zh_CN": "通知和语音指南"
+    },
+    "Voice guidance volume": {
+      "en": "Voice guidance volume",
+      "zh_CN": "语音指南音量"
+    },
+    "Prioritize sound quality": {
+      "en": "Prioritize sound quality",
+      "zh_CN": "优先音质"
+    },
+    "Automatic power off": {
+      "en": "Automatic power off",
+      "zh_CN": "自动关机"
+    },
+    "Head gesture": {
+      "en": "Head gesture",
+      "zh_CN": "头部姿势"
+    },
+    "Background Music Effect": {
+      "en": "Background Music Effect",
+      "zh_CN": "背景音乐效果"
+    },
+    "Pairing mode": {
+      "en": "Pairing mode",
+      "zh_CN": "配对模式"
+    },
+    "Connected": {
+      "en": "Connected",
+      "zh_CN": "已连接"
+    },
+    "Connect": {
+      "en": "Connect",
+      "zh_CN": "连接"
+    },
+    "Disconnect": {
+      "en": "Disconnect",
+      "zh_CN": "断开连接"
+    },
+    "Use for playback": {
+      "en": "Use for playback",
+      "zh_CN": "用于播放"
+    },
+    "Unpair": {
+      "en": "Unpair",
+      "zh_CN": "取消配对"
+    },
+    "Scan for headphones": {
+      "en": "Scan for headphones",
+      "zh_CN": "扫描耳机"
+    },
+    "Scanning for headphones…": {
+      "en": "Scanning for headphones…",
+      "zh_CN": "正在扫描耳机…"
+    },
+    "Connecting…": {
+      "en": "Connecting…",
+      "zh_CN": "正在连接…"
+    },
+    "Switch to light mode": {
+      "en": "Switch to light mode",
+      "zh_CN": "切换到浅色模式"
+    },
+    "Switch to dark mode": {
+      "en": "Switch to dark mode",
+      "zh_CN": "切换到暗色模式"
+    },
+    "Switch to English": {
+      "en": "Switch to English",
+      "zh_CN": "切换到英文"
+    },
+    "Switch to Simplified Chinese": {
+      "en": "Switch to Simplified Chinese",
+      "zh_CN": "切换到简体中文"
+    },
+    "No headphones found": {
+      "en": "No headphones found",
+      "zh_CN": "未找到耳机"
+    },
+    "Try again": {
+      "en": "Try again",
+      "zh_CN": "重试"
+    },
+    "Loading device settings…": {
+      "en": "Loading device settings…",
+      "zh_CN": "正在加载设备设置…"
+    },
+    "This feature is not available for this device.": {
+      "en": "This feature is not available for this device.",
+      "zh_CN": "此设备不支持该功能。"
+    },
+    "Reference state pending capture": {
+      "en": "Reference state pending capture",
+      "zh_CN": "参考状态等待采集"
+    },
+    "Back": {
+      "en": "Back",
+      "zh_CN": "返回"
+    },
+    "L": {
+      "en": "L",
+      "zh_CN": "左"
+    },
+    "R": {
+      "en": "R",
+      "zh_CN": "右"
+    },
+    "Case": {
+      "en": "Case",
+      "zh_CN": "充电盒"
+    },
+    "Focus on Voice": {
+      "en": "Focus on Voice",
+      "zh_CN": "关注语音"
+    },
+    "Ambient sound level": {
+      "en": "Ambient sound level",
+      "zh_CN": "环境声级别"
+    },
+    "CLEAR BASS": {
+      "en": "CLEAR BASS",
+      "zh_CN": "低音"
+    },
+    "Flat": {
+      "en": "Flat",
+      "zh_CN": "平坦"
+    },
+    "Laptop": {
+      "en": "Laptop",
+      "zh_CN": "笔记本电脑"
+    },
+    "Phone": {
+      "en": "Phone",
+      "zh_CN": "手机"
+    },
+    "Firmware": {
+      "en": "Firmware",
+      "zh_CN": "固件"
+    },
+    "Safe Listening": {
+      "en": "Safe Listening",
+      "zh_CN": "安全聆听"
+    },
+    "Safe Listening sound pressure": {
+      "en": "Safe Listening sound pressure",
+      "zh_CN": "安全聆听声压"
+    },
+    "Reduce prolonged high-volume exposure": {
+      "en": "Reduce prolonged high-volume exposure",
+      "zh_CN": "减少长时间高音量暴露"
+    },
+    "Cinema mode": {
+      "en": "Cinema mode",
+      "zh_CN": "影院模式"
+    },
+    "Small room": {
+      "en": "Small room",
+      "zh_CN": "小房间"
+    },
+    "Medium room": {
+      "en": "Medium room",
+      "zh_CN": "中等房间"
+    },
+    "Large room": {
+      "en": "Large room",
+      "zh_CN": "大房间"
+    },
+    "Listening mode room size": {
+      "en": "Listening mode room size",
+      "zh_CN": "聆听模式房间大小"
+    },
+    "Automatic sensitivity": {
+      "en": "Automatic sensitivity",
+      "zh_CN": "自动灵敏度"
+    },
+    "High sensitivity": {
+      "en": "High sensitivity",
+      "zh_CN": "高灵敏度"
+    },
+    "Low sensitivity": {
+      "en": "Low sensitivity",
+      "zh_CN": "低灵敏度"
+    },
+    "Speak-to-Chat sensitivity": {
+      "en": "Speak-to-Chat sensitivity",
+      "zh_CN": "说话时聊天灵敏度"
+    },
+    "Fast close": {
+      "en": "Fast close",
+      "zh_CN": "快速关闭"
+    },
+    "Normal close": {
+      "en": "Normal close",
+      "zh_CN": "正常关闭"
+    },
+    "Slow close": {
+      "en": "Slow close",
+      "zh_CN": "缓慢关闭"
+    },
+    "Do not close": {
+      "en": "Do not close",
+      "zh_CN": "不关闭"
+    },
+    "Speak-to-Chat close time": {
+      "en": "Speak-to-Chat close time",
+      "zh_CN": "说话时聊天关闭时间"
+    },
+    "Adaptive volume": {
+      "en": "Adaptive volume",
+      "zh_CN": "自适应音量"
+    },
+    "Adaptive noise control": {
+      "en": "Adaptive noise control",
+      "zh_CN": "自适应降噪控制"
+    },
+    "Adaptive sensitivity": {
+      "en": "Adaptive sensitivity",
+      "zh_CN": "自适应灵敏度"
+    },
+    "Standard": {
+      "en": "Standard",
+      "zh_CN": "标准"
+    },
+    "High": {
+      "en": "High",
+      "zh_CN": "高"
+    },
+    "Low": {
+      "en": "Low",
+      "zh_CN": "低"
+    },
+    "5 minutes": {
+      "en": "5 minutes",
+      "zh_CN": "5 分钟"
+    },
+    "15 minutes": {
+      "en": "15 minutes",
+      "zh_CN": "15 分钟"
+    },
+    "30 minutes": {
+      "en": "30 minutes",
+      "zh_CN": "30 分钟"
+    },
+    "60 minutes": {
+      "en": "60 minutes",
+      "zh_CN": "60 分钟"
+    },
+    "180 minutes": {
+      "en": "180 minutes",
+      "zh_CN": "180 分钟"
+    },
+    "When removed": {
+      "en": "When removed",
+      "zh_CN": "取下耳机时"
+    },
+    "Capture voice during calls": {
+      "en": "Capture voice during calls",
+      "zh_CN": "通话时采集语音"
+    },
+    "Rock": {
+      "en": "Rock",
+      "zh_CN": "摇滚"
+    },
+    "Pop": {
+      "en": "Pop",
+      "zh_CN": "流行"
+    },
+    "Jazz": {
+      "en": "Jazz",
+      "zh_CN": "爵士"
+    },
+    "Dance": {
+      "en": "Dance",
+      "zh_CN": "舞曲"
+    },
+    "EDM": {
+      "en": "EDM",
+      "zh_CN": "电子舞曲"
+    },
+    "R&B / Hip-Hop": {
+      "en": "R&B / Hip-Hop",
+      "zh_CN": "节奏蓝调 / 嘻哈"
+    },
+    "Acoustic": {
+      "en": "Acoustic",
+      "zh_CN": "原声"
+    },
+    "Bright": {
+      "en": "Bright",
+      "zh_CN": "明亮"
+    },
+    "Excited": {
+      "en": "Excited",
+      "zh_CN": "激昂"
+    },
+    "Mellow": {
+      "en": "Mellow",
+      "zh_CN": "柔和"
+    },
+    "Relaxed": {
+      "en": "Relaxed",
+      "zh_CN": "舒缓"
+    },
+    "Vocal": {
+      "en": "Vocal",
+      "zh_CN": "人声"
+    },
+    "Treble Boost": {
+      "en": "Treble Boost",
+      "zh_CN": "高音增强"
+    },
+    "Bass Boost": {
+      "en": "Bass Boost",
+      "zh_CN": "低音增强"
+    },
+    "Speech": {
+      "en": "Speech",
+      "zh_CN": "语音"
+    },
+    "Gaming": {
+      "en": "Gaming",
+      "zh_CN": "游戏"
+    },
+    "Heavy": {
+      "en": "Heavy",
+      "zh_CN": "重低音"
+    },
+    "Clear": {
+      "en": "Clear",
+      "zh_CN": "清晰"
+    },
+    "Hard": {
+      "en": "Hard",
+      "zh_CN": "强劲"
+    },
+    "Soft": {
+      "en": "Soft",
+      "zh_CN": "轻柔"
+    },
+    "User 1": {
+      "en": "User 1",
+      "zh_CN": "用户 1"
+    },
+    "User 2": {
+      "en": "User 2",
+      "zh_CN": "用户 2"
+    },
+    "User 3": {
+      "en": "User 3",
+      "zh_CN": "用户 3"
+    },
+    "User 4": {
+      "en": "User 4",
+      "zh_CN": "用户 4"
+    },
+    "User 5": {
+      "en": "User 5",
+      "zh_CN": "用户 5"
+    },
+    "No Bluetooth backend available": {
+      "en": "No Bluetooth backend available",
+      "zh_CN": "没有可用的蓝牙后端"
+    },
+    "Bluetooth scan failed: %1": {
+      "en": "Bluetooth scan failed: %1",
+      "zh_CN": "蓝牙扫描失败：%1"
+    },
+    "Bluetooth scan failed": {
+      "en": "Bluetooth scan failed",
+      "zh_CN": "蓝牙扫描失败"
+    },
+    "Connection timed out": {
+      "en": "Connection timed out",
+      "zh_CN": "连接超时"
+    },
+    "Connection failed: %1": {
+      "en": "Connection failed: %1",
+      "zh_CN": "连接失败：%1"
+    },
+    "Connection failed": {
+      "en": "Connection failed",
+      "zh_CN": "连接失败"
+    },
+    "Unable to initialize the headphones": {
+      "en": "Unable to initialize the headphones",
+      "zh_CN": "无法初始化耳机"
+    },
+    "Headphone initialization timed out": {
+      "en": "Headphone initialization timed out",
+      "zh_CN": "耳机初始化超时"
+    },
+    "Protocol error: %1": {
+      "en": "Protocol error: %1",
+      "zh_CN": "协议错误：%1"
+    },
+    "Unexpected error: %1": {
+      "en": "Unexpected error: %1",
+      "zh_CN": "意外错误：%1"
+    },
+    "Ambient sound control": {
+      "en": "Ambient sound control",
+      "zh_CN": "环境声控制"
+    },
+    "Volume control": {
+      "en": "Volume control",
+      "zh_CN": "音量控制"
+    },
+    "Playback control": {
+      "en": "Playback control",
+      "zh_CN": "播放控制"
+    },
+    "Track control": {
+      "en": "Track control",
+      "zh_CN": "曲目控制"
+    },
+    "Playback / voice assistant": {
+      "en": "Playback / voice assistant",
+      "zh_CN": "播放 / 语音助手"
+    },
+    "Voice recognition": {
+      "en": "Voice recognition",
+      "zh_CN": "语音识别"
+    },
+    "Ambient sound / microphone": {
+      "en": "Ambient sound / microphone",
+      "zh_CN": "环境声 / 麦克风"
+    },
+    "Chat mix": {
+      "en": "Chat mix",
+      "zh_CN": "聊天混音"
+    },
+    "Custom 1": {
+      "en": "Custom 1",
+      "zh_CN": "自定义 1"
+    },
+    "Custom 2": {
+      "en": "Custom 2",
+      "zh_CN": "自定义 2"
+    },
+    "Device function %1": {
+      "en": "Device function %1",
+      "zh_CN": "设备功能 %1"
+    },
+    "Show / Hide": {
+      "en": "Show / Hide",
+      "zh_CN": "显示 / 隐藏"
+    },
+    "Next track": {
+      "en": "Next track",
+      "zh_CN": "下一曲"
+    },
+    "connected": {
+      "en": "Connected",
+      "zh_CN": "已连接"
+    },
+    "connecting": {
+      "en": "Connecting…",
+      "zh_CN": "正在连接…"
+    },
+    "disconnected": {
+      "en": "Disconnected",
+      "zh_CN": "未连接"
+    },
+    "idle": {
+      "en": "Not connected",
+      "zh_CN": "未连接"
+    },
+    "scanning": {
+      "en": "Scanning…",
+      "zh_CN": "正在扫描…"
+    },
+    "error": {
+      "en": "Connection error",
+      "zh_CN": "连接错误"
+    },
+    "Backend stopped": {
+      "en": "Backend stopped",
+      "zh_CN": "后台进程已停止"
+    },
+    "Backend unavailable": {
+      "en": "Backend unavailable",
+      "zh_CN": "无法访问后台进程"
+    },
+    "Command rejected": {
+      "en": "Command rejected",
+      "zh_CN": "操作被拒绝"
+    },
+    "unsupported-version": {
+      "en": "Unsupported backend version",
+      "zh_CN": "后台协议版本不兼容"
+    },
+    "invalid-id": {
+      "en": "Invalid request identifier",
+      "zh_CN": "请求标识无效"
+    },
+    "invalid-request": {
+      "en": "Invalid request",
+      "zh_CN": "请求格式无效"
+    },
+    "invalid-command": {
+      "en": "Unsupported command",
+      "zh_CN": "不支持此操作"
+    },
+    "invalid-arguments": {
+      "en": "Invalid operation value",
+      "zh_CN": "操作参数无效"
+    },
+    "connection-busy": {
+      "en": "Connection already active",
+      "zh_CN": "正在连接或已连接设备"
+    },
+    "not-connected": {
+      "en": "Headphones disconnected",
+      "zh_CN": "耳机未连接"
+    },
+    "unavailable-or-invalid-value": {
+      "en": "Feature unavailable or value rejected",
+      "zh_CN": "设备不支持此功能或参数无效"
+    },
+    "preference-save-failed": {
+      "en": "Unable to save preference",
+      "zh_CN": "无法保存偏好设置"
+    },
+    "frame-too-large": {
+      "en": "Request too large",
+      "zh_CN": "请求过大"
+    },
+    "invalid-json": {
+      "en": "Invalid backend message",
+      "zh_CN": "后台消息格式无效"
+    },
+    "Yes": {
+      "en": "Yes",
+      "zh_CN": "是"
+    },
+    "No": {
+      "en": "No",
+      "zh_CN": "否"
+    },
+    "Unknown": {
+      "en": "Unknown",
+      "zh_CN": "未知"
+    },
+    "Backend error: %1": {
+      "en": "Backend error: %1",
+      "zh_CN": "后台错误：%1"
+    }
+  },
   "quick": {
     "id": "quick",
     "label": {

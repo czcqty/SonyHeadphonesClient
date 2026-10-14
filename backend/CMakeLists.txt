@@ -8,6 +8,7 @@ add_library(device_backend STATIC
     DeviceCapabilities.cpp DeviceCapabilities.hpp
     MdrSession.cpp MdrSession.hpp
     BackendProtocol.cpp BackendProtocol.hpp
+    ApplicationPreferences.cpp ApplicationPreferences.hpp
 )
 target_include_directories(device_backend PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
 target_link_libraries(device_backend PUBLIC Qt6::Core mdr)
@@ -60,6 +61,9 @@ if(BUILD_TESTING)
     add_executable(backend_protocol_tests tests/ProtocolTests.cpp)
     target_link_libraries(backend_protocol_tests PRIVATE device_backend Qt6::Test)
     add_test(NAME backend-protocol COMMAND backend_protocol_tests)
+    add_executable(backend_preference_tests tests/PreferenceTests.cpp)
+    target_link_libraries(backend_preference_tests PRIVATE device_backend Qt6::Test)
+    add_test(NAME backend-preferences COMMAND backend_preference_tests)
     add_executable(mdr_regression_tests tests/BackendTests.cpp)
     target_link_libraries(mdr_regression_tests PRIVATE mdr Qt6::Core Qt6::Test)
     add_test(NAME backend-mdr-regressions COMMAND mdr_regression_tests)
