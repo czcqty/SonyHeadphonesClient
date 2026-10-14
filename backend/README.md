@@ -42,9 +42,10 @@ macOS packaging/runtime verification is still pending on a macOS host.
 
 UTF-8 JSON objects, one per line. The initial message is a full `type: state`
 snapshot with `app`, `connection`, `playback`, `noiseControl`, `equalizer`,
-`settings`, and `deviceManager`. Snapshots contain desired values as well as
+`settings`, `deviceManager`, and `preferences`. Snapshots contain desired values as well as
 device-reported metadata. Subsequent snapshots also publish asynchronous
-device/connection changes. No presentation routing or theme is included.
+device/connection changes. The preference group contains locale, theme mode and
+a persistence flag; system colors, rendered themes and navigation remain frontend-owned.
 
 Example request:
 
@@ -70,7 +71,7 @@ Send `{"target":"app","method":"describe","args":[]}` to retrieve the
 complete allowed device command surface and profile IDs. Application commands
 are `refreshDevices`, `connectDevice(name, mac)` and `disconnectDevice`.
 QObject methods, arbitrary properties, UI navigation, profile substitution
-and appearance changes are not remote device commands.
+are not remote device commands. Application preferences use their own target.
 
 Frames are limited to 65536 bytes; malformed/oversized frames are rejected.
 At most 64 frames wait for the event loop. The pipe applies backpressure.
@@ -82,3 +83,21 @@ must suppress widget change handlers, so each user operation sends one command.
 See [migration status](../docs/backend-migration.md). Qt Quick removal is
 conditional on native feature parity and platform/hardware validation; a
 successful simulation or compile alone does not satisfy that condition.
+
+## Application preferences
+
+`preferences.setLocale("en" | "zh_CN")` and
+`preferences.setThemeMode("system" | "light" | "dark")` work even while
+headphones are disconnected. They use the same QSettings organization/application
+(and macOS organization domain) as the transitional frontend. Existing
+`appearance/locale` and `appearance/themeMode` are read; when no themeMode exists,
+`appearance/darkMode` migrates to a manual light/dark choice. No old theme means
+system mode. Invalid stored themes fall back to system. Unrelated keys are kept.
+An explicit successful theme save removes the obsolete darkMode key.
+
+Live operation persists changes. Simulation never reads or writes user settings.
+`--locale` and `--theme` are session overrides and do not save by themselves;
+subsequent explicit GUI choices persist only in live mode. A storage failure
+returns `preference-save-failed`, and the previous in-memory preference remains.
+Native adapters apply snapshots silently, use their framework's system-theme
+mechanism, and send only actual user changes. No Bluetooth operation is involved.
