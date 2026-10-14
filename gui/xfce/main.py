@@ -2,7 +2,7 @@
 """Xfce presentation using stock GTK 3 and libxfce4ui."""
 from pathlib import Path
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'native'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'clients' / 'common'))
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')

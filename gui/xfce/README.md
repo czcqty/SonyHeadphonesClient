@@ -6,7 +6,7 @@ Appearance/fonts come from Xfce's GTK settings; no custom CSS or control paintin
 
 ```sh
 sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-libxfce4ui-2.0
-python3 gui/xfce/main.py --backend "$PWD/build/gui/SonyHeadphonesClient_native_backend"
+python3 gui/xfce/main.py --backend "$PWD/build/backend/SoundConnectBackend"
 ```
 
 Build the host using [../native/README.md](../native/README.md). Supports
@@ -35,3 +35,11 @@ dialog actions, zero startup writes and single toggle/slider commits. GTK's
 legacy StatusIcon reports its expected deprecation warnings. The shared C++
 Windows host ran in simulation via WSL pipes; Linux Bluetooth, an actual Xfce
 panel and Wayland tray behavior were not validated.
+
+## Shared backend migration
+
+The adapter now consumes the main branch's `SoundConnectBackend` and
+`clients/common/catalog.json`. The former branch-local backend source and
+catalog copies have been removed. Advanced device operations are present in
+the shared catalog; application/desktop parity still follows the migration gate.
+Native widget smoke test passed again against the new standalone backend.
