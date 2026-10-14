@@ -1,5 +1,9 @@
 # SonyHeadphonesClient
 
+> This is the `codex/winui` experimental branch. A native WinUI 3 full window
+> and separate tray quick panel are available in [gui/winui](gui/winui/README.md).
+> The Qt frontend below remains available; `main` uses official Qt platform styles.
+
 An unofficial, open-source Qt Quick desktop application for controlling the
 local features of supported Sony headphones without the mobile-only Sound
 Connect application.
