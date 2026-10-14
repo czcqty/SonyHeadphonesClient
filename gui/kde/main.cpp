@@ -236,7 +236,7 @@ public:
         if (options.isSet("smoke-test")) QTimer::singleShot(3000, this, [this] { smoke(); });
     }
     void smoke() {
-        bool ok = state.value("app").toObject().value("previewMode").toBool() && sent == 0 && pageItems.size() == 9;
+        bool ok = state.value("app").toObject().value("previewMode").toBool() && sent == 0 && pageItems.size() == static_cast<size_t>(catalog.value("pages").toArray().size());
         for (auto item : pageItems) pages->setCurrentPage(item);
         for (const auto& b : bindings) {
             if (b.field.value("key") == "dseeEnabled") { qobject_cast<QCheckBox*>(b.widget)->click(); break; }

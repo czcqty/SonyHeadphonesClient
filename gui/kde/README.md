@@ -12,7 +12,7 @@ retains the repository's Qt 6.5+ requirement.
 sudo apt install cmake g++ qtbase5-dev libkf5widgetsaddons-dev libkf5notifications-dev
 cmake -S gui/kde -B build/kde
 cmake --build build/kde --parallel
-build/kde/SoundConnectKDE --backend "$PWD/build/gui/SonyHeadphonesClient_native_backend"
+build/kde/SoundConnectKDE --backend "$PWD/build/backend/SoundConnectBackend"
 ```
 
 Build the shared host using [../native/README.md](../native/README.md). Optional
@@ -39,3 +39,11 @@ The Xvfb/DBus native-control smoke test passes for all nine pages, zero startup
 writes, silent state refresh and one write per toggle/slider update. The host was
 the real shared C++ Windows executable over WSL interoperability pipes in isolated
 simulation; this does not verify Linux Bluetooth or a Plasma desktop session.
+
+## Shared backend migration
+
+The adapter now consumes the main branch's `SoundConnectBackend` and
+`clients/common/catalog.json`. The former branch-local backend source and
+catalog copies have been removed. Advanced device operations are present in
+the shared catalog; application/desktop parity still follows the migration gate.
+Native widget smoke test passed again against the new standalone backend.
