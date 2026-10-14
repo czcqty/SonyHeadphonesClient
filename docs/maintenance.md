@@ -23,7 +23,7 @@ widget-specific tests have been removed. `SonyHeadphonesClient` now names the
 Qt Quick executable directly.
 
 The coroutine ownership and MDR v1 packet regressions live in
-`gui/tests/BackendTests.cpp`. ViewModel capability gating and desired-state
+`backend/tests/BackendTests.cpp`. ViewModel capability gating and desired-state
 mapping live in `gui/tests/ViewModelTests.cpp`; QML contracts live under
 `gui/tests/qml/`.
 
@@ -34,3 +34,9 @@ all six registered tests on 2026-08-04.
 The protocol and Windows changes are compile-checked by the normal Windows
 build. Real-device verification remains required for transport, reconnect,
 capability, and persistence behavior.
+
+The shared-backend migration now uses `backend/` for the device service and
+private process host. Native adapters consume that host and the common binding
+catalog; the transitional Qt Quick application links the same business library.
+Backend-only builds use `MDR_BUILD_QT_FRONTEND=OFF`. Current checks and the
+conditions for removing Qt Quick are in [backend-migration.md](backend-migration.md).

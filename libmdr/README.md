@@ -1,7 +1,7 @@
 # libmdr
 
-`libmdr` is the C++20 MDR protocol and transport library used by the Qt Quick
-application. It exposes both the C++ `mdr::MDRHeadphones` API and the `mdr-c`
+`libmdr` is the C++20 MDR protocol and transport library used by the shared
+device backend and its native presentation adapters. It exposes both the C++ `mdr::MDRHeadphones` API and the `mdr-c`
 wrapper, and selects the Windows, Linux, macOS, or Emscripten platform backend
 at configure time.
 
@@ -15,9 +15,9 @@ at configure time.
 - Generated serialization, validation, enum, and trait sources are committed.
   Normal application builds should configure with `MDR_ENABLE_CODEGEN=OFF`.
 
-The Qt-facing session is implemented in `gui/quick/MdrSession.*`; UI code must
+The shared Qt Core session is implemented in `backend/MdrSession.*`; UI code must
 not send protocol packets directly. Capability mapping is kept in
-`gui/DeviceCapabilities.*`.
+`backend/DeviceCapabilities.*`.
 
 ## Development
 
@@ -30,7 +30,7 @@ target, and commit the generated output. See
 The protocol library is built through the repository's top-level CMake project;
 it is not currently documented as a standalone installable package. MDR v1
 packet fixtures and coroutine ownership regressions live in
-`gui/tests/BackendTests.cpp`.
+`backend/tests/BackendTests.cpp`.
 
 ## Credits
 
