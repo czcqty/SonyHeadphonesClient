@@ -15,6 +15,14 @@ target_link_libraries(device_backend PUBLIC Qt6::Core mdr)
 add_executable(SoundConnectBackend BackendMain.cpp)
 target_link_libraries(SoundConnectBackend PRIVATE device_backend)
 set_target_properties(SoundConnectBackend PROPERTIES WIN32_EXECUTABLE FALSE MACOSX_BUNDLE FALSE)
+if(APPLE)
+    # macdeployqt requires a bundle. This remains a QCoreApplication child
+    # process, with no window or Dock entry, and uses Qt's official deploy tool.
+    set_target_properties(SoundConnectBackend PROPERTIES
+        MACOSX_BUNDLE TRUE
+        MACOSX_BUNDLE_INFO_PLIST "${CMAKE_CURRENT_SOURCE_DIR}/BackendInfo.plist.in"
+        MACOSX_BUNDLE_GUI_IDENTIFIER "io.github.czcqty.SoundConnectBackend")
+endif()
 
 include(GNUInstallDirs)
 if(WIN32 AND NOT MDR_BUILD_QT_FRONTEND)
@@ -30,7 +38,8 @@ if(WIN32 AND NOT MDR_BUILD_QT_FRONTEND)
     set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ${CMAKE_INSTALL_BINDIR})
     include(InstallRequiredSystemLibraries)
 else()
-    install(TARGETS SoundConnectBackend RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    install(TARGETS SoundConnectBackend
+        BUNDLE DESTINATION . RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 endif()
 install(FILES README.md DESTINATION ${CMAKE_INSTALL_DATADIR}/SoundConnectBackend)
 if(NOT MDR_BUILD_QT_FRONTEND)
