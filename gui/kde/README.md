@@ -31,3 +31,11 @@ and one write per toggle/slider update. A KDE Plasma session, KF6 build, tray
 positioning on Wayland/multiple displays, keyboard/accessibility and real-device
 acceptance are still required. No target desktop appearance is inferred from
 Xvfb. See the shared README for remaining prototype feature and packaging work.
+
+## Local verification (2026-10-14)
+
+Ubuntu 24.04 WSL: GCC 13.3, Qt 5.15.13 and KDE Frameworks 5.115 build succeeds.
+The Xvfb/DBus native-control smoke test passes for all nine pages, zero startup
+writes, silent state refresh and one write per toggle/slider update. The host was
+the real shared C++ Windows executable over WSL interoperability pipes in isolated
+simulation; this does not verify Linux Bluetooth or a Plasma desktop session.
