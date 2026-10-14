@@ -14,7 +14,7 @@ dependencies described in [../native/README.md](../native/README.md).
 ```sh
 sh gui/macos/build.sh
 "build/macos/Sound Connect.app/Contents/MacOS/SoundConnect" \
-  --backend "$PWD/build/backend/SoundConnectBackend" --locale zh_CN
+  --backend "$PWD/build/backend/SoundConnectBackend.app/Contents/MacOS/SoundConnectBackend" --locale zh_CN
 ```
 
 `--panel`, `--route equalizer`, `--profile WF-1000XM5`, `--locale en`, `--live`
