@@ -50,7 +50,12 @@ class App(Adw.Application):
         settings = Gtk.Button(label=self.tr('All settings', '全部设置'))
         settings.connect('clicked', self.show_settings)
         quick_header.pack_start(settings); quick_toolbar.add_top_bar(quick_header)
-        quick_toolbar.set_content(self.make_page(CATALOG['quick'])); self.quick.set_content(quick_toolbar)
+        quick_content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+        self.quick_status = Gtk.Label(wrap=True, margin_start=12, margin_end=12, margin_top=6, margin_bottom=6)
+        quick_content.append(self.quick_status)
+        quick_page = self.make_page(CATALOG['quick']); quick_page.set_vexpand(True)
+        quick_content.append(quick_page)
+        quick_toolbar.set_content(quick_content); self.quick.set_content(quick_toolbar)
         self.quick.connect('close-request', self.close_quick)
         keys = Gtk.EventControllerKey()
         keys.connect('key-pressed', lambda _, key, *__: self.close_quick() if key == Gdk.KEY_Escape else False)
@@ -151,7 +156,8 @@ class App(Adw.Application):
             return
         self.syncing = True
         state = self.client.state
-        self.status.set_label(self.client.error or self.tr('Live device' if self.args.live else 'Isolated device preview', '实时设备' if self.args.live else '独立设备预览'))
+        message = self.client.error or self.tr('Live device' if self.args.live else 'Isolated device preview', '实时设备' if self.args.live else '独立设备预览')
+        self.status.set_label(message); self.quick_status.set_label(message)
         for b in self.bindings:
             field, widget, row = b['field'], b['widget'], b['row']
             current = value(state, field)

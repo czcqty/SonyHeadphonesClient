@@ -28,3 +28,11 @@ xvfb-run -a python3 gui/gnome/main.py --backend /absolute/backend --smoke-test
 See the common README for feature-parity limitations. GNOME Shell/Wayland,
 real headset, accessibility, multiple displays and packaging remain acceptance
 work; Xvfb tests are not a substitute for those checks.
+
+## Local verification (2026-10-14)
+
+Ubuntu 24.04 WSL: GTK 4.14.5/libadwaita 1.5 native UI starts and passes the Xvfb
+smoke test for all pages, zero startup writes, silent refresh and one write per
+toggle/slider commit. The host was the real shared Windows C++ executable over
+WSL interoperability pipes in isolated simulation. This does not validate the
+Linux Bluetooth backend or GNOME Shell/Wayland integration.
