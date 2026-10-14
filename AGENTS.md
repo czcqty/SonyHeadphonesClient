@@ -12,8 +12,8 @@
 - Prefer existing system/framework controls and official styles over custom-painted replacements.
 - The main Qt frontend uses Qt Quick Controls with the platform's official default style; preserve externally configured styles. Do not recreate Fluent, AppKit, Breeze, Adwaita, or Xfce controls by hand.
 - Build experimental WinUI presentation work on its own branch and share the existing device/backend logic.
-- Keep main on Qt. Native frontend experiments stay on their own branches: macOS uses Swift/AppKit, KDE uses Qt Widgets/KDE Frameworks, GNOME uses GTK 4/libadwaita, and Xfce uses GTK 3/libxfce4ui. Use the actual framework controls without custom skins or replacement control painting.
-- Native frontends share the existing AppController/ViewModels/libmdr backend. Keep simulation isolated and require an explicit --live option for Bluetooth operation. Never claim target-platform validation from simulated visuals.
+- Retain Qt Core in the shared backend and keep Qt Quick until the migration gates pass. Native frontend experiments stay on their own branches: macOS uses Swift/AppKit, KDE uses Qt Widgets/KDE Frameworks, GNOME uses GTK 4/libadwaita, and Xfce uses GTK 3/libxfce4ui. Use the actual framework controls without custom skins or replacement control painting.
+- Native frontends use SoundConnectBackend and the shared clients/common contract; AppController belongs to the transitional Qt Quick presentation. Keep simulation isolated and require an explicit --live option for Bluetooth operation. Never claim target-platform validation from simulated visuals.
 - Treat the tray's quick controls and the full settings window as distinct layouts; do not shrink the entire settings interface into a tray popup.
 
 # Payload Struct Implementation Details (libmdr)

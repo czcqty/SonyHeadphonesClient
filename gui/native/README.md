@@ -2,7 +2,9 @@
 
 All native branches now build the same `SoundConnectBackend` target from `backend/`.
 Configure the root with `-DMDR_BUILD_QT_FRONTEND=OFF -DMDR_ENABLE_CODEGEN=OFF`.
-The process is `build/backend/SoundConnectBackend` (add `.exe` on Windows).
+Follow the [shared backend build guide](../../backend/README.md) for configuration,
+testing, and platform-specific executable paths, including the macOS app bundle.
+See the [branch guide](../../docs/branches.md) for all native build entries.
 Device validation, connection handling and protocol mapping remain on the main
 branch. This branch owns only its native widgets and platform integration.
 
