@@ -12,11 +12,13 @@ env:
 
 jobs:
   desktop:
-    name: ${{ matrix.os }}
+    name: ${{ matrix.os }} / Qt frontend ${{ matrix.frontend }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        frontend: ['ON', 'OFF']
+        os: [ubuntu-22.04, macos-14, windows-2022]
         include:
           - os: ubuntu-22.04
             qt_arch: linux_gcc_64
@@ -52,6 +54,7 @@ jobs:
           -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
           -DBUILD_TESTING=ON
           -DMDR_ENABLE_CODEGEN=OFF
+          -DMDR_BUILD_QT_FRONTEND=${{ matrix.frontend }}
 
       - name: Build
         # The GUI, QML test module, and C++ tests compile several Qt-heavy

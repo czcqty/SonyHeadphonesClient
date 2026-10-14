@@ -1,5 +1,12 @@
 # SonyHeadphonesClient
 
+The project is migrating to a shared Qt Core backend with native presentation
+branches. Build the standalone process with `-DMDR_BUILD_QT_FRONTEND=OFF`; see
+[backend build and protocol](backend/README.md) and the
+[migration/verification gate](docs/backend-migration.md). The Qt Quick frontend
+below remains available during migration, until native functional parity and
+platform/device checks are complete. Removing Qt from the backend is deferred.
+
 An unofficial, open-source Qt Quick desktop application for controlling the
 local features of supported Sony headphones without the mobile-only Sound
 Connect application.
