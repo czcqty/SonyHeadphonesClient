@@ -26,7 +26,7 @@ internal sealed class BackendClient : IDisposable
 
     public BackendClient(DispatcherQueue dispatcher) { this.dispatcher = dispatcher; }
 
-    public void Start(string path, bool live, string profile)
+    public void Start(string path, bool live, string profile, string locale, string theme)
     {
         try
         {
@@ -38,6 +38,8 @@ internal sealed class BackendClient : IDisposable
             };
             if (live) info.ArgumentList.Add("--live");
             else { info.ArgumentList.Add("--profile"); info.ArgumentList.Add(profile); }
+            if (locale.Length > 0) { info.ArgumentList.Add("--locale"); info.ArgumentList.Add(locale); }
+            if (theme.Length > 0) { info.ArgumentList.Add("--theme"); info.ArgumentList.Add(theme); }
             process = new Process { StartInfo = info };
             process.Start();
             _ = ReadOutputAsync(process);
@@ -59,9 +61,12 @@ internal sealed class BackendClient : IDisposable
                 if (data is null) continue;
                 dispatcher.TryEnqueue(() => {
                     if (disposed) return;
-                    if (data["type"]?.GetValue<string>() == "state") State = data;
+                    if (data["type"]?.GetValue<string>() == "state") {
+                        if (data["version"]?.GetValue<int>() == 1) State = data;
+                        else { Error = "unsupported-version"; State = new(); }
+                    }
                     else if (data["type"]?.GetValue<string>() == "result")
-                        Error = data["ok"]?.GetValue<bool>() == true ? "" : data["error"]?.GetValue<string>() ?? "Command rejected";
+                        Error = data["ok"]?.GetValue<bool>() == true ? "" : data["errorCode"]?.GetValue<string>() ?? "Command rejected";
                     Changed?.Invoke();
                 });
             }

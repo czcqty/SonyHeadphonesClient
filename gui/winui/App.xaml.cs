@@ -16,6 +16,11 @@ public partial class App : Application
     private MainWindow? main;
     private MainWindow? panel;
     private Forms.NotifyIcon? tray;
+    private Hotkeys? hotkeys;
+    private readonly DispatcherTimer trayMonitor = new() { Interval = TimeSpan.FromSeconds(2) };
+    internal bool HasTray => tray is not null && Hotkeys.TrayAvailable;
+    internal bool HasGlobalKey(int id) => hotkeys?.Registered(id) == true;
+    internal string ShortcutError => hotkeys?.Error ?? "";
     internal string T(string zh, string en) => Chinese ? zh : en;
 
     public App()
@@ -34,33 +39,35 @@ public partial class App : Application
             return i >= 0 && i + 1 < arguments.Length ? arguments[i + 1] : fallback;
         }
         Live = arguments.Contains("--live");
-        Chinese = Option("--locale", "zh_CN") != "en";
+        Chinese = Option("--locale", "en") != "en";
         Theme = Option("--theme", "system") switch { "light" => ElementTheme.Light, "dark" => ElementTheme.Dark, _ => ElementTheme.Default };
         Backend = new BackendClient(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+        Backend.Changed += ApplyPreferences;
         main = new MainWindow(false, Option("--route", "home"));
         main.Activate();
-        var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add(T("打开 Sound Connect", "Open Sound Connect"), null, (_, _) => ShowMain());
-        menu.Items.Add(T("快捷控制", "Quick controls"), null, (_, _) => TogglePanel());
-        menu.Items.Add(new Forms.ToolStripSeparator());
-        menu.Items.Add(T("退出", "Quit"), null, (_, _) => Quit());
-        tray = new Forms.NotifyIcon {
-            Text = "Sound Connect · WinUI preview",
-            Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? System.Drawing.SystemIcons.Application,
-            ContextMenuStrip = menu, Visible = true
-        };
-        tray.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) TogglePanel(); };
+        if (Hotkeys.TrayAvailable) {
+            tray = new Forms.NotifyIcon {
+                Text = "Sound Connect",
+                Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? System.Drawing.SystemIcons.Application,
+                Visible = true
+            };
+            tray.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) TogglePanel(); };
+            RebuildTrayMenu();
+        }
+        if (Live) hotkeys = new Hotkeys(InvokeShortcut);
+        trayMonitor.Tick += (_, _) => { if (!HasTray && main?.AppWindow.IsVisible == false) ShowMain(); };
+        trayMonitor.Start();
         Backend.Start(Option("--backend", Path.Combine(AppContext.BaseDirectory, "backend", "SoundConnectBackend.exe")),
-            Live, Option("--profile", "WH-1000XM6"));
+            Live, Option("--profile", "WH-1000XM6"), Option("--locale", ""), Option("--theme", ""));
         if (arguments.Contains("--panel")) TogglePanel();
         if (arguments.Contains("--smoke-test"))
         {
             if (Live) throw new InvalidOperationException("Smoke testing cannot use --live");
             var smokeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
-            smokeTimer.Tick += (_, _) => {
+            smokeTimer.Tick += async (_, _) => {
                 smokeTimer.Stop();
                 try {
-                    main.SmokeTest();
+                    await main.SmokeTestAsync();
                     File.WriteAllText(Option("--smoke-report", Path.Combine(AppContext.BaseDirectory, "smoke.json")),
                         System.Text.Json.JsonSerializer.Serialize(new { ok = true, sentCommands = Backend.SentCommandCount }));
                 } catch (Exception error) {
@@ -94,23 +101,51 @@ public partial class App : Application
     internal void ShowMain() { main?.Activate(); }
     internal void TogglePanel()
     {
+        if (!HasTray) { ShowMain(); return; }
         panel ??= new MainWindow(true);
         if (panel.AppWindow.IsVisible) panel.AppWindow.Hide();
         else { panel.PositionAtTray(); panel.Activate(); }
     }
+    private void RebuildTrayMenu()
+    {
+        if (tray is null) return;
+        var old = tray.ContextMenuStrip;
+        var menu = new Forms.ContextMenuStrip();
+        menu.Items.Add(T("打开 Sound Connect", "Open Sound Connect"), null, (_, _) => ShowMain());
+        menu.Items.Add(T("快捷控制", "Quick controls"), null, (_, _) => TogglePanel());
+        menu.Items.Add(T("播放 / 暂停", "Play / Pause"), null, (_, _) => InvokeShortcut(1));
+        menu.Items.Add(T("下一曲", "Next track"), null, (_, _) => InvokeShortcut(2));
+        menu.Items.Add(T("断开连接", "Disconnect"), null, (_, _) => Backend.Send("app", "disconnectDevice"));
+        menu.Items.Add(new Forms.ToolStripSeparator());
+        menu.Items.Add(T("退出", "Quit"), null, (_, _) => Quit());
+        tray.ContextMenuStrip = menu; old?.Dispose();
+    }
+    internal void InvokeShortcut(int id)
+    {
+        if (id == 3) TogglePanel();
+        else Backend.Send("playback", id == 1 ? "togglePlayback" : "nextTrack");
+    }
+    private void ApplyPreferences()
+    {
+        var prefs = Backend.State["preferences"];
+        if (prefs is null) return;
+        bool chinese = prefs["locale"]?.ToString() == "zh_CN";
+        var theme = prefs["themeMode"]?.ToString() switch { "light" => ElementTheme.Light, "dark" => ElementTheme.Dark, _ => ElementTheme.Default };
+        if (Chinese != chinese) { Chinese = chinese; RebuildTrayMenu(); main?.Rebuild(); panel?.Rebuild(); }
+        if (Theme != theme) { Theme = theme; main?.ApplyTheme(); panel?.ApplyTheme(); }
+    }
     internal void ChangeLanguage(bool chinese)
     {
-        Chinese = chinese;
-        main?.Rebuild(); panel?.Rebuild();
+        Backend.Send("preferences", "setLocale", chinese ? "zh_CN" : "en");
     }
     internal void ChangeTheme(ElementTheme theme)
     {
-        Theme = theme;
-        main?.ApplyTheme(); panel?.ApplyTheme();
+        Backend.Send("preferences", "setThemeMode", theme == ElementTheme.Light ? "light" : theme == ElementTheme.Dark ? "dark" : "system");
     }
     internal void Quit()
     {
-        tray?.Dispose(); tray = null;
+        trayMonitor.Stop(); hotkeys?.Dispose();
+        tray?.ContextMenuStrip?.Dispose(); tray?.Dispose(); tray = null;
         Backend.Dispose();
         panel?.ExitWindow(); main?.ExitWindow();
         Exit();

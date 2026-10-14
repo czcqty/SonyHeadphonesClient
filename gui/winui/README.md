@@ -43,7 +43,7 @@ device backend; use the Connection page to select a paired device.
 
 Options: `--profile <existing-profile-id>`, `--backend <host-executable>`,
 `--locale en|zh_CN`, `--theme system|light|dark`, `--panel`,
-`--route home|connection|sound|noise|equalizer|behavior|touch|voice|devices|appearance`.
+`--route home|connection|sound|noise|equalizer|behavior|touch|voice|devices|application` (`appearance` remains an alias).
 Left-click the tray icon to toggle quick controls, or use its context menu.
 Closing the main window hides it to the tray; Quit terminates both processes.
 
@@ -63,8 +63,9 @@ rejection, capability enforcement, preview isolation and orderly EOF shutdown.
 All device commands now have native controls, including advanced listening and
 speak-to-chat settings, automatic power-off timing, NC-button assignment and
 multipoint actions. That is command coverage, not complete production parity:
-global shortcuts, persisted preferences, complete dynamic-option localization
-and desktop/hardware acceptance remain tracked in `docs/backend-migration.md`.
+preferences, migration, dynamic-option localization and Windows global shortcuts
+are implemented. Actual desktop/hardware acceptance remains tracked in
+`docs/backend-migration.md`.
 
 Run `--smoke-test` with the preview backend to traverse every device page,
 check zero synchronization writes, then exercise one toggle and slider commit.
@@ -80,3 +81,18 @@ check zero synchronization writes, then exercise one toggle and slider commit.
 - Offline NuGet restore reports unavailable vulnerability metadata (NU1900).
 - Real headset operation, multi-monitor/taskbar placement, accessibility,
   high contrast, Windows 10 and clean-machine deployment are not yet accepted.
+
+## Preference and desktop follow-up
+
+- The application-settings page supports live persistent language and
+  system/light/dark, including migration of the old Qt preferences. Preview
+  changes are intentionally session-only. `--locale` / `--theme` override the
+  initial session without saving. Both device pages and dynamic choices/errors
+  update when switching English/Chinese.
+- Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls. Windows
+  uses global registration in live mode and reports conflicts with a local
+  fallback. Linux shortcuts are application-local, as in the previous Qt UI;
+  AppKit uses Control+Option menu equivalents.
+- Native dialogs confirm power-off and unpair; cancellation sends no command.
+  Separate quick/full layouts, native menu styling and Qt Quick removal gates
+  remain unchanged.

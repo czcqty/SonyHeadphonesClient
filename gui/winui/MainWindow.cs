@@ -37,7 +37,7 @@ internal sealed partial class MainWindow : Window
     public MainWindow(bool compact, string initialRoute = "home")
     {
         this.compact = compact;
-        route = initialRoute;
+        route = initialRoute == "appearance" ? "application" : initialRoute;
         Title = compact ? "Sound Connect" : "Sound Connect · WinUI";
         SystemBackdrop = compact ? new DesktopAcrylicBackdrop() : new MicaBackdrop();
         var presenter = (OverlappedPresenter)AppWindow.Presenter;
@@ -52,11 +52,11 @@ internal sealed partial class MainWindow : Window
         double scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
         AppWindow.Resize(new SizeInt32((int)((compact ? 420 : 1080) * scale), (int)((compact ? 400 : 800) * scale)));
         AppWindow.Closing += (_, e) => {
-            if (!exiting) { e.Cancel = true; AppWindow.Hide(); }
+            if (!exiting) { e.Cancel = true; if (app.HasTray) AppWindow.Hide(); else app.Quit(); }
         };
         Closed += (_, _) => { dismissTimer.Stop(); backend.Changed -= Refresh; };
         Activated += (_, e) => {
-            if (compact && e.WindowActivationState == WindowActivationState.Deactivated) dismissTimer.Start();
+            if (compact && app.HasTray && e.WindowActivationState == WindowActivationState.Deactivated) dismissTimer.Start();
             else dismissTimer.Stop();
         };
         dismissTimer.Tick += (_, _) => {
@@ -81,9 +81,16 @@ internal sealed partial class MainWindow : Window
         root = new Grid { RequestedTheme = app.Theme };
         root.KeyDown += (_, e) => {
             if (compact && e.Key == VirtualKey.Escape && !GetOpenPopups().Any()) {
-                AppWindow.Hide(); e.Handled = true;
+                AppWindow.Hide(); if (!app.HasTray) app.ShowMain(); e.Handled = true;
             }
         };
+        for (int i = 1; i <= 3; ++i) {
+            int id = i;
+            var accelerator = new KeyboardAccelerator { Key = i == 1 ? VirtualKey.P : i == 2 ? VirtualKey.N : VirtualKey.M,
+                Modifiers = VirtualKeyModifiers.Control | VirtualKeyModifiers.Menu };
+            accelerator.Invoked += (_, e) => { if (!app.HasGlobalKey(id)) app.InvokeShortcut(id); e.Handled = true; };
+            root.KeyboardAccelerators.Add(accelerator);
+        }
         if (compact) BuildPage();
         else
         {
@@ -98,7 +105,6 @@ internal sealed partial class MainWindow : Window
                 navigation.MenuItems.Add(new NavigationViewItem { Content = CatalogText(spec["label"]),
                     Tag = spec["id"]!.GetValue<string>() });
             }
-            navigation.MenuItems.Add(new NavigationViewItem { Content = T("应用设置", "App settings"), Tag = "appearance", Icon = new SymbolIcon(Symbol.Setting) });
             navigation.SelectionChanged += (_, e) => {
                 if (e.SelectedItem is NavigationViewItem item) { route = (string)item.Tag; BuildPage(); }
             };
@@ -118,16 +124,21 @@ internal sealed partial class MainWindow : Window
         if (compact) { root.Children.Clear(); root.Children.Add(scroll); }
         else navigation!.Content = scroll;
         var status = new InfoBar { IsClosable = false, Severity = InfoBarSeverity.Informational };
-        if (!compact) page.Children.Add(status);
+        page.Children.Add(status);
         bindings.Add(() => {
-            status.IsOpen = !app.Live || backend.Error.Length > 0 || !backend.Connected;
+            status.IsOpen = !app.Live || backend.Error.Length > 0 || ConnectionError().Length > 0 || app.ShortcutError.Length > 0 || !backend.Connected;
             status.Severity = backend.Error.Length > 0 ? InfoBarSeverity.Error : InfoBarSeverity.Informational;
             status.Title = backend.Error.Length > 0 ? T("连接错误", "Connection error") : app.Live ? T("设备连接", "Device connection") : T("预览模式", "Preview mode");
-            status.Message = backend.Error.Length > 0 ? backend.Error : app.Live ? T("请在设备页连接耳机。", "Connect headphones on the Devices page.") : T("使用模拟设备，操作不会发送至真实耳机。", "Simulated device. Changes are not sent to real headphones.");
+            status.Message = backend.Error.Length > 0 ? Dynamic("Backend error: %1").Replace("%1", Dynamic(backend.Error)) : ConnectionError().Length > 0 ? ConnectionError() : app.ShortcutError.Length > 0 ? T("快捷键注册失败（可能已被占用）：", "Shortcut registration failed (possibly already in use): ") + app.ShortcutError : app.Live ? T("请在设备页连接耳机。", "Connect headphones on the Devices page.") : T("使用模拟设备，操作不会发送至真实耳机。", "Simulated device. Changes are not sent to real headphones.");
         });
         if (compact) Overview();
-        else if (route == "appearance") Appearance();
-        else CatalogPage(route);
+        else {
+            CatalogPage(route);
+            if (route == "application") {
+                page.Children.Add(new TextBlock { Text = T("Ctrl+Alt+P 播放/暂停 · Ctrl+Alt+N 下一曲 · Ctrl+Alt+M 快捷面板。预览设置仅本次生效。", "Ctrl+Alt+P play/pause · Ctrl+Alt+N next · Ctrl+Alt+M quick controls. Preview preferences are session only."), TextWrapping = TextWrapping.Wrap });
+                page.Children.Add(ActionButton(T("退出应用", "Quit application"), app.Quit));
+            }
+        }
         Refresh();
     }
 
@@ -249,22 +260,6 @@ internal sealed partial class MainWindow : Window
             modes.Children.Add(radio);
         }
         page.Children.Add(modes);
-    }
-
-    private void Appearance()
-    {
-        Heading(T("应用设置", "App settings"), true);
-        var theme = new ComboBox { Header = T("外观", "Appearance"), MinWidth = 280,
-            ItemsSource = new[] { T("跟随系统", "Follow system"), T("浅色", "Light"), T("深色", "Dark") },
-            SelectedIndex = app.Theme == ElementTheme.Light ? 1 : app.Theme == ElementTheme.Dark ? 2 : 0 };
-        theme.SelectionChanged += (_, _) => app.ChangeTheme(theme.SelectedIndex == 1 ? ElementTheme.Light : theme.SelectedIndex == 2 ? ElementTheme.Dark : ElementTheme.Default);
-        page.Children.Add(theme);
-        var language = new ComboBox { Header = T("语言", "Language"), MinWidth = 280,
-            ItemsSource = new[] { "简体中文", "English" }, SelectedIndex = app.Chinese ? 0 : 1 };
-        language.SelectionChanged += (_, _) => app.ChangeLanguage(language.SelectedIndex == 0);
-        page.Children.Add(language);
-        page.Children.Add(new TextBlock { Text = T("WinUI 实验分支。外观选择仅在本次运行中生效。", "WinUI experimental branch. Appearance choices apply to this session only."), TextWrapping = TextWrapping.Wrap });
-        page.Children.Add(ActionButton(T("退出应用", "Quit application"), app.Quit));
     }
 
     internal void PositionAtTray()
