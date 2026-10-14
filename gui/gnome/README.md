@@ -8,8 +8,8 @@ CSS or painted replacements. System appearance comes from libadwaita.
 ```sh
 # Debian/Ubuntu runtime dependencies
 sudo apt install python3-gi gir1.2-gtk-4.0 gir1.2-adw-1
-python3 gui/gnome/main.py --backend "$PWD/build/gui/SonyHeadphonesClient_native_backend"
-python3 gui/gnome/main.py --backend "$PWD/build/gui/SonyHeadphonesClient_native_backend" --panel
+python3 gui/gnome/main.py --backend "$PWD/build/backend/SoundConnectBackend"
+python3 gui/gnome/main.py --backend "$PWD/build/backend/SoundConnectBackend" --panel
 ```
 
 Build the backend first as documented in [../native/README.md](../native/README.md).
@@ -36,3 +36,11 @@ smoke test for all pages, zero startup writes, silent refresh and one write per
 toggle/slider commit. The host was the real shared Windows C++ executable over
 WSL interoperability pipes in isolated simulation. This does not validate the
 Linux Bluetooth backend or GNOME Shell/Wayland integration.
+
+## Shared backend migration
+
+The adapter now consumes the main branch's `SoundConnectBackend` and
+`clients/common/catalog.json`. The former branch-local backend source and
+catalog copies have been removed. Advanced device operations are present in
+the shared catalog; application/desktop parity still follows the migration gate.
+Native widget smoke test passed again against the new standalone backend.

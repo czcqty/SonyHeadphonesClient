@@ -2,7 +2,7 @@
 """GNOME presentation using stock GTK 4/libadwaita widgets."""
 from pathlib import Path
 import sys
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'native'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'clients' / 'common'))
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
