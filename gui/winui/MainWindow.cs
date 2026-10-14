@@ -18,7 +18,7 @@ using Windows.System;
 
 namespace SoundConnect.WinUI;
 
-internal sealed class MainWindow : Window
+internal sealed partial class MainWindow : Window
 {
     private readonly bool compact;
     private readonly List<Action> bindings = new();
@@ -29,8 +29,8 @@ internal sealed class MainWindow : Window
     private NavigationView? navigation;
     private string route = "home";
     private bool updating;
+    private Action? smokeSliderCommit;
     private bool exiting;
-    private string deviceSignature = "";
     private readonly DispatcherTimer dismissTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
     private string T(string zh, string en) => app.T(zh, en);
 
@@ -77,7 +77,7 @@ internal sealed class MainWindow : Window
 
     internal void Rebuild()
     {
-        bindings.Clear();
+        bindings.Clear(); smokeSliderCommit = null;
         root = new Grid { RequestedTheme = app.Theme };
         root.KeyDown += (_, e) => {
             if (compact && e.Key == VirtualKey.Escape && !GetOpenPopups().Any()) {
@@ -93,22 +93,17 @@ internal sealed class MainWindow : Window
                 IsSettingsVisible = false, OpenPaneLength = 220,
                 PaneTitle = "Sound Connect", IsPaneOpen = true
             };
-            var routes = new[] {
-                ("home", T("概览", "Overview"), Symbol.Home),
-                ("sound", T("声音与降噪", "Sound & noise control"), Symbol.Volume),
-                ("equalizer", T("均衡器", "Equalizer"), Symbol.Audio),
-                ("behavior", T("耳机行为", "Headphone behavior"), Symbol.Audio),
-                ("touch", T("触控与语音", "Touch & voice"), Symbol.TouchPointer),
-                ("devices", T("设备", "Devices"), Symbol.Link),
-                ("appearance", T("应用设置", "App settings"), Symbol.Setting)
-            };
-            foreach (var (key, label, icon) in routes)
-                navigation.MenuItems.Add(new NavigationViewItem { Content = label, Tag = key, Icon = new SymbolIcon(icon) });
+            foreach (var entry in Catalog["pages"]!.AsArray()) {
+                var spec = entry!.AsObject();
+                navigation.MenuItems.Add(new NavigationViewItem { Content = CatalogText(spec["label"]),
+                    Tag = spec["id"]!.GetValue<string>() });
+            }
+            navigation.MenuItems.Add(new NavigationViewItem { Content = T("应用设置", "App settings"), Tag = "appearance", Icon = new SymbolIcon(Symbol.Setting) });
             navigation.SelectionChanged += (_, e) => {
                 if (e.SelectedItem is NavigationViewItem item) { route = (string)item.Tag; BuildPage(); }
             };
             root.Children.Add(navigation);
-            navigation.SelectedItem = navigation.MenuItems.Cast<NavigationViewItem>().First(x => (string)x.Tag == route);
+            navigation.SelectedItem = navigation.MenuItems.Cast<NavigationViewItem>().FirstOrDefault(x => (string)x.Tag == route) ?? navigation.MenuItems[0];
         }
         Content = root;
         ApplyTheme();
@@ -117,7 +112,7 @@ internal sealed class MainWindow : Window
 
     private void BuildPage()
     {
-        bindings.Clear(); deviceSignature = "";
+        bindings.Clear();
         page = new StackPanel { Spacing = compact ? 16 : 24, Margin = new Thickness(compact ? 20 : 32), MaxWidth = 860, HorizontalAlignment = HorizontalAlignment.Stretch };
         var scroll = new ScrollViewer { Content = page, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
         if (compact) { root.Children.Clear(); root.Children.Add(scroll); }
@@ -130,13 +125,9 @@ internal sealed class MainWindow : Window
             status.Title = backend.Error.Length > 0 ? T("连接错误", "Connection error") : app.Live ? T("设备连接", "Device connection") : T("预览模式", "Preview mode");
             status.Message = backend.Error.Length > 0 ? backend.Error : app.Live ? T("请在设备页连接耳机。", "Connect headphones on the Devices page.") : T("使用模拟设备，操作不会发送至真实耳机。", "Simulated device. Changes are not sent to real headphones.");
         });
-        if (compact || route == "home") Overview();
-        else if (route == "sound") Sound();
-        else if (route == "equalizer") Equalizer();
-        else if (route == "behavior") Behavior();
-        else if (route == "touch") Touch();
-        else if (route == "devices") Devices();
-        else Appearance();
+        if (compact) Overview();
+        else if (route == "appearance") Appearance();
+        else CatalogPage(route);
         Refresh();
     }
 
@@ -182,6 +173,7 @@ internal sealed class MainWindow : Window
         bool dirty = false;
         slider.ValueChanged += (_, _) => { if (!updating) dirty = true; };
         void Commit() { if (!dirty) return; dirty = false; commit((int)Math.Round(slider.Value)); }
+        smokeSliderCommit = Commit;
         slider.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler((_, _) => Commit()), true);
         slider.AddHandler(UIElement.KeyUpEvent, new KeyEventHandler((_, _) => Commit()), true);
         slider.LostFocus += (_, _) => Commit();
@@ -257,101 +249,6 @@ internal sealed class MainWindow : Window
             modes.Children.Add(radio);
         }
         page.Children.Add(modes);
-    }
-
-    private void Sound()
-    {
-        Heading(T("声音与降噪", "Sound & noise control"), true);
-        NoiseModes();
-        Slider(T("环境声级别", "Ambient sound level"), "noiseControl", "ambientSupported", 1, 20,
-            () => backend.Number("noiseControl", "ambientLevel"), v => backend.Send("noiseControl", "setAmbientLevel", v));
-        Toggle(T("专注于语音", "Focus on voice"), "noiseControl", "focusOnVoice", "ambientSupported", "setFocusOnVoice");
-        Toggle(T("自适应降噪", "Adaptive noise cancellation"), "noiseControl", "adaptiveEnabled", "adaptiveSupported", "setAdaptiveEnabled");
-        Toggle("DSEE", "settings", "dseeEnabled", "dseeSupported", "setDseeEnabled");
-        Toggle(T("优先音质", "Prioritize sound quality"), "settings", "soundQualityPrior", "connectionQualitySupported", "setSoundQualityPrior");
-        Toggle(T("自适应音量", "Adaptive volume"), "settings", "adaptiveVolumeEnabled", "adaptiveVolumeSupported", "setAdaptiveVolumeEnabled");
-        Toggle(T("安全聆听", "Safe listening"), "settings", "safeListeningEnabled", "safeListeningSupported", "setSafeListeningEnabled");
-    }
-
-    private void Equalizer()
-    {
-        Heading(T("均衡器", "Equalizer"), true);
-        var preset = new ComboBox { Header = T("预设", "Preset"), MinWidth = 280 };
-        string optionsSignature = "";
-        bindings.Add(() => {
-            preset.IsEnabled = backend.Connected && backend.Flag("equalizer", "supported");
-            var options = backend.State["equalizer"]?["presetOptions"]?.AsArray();
-            string signature = options?.ToJsonString() ?? "";
-            if (signature != optionsSignature) { optionsSignature = signature; preset.ItemsSource = options?.Select(x => x?["id"]?.GetValue<string>() ?? "").ToList(); }
-            preset.SelectedItem = backend.Text("equalizer", "presetId");
-        });
-        preset.SelectionChanged += (_, _) => { if (!updating && preset.SelectedItem is string id) backend.Send("equalizer", "selectPreset", id); };
-        page.Children.Add(preset);
-        for (int i = 0; i < 5; i++) {
-            int band = i;
-            Slider(new[] { "400 Hz", "1 kHz", "2.5 kHz", "6.3 kHz", "16 kHz" }[i], "equalizer", "supported", -10, 10,
-                () => backend.State["equalizer"]?["bands"] is JsonArray bands && band < bands.Count ? bands[band]!.GetValue<int>() : 0,
-                v => backend.Send("equalizer", "setBand", band, v));
-        }
-        Slider("Clear Bass", "equalizer", "supported", -10, 10,
-            () => backend.Number("equalizer", "clearBass"), v => backend.Send("equalizer", "setClearBass", v));
-    }
-
-    private void Behavior()
-    {
-        Heading(T("耳机行为", "Headphone behavior"), true);
-        Toggle(T("取下耳机时自动暂停", "Pause when headphones are removed"), "settings", "autoPauseEnabled", "autoPauseSupported", "setAutoPauseEnabled");
-        Toggle(T("自动关机", "Automatic power off"), "settings", "autoPowerOffEnabled", "autoPowerOffSupported", "setAutoPowerOffEnabled");
-        Toggle(T("头部手势", "Head gestures"), "settings", "headGestureEnabled", "headGestureSupported", "setHeadGestureEnabled");
-        Toggle(T("智能免摘", "Speak-to-Chat"), "settings", "speakToChatEnabled", "speakToChatSupported", "setSpeakToChatEnabled");
-        Toggle(T("捕捉语音", "Capture voice"), "settings", "captureVoiceEnabled", "captureVoiceSupported", "setCaptureVoiceEnabled");
-    }
-
-    private void Touch()
-    {
-        Heading(T("触控与语音", "Touch & voice"), true);
-        foreach (var side in new[] { "Left", "Right" })
-        {
-            var combo = new ComboBox { Header = side == "Left" ? T("左侧触控", "Left touch control") : T("右侧触控", "Right touch control"), MinWidth = 280 };
-            string signature = ""; List<int> values = new();
-            bindings.Add(() => {
-                combo.IsEnabled = backend.Connected && backend.Flag("settings", "touchSupported");
-                var options = backend.State["settings"]?["touchOptions"]?.AsArray();
-                string next = options?.ToJsonString() ?? "";
-                if (next != signature) {
-                    signature = next;
-                    values = options?.Select(x => x!["value"]!.GetValue<int>()).ToList() ?? new();
-                    combo.ItemsSource = options?.Select(x => x!["name"]!.GetValue<string>()).ToList();
-                }
-                combo.SelectedIndex = values.IndexOf(backend.Number("settings", "touch" + side));
-            });
-            combo.SelectionChanged += (_, _) => { if (!updating && combo.SelectedIndex >= 0) backend.Send("settings", "setTouch" + side, values[combo.SelectedIndex]); };
-            page.Children.Add(combo);
-        }
-        Toggle(T("语音提示", "Voice guidance"), "settings", "voiceGuidanceEnabled", "voiceGuidanceSupported", "setVoiceGuidanceEnabled");
-        Slider(T("语音提示音量", "Voice guidance volume"), "settings", "voiceGuidanceVolumeSupported", -2, 2,
-            () => backend.Number("settings", "voiceGuidanceVolume"), v => backend.Send("settings", "setVoiceGuidanceVolume", v));
-    }
-
-    private void Devices()
-    {
-        Heading(T("设备", "Devices"), true);
-        page.Children.Add(Row(ActionButton(T("刷新设备", "Refresh devices"), () => backend.Send("app", "refreshDevices")),
-            ActionButton(T("断开连接", "Disconnect"), () => backend.Send("app", "disconnectDevice"))));
-        var devices = new StackPanel { Spacing = 12 }; page.Children.Add(devices);
-        bindings.Add(() => {
-            var list = backend.State["connection"]?["devices"]?.AsArray();
-            var signature = list?.ToJsonString() ?? "";
-            if (signature == deviceSignature) return;
-            deviceSignature = signature; devices.Children.Clear();
-            if (list is null) return;
-            foreach (var device in list) {
-                string name = device?["name"]?.GetValue<string>() ?? "Headphones";
-                string mac = device?["mac"]?.GetValue<string>() ?? "";
-                devices.Children.Add(ActionButton(name + "  ·  " + mac, () => backend.Send("app", "connectDevice", name, mac)));
-            }
-        });
-        Toggle(T("多点配对模式", "Multipoint pairing mode"), "deviceManager", "pairingMode", "supported", "setPairingMode");
     }
 
     private void Appearance()

@@ -7,8 +7,10 @@ The full settings window and tray quick panel have separate layouts. Mica and
 Desktop Acrylic use WinUI system backdrops; unsupported systems use their fallback.
 
 The native UI is C#/.NET 8 with Windows App SDK 1.8, x64, unpackaged and
-self-contained. The private C++ helper runs the existing AppController,
-ViewModels, capability checks and MdrSession with its own Qt event loop. JSON
+self-contained. The shared `SoundConnectBackend` runs DeviceService, ViewModels, capability
+checks and MdrSession with a Qt Core event loop. It has no dependency on
+the Qt Quick frontend. Full pages bind the same `clients/common/catalog.json`
+used by the other native adapters. JSON
 state/commands travel over redirected child-process pipes, with no listening
 network port. Protocol and device command mapping are unchanged.
 
@@ -31,7 +33,7 @@ and the appropriate VC runtime before distributing outside development.
 
 The default is an isolated WH-1000XM6 simulation. It neither connects Bluetooth
 nor saves appearance preferences. `--live` explicitly enables the existing real
-device backend; use the Devices page to select a paired device.
+device backend; use the Connection page to select a paired device.
 
 ```powershell
 ./cmake-build-winui/app/SoundConnect.WinUI.exe --panel --theme dark
@@ -41,7 +43,7 @@ device backend; use the Devices page to select a paired device.
 
 Options: `--profile <existing-profile-id>`, `--backend <host-executable>`,
 `--locale en|zh_CN`, `--theme system|light|dark`, `--panel`,
-`--route home|sound|equalizer|behavior|touch|devices|appearance`.
+`--route home|connection|sound|noise|equalizer|behavior|touch|voice|devices|appearance`.
 Left-click the tray icon to toggle quick controls, or use its context menu.
 Closing the main window hides it to the tray; Quit terminates both processes.
 
@@ -53,27 +55,28 @@ capture the compositor's Mica/Acrylic or nonclient titlebar. They are not mockup
 ## Verification and limits
 
 ```powershell
-python gui/winui/test_backend.py cmake-build-debug-visual-studio/gui/SonyHeadphonesClient_winui_backend.exe
+python clients/common/test_backend.py cmake-build-debug-visual-studio/backend/SoundConnectBackend.exe
 ```
 
 The host contract test verifies real shared ViewModel updates, invalid argument
 rejection, capability enforcement, preview isolation and orderly EOF shutdown.
-The native preview is intended to assess the toolkit and layout, not to replace
-the production Qt frontend yet. Overview, sound/noise, EQ, basic behavior,
-touch/voice, device connection and session appearance are present. Remaining
-parity work includes advanced listening/speak-to-chat settings, device management
-actions, global shortcuts, persisted preferences and complete option localization.
-Real headset operation, multi-monitor/taskbar placement, accessibility tooling,
-high-contrast, Windows 10 and clean-machine deployment require further acceptance.
+All device commands now have native controls, including advanced listening and
+speak-to-chat settings, automatic power-off timing, NC-button assignment and
+multipoint actions. That is command coverage, not complete production parity:
+global shortcuts, persisted preferences, complete dynamic-option localization
+and desktop/hardware acceptance remain tracked in `docs/backend-migration.md`.
 
-## Local verification (2026-10-14)
+Run `--smoke-test` with the preview backend to traverse every device page,
+check zero synchronization writes, then exercise one toggle and slider commit.
+`--smoke-report <absolute.json>` selects the report path. Never use with `--live`.
 
-- Windows 11 x64: .NET 8.0.426 / Windows App SDK 1.8 build succeeds without warnings.
-- Shared Qt/C++ host builds with MSVC and Qt 6.11; all eight existing CTest suites pass.
-- Backend contract test passes for supported actions and capability-limited profiles.
-- Native WinUI window captures cover all seven routes and the separate quick panel,
-  with Chinese/English and light/dark samples. Startup sends zero device commands.
-- Qt main also passes its QML suite with the Windows and Fusion official styles.
-- macOS/Linux runtime validation and WinUI feature parity are not claimed.
+## Shared-backend verification (2026-10-14)
 
-Do not merge the experimental frontend into main until that work is accepted.
+- Windows 11 x64: .NET 8.0.426 / Windows App SDK 1.8 build succeeds.
+- Native widget smoke test passes with `ok: true, sentCommands: 2`.
+- The shared Qt Core backend passes 14 CTest suites with the transitional Qt UI,
+  and six suites with Qt Quick disabled. The installed headless host also passes
+  the process contract test.
+- Offline NuGet restore reports unavailable vulnerability metadata (NU1900).
+- Real headset operation, multi-monitor/taskbar placement, accessibility,
+  high contrast, Windows 10 and clean-machine deployment are not yet accepted.

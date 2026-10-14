@@ -81,7 +81,7 @@ internal sealed class BackendClient : IDisposable
         try
         {
             SentCommandCount++;
-            process.StandardInput.WriteLine(JsonSerializer.Serialize(new { target, method, args }));
+            process.StandardInput.WriteLine(JsonSerializer.Serialize(new { version = 1, id = SentCommandCount.ToString(), target, method, args }));
             process.StandardInput.Flush();
         }
         catch (Exception e) when (e is IOException or InvalidOperationException)

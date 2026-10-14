@@ -50,9 +50,28 @@ public partial class App : Application
             ContextMenuStrip = menu, Visible = true
         };
         tray.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) TogglePanel(); };
-        Backend.Start(Option("--backend", Path.Combine(AppContext.BaseDirectory, "backend", "SonyHeadphonesClient_winui_backend.exe")),
+        Backend.Start(Option("--backend", Path.Combine(AppContext.BaseDirectory, "backend", "SoundConnectBackend.exe")),
             Live, Option("--profile", "WH-1000XM6"));
         if (arguments.Contains("--panel")) TogglePanel();
+        if (arguments.Contains("--smoke-test"))
+        {
+            if (Live) throw new InvalidOperationException("Smoke testing cannot use --live");
+            var smokeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
+            smokeTimer.Tick += (_, _) => {
+                smokeTimer.Stop();
+                try {
+                    main.SmokeTest();
+                    File.WriteAllText(Option("--smoke-report", Path.Combine(AppContext.BaseDirectory, "smoke.json")),
+                        System.Text.Json.JsonSerializer.Serialize(new { ok = true, sentCommands = Backend.SentCommandCount }));
+                } catch (Exception error) {
+                    Environment.ExitCode = 1;
+                    File.WriteAllText(Option("--smoke-report", Path.Combine(AppContext.BaseDirectory, "smoke.json")),
+                        System.Text.Json.JsonSerializer.Serialize(new { ok = false, error = error.ToString() }));
+                }
+                Quit();
+            };
+            smokeTimer.Start();
+        }
         string capture = Option("--capture", "");
         if (capture.Length > 0)
         {
