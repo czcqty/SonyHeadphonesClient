@@ -15,5 +15,6 @@ Native widget smoke tests remain available with `--smoke-test` where supported.
 Pass `--backend /absolute/path/to/SoundConnectBackend` to the native executable.
 The default is isolated preview; `--live` enables Bluetooth. See
 [the protocol](../../backend/README.md) and [migration gate](../../docs/backend-migration.md).
-Full production parity, persistent preferences/localization, desktop behavior
-and real-device acceptance are still tracked separately from command coverage.
+Application preferences/migration, bilingual dynamic text and shortcut bindings
+now use the shared contract. Actual desktop, packaging and real-device acceptance
+remain separate from command coverage; see the migration gate for unrun checks.

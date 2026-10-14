@@ -1,4 +1,5 @@
 #include <QApplication>
+#include <QAbstractItemView>
 #include <QCheckBox>
 #include <QCloseEvent>
 #include <QComboBox>
@@ -12,6 +13,7 @@
 #include <QLabel>
 #include <QMainWindow>
 #include <QMenu>
+#include <QMessageBox>
 #include <QProcess>
 #include <QPushButton>
 #include <QScreen>
@@ -23,6 +25,8 @@
 #include <QToolBar>
 #include <QVBoxLayout>
 #include <KPageWidget>
+#include <KColorSchemeManager>
+#include <QAbstractItemModel>
 #include <KStatusNotifierItem>
 #include <algorithm>
 #include <functional>
@@ -38,7 +42,7 @@ public:
     }
 };
 
-struct Binding { QJsonObject field; QWidget* widget; };
+struct Binding { QJsonObject field; QWidget* widget; QLabel* label; };
 
 class App : public QObject {
 public:
@@ -52,12 +56,43 @@ public:
     QByteArray pending;
     std::vector<Binding> bindings;
     std::vector<KPageWidgetItem*> pageItems;
-    QString locale, error;
+    QString locale, error, theme;
+    KColorSchemeManager schemes;
+    std::vector<std::function<void()>> translations;
     bool syncing = false, live = false, closing = false;
     int sent = 0;
 
     QString text(const QJsonValue& label) const {
         return label.isObject() ? label.toObject().value(locale).toString(label.toObject().value("en").toString()) : label.toString();
+    }
+    QString dynamic(const QString& value) const {
+        const auto messages = catalog.value("messages").toObject();
+        if (messages.contains(value)) return text(messages.value(value));
+        for (auto it = messages.begin(); it != messages.end(); ++it) {
+            const int index = it.key().indexOf("%1");
+            if (index < 0) continue;
+            const auto prefix = it.key().left(index), suffix = it.key().mid(index + 2);
+            if (value.startsWith(prefix) && value.endsWith(suffix))
+                return text(it.value()).replace("%1", value.mid(prefix.size(), value.size() - prefix.size() - suffix.size()));
+        }
+        return value;
+    }
+    QString connectionError() const {
+        const auto connection = state.value("connection").toObject();
+        const auto code = connection.value("errorCode").toString(), detail = connection.value("errorDetail").toString();
+        return code.isEmpty() ? detail : dynamic(code) + (detail.isEmpty() ? QString() : ": " + detail);
+    }
+    QString display(const QJsonValue& value, const QString& key) const {
+        if (key == "errorDetail") return connectionError();
+        if (value.isBool()) return dynamic(value.toBool() ? "Yes" : "No");
+        if (value.isNull() || value.isUndefined()) return "—";
+        if (value.isArray()) {
+            QStringList names;
+            for (const auto item : value.toArray()) names.append(item.toObject().value("name").toString());
+            return names.join(" · ");
+        }
+        const auto string = value.toVariant().toString();
+        return key == "state" || key == "errorDetail" || key == "alertMessage" ? dynamic(string) : string;
     }
     QString tr(const char* en, const char* zh) const { return QString::fromUtf8(locale == "zh_CN" ? zh : en); }
     QJsonValue value(const QJsonObject& field) const {
@@ -69,7 +104,7 @@ public:
         return current;
     }
     bool enabled(const QJsonObject& field) const {
-        if (field.value("kind") == "label" || field.value("group") == "app") return true;
+        if (field.value("kind") == "label" || field.value("group") == "app" || field.value("group") == "preferences") return true;
         auto group = state.value(field.value("group").toString()).toObject();
         const auto cap = field.value("capability").toString();
         return state.value("connection").toObject().value("state") == "connected"
@@ -78,7 +113,7 @@ public:
     }
     void send(const QString& target, const QString& method, const QJsonArray& args = {}) {
         if (syncing || closing || backend.state() != QProcess::Running) return;
-        auto data = QJsonDocument(QJsonObject{{"target", target}, {"method", method}, {"args", args}}).toJson(QJsonDocument::Compact) + '\n';
+        auto data = QJsonDocument(QJsonObject{{"version", 1}, {"id", QString::number(sent + 1)}, {"target", target}, {"method", method}, {"args", args}}).toJson(QJsonDocument::Compact) + '\n';
         if (backend.write(data) < 0) { error = backend.errorString(); refresh(); }
         else ++sent;
     }
@@ -86,7 +121,12 @@ public:
         QJsonArray args;
         if (field.contains("index")) args.append(field.value("index"));
         if (field.value("kind") != "button") args.append(value);
-        send(field.value("group").toString(), field.value("method").toString(), args);
+        const auto method = field.value("method").toString();
+        if (method == "powerOff" || method == "unpairDevice") {
+            const auto question = method == "powerOff" ? tr("Power off headphones?", "是否关闭耳机电源？") : tr("Unpair device?", "是否取消设备配对？");
+            if (QMessageBox::question(&window, "Sound Connect", question, QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel) != QMessageBox::Yes) return;
+        }
+        send(field.value("group").toString(), method, args);
     }
     QWidget* makePage(const QJsonObject& spec) {
         auto body = new QWidget;
@@ -125,37 +165,60 @@ public:
             widget->setAccessibleName(label); widget->setToolTip(label);
             if (kind == "toggle" || kind == "button") form->addRow(QString(), widget);
             else form->addRow(label, widget);
-            bindings.push_back({field, widget});
+            bindings.push_back({field, widget, qobject_cast<QLabel*>(form->labelForField(widget))});
         }
         auto scroll = new QScrollArea; scroll->setWidgetResizable(true); scroll->setFrameShape(QFrame::NoFrame); scroll->setWidget(body);
         return scroll;
     }
     void refresh() {
         syncing = true;
-        auto status = error.isEmpty() ? (live ? tr("Live device", "实时设备") : tr("Isolated device preview", "独立设备预览")) : error;
+        const auto prefs = state.value("preferences").toObject();
+        if (prefs.contains("locale")) locale = prefs.value("locale").toString();
+        const auto mode = prefs.value("themeMode").toString("system");
+        if (mode != theme) {
+            theme = mode;
+            // Official KDE schemes, never a private palette. Invalid index restores
+            // system colors and KDE's automatic desktop palette updates.
+            QModelIndex selected;
+            const auto filename = mode == "dark" ? QString("BreezeDark.colors") : QString("BreezeLight.colors");
+            if (mode != "system") for (int row = 0; row < schemes.model()->rowCount(); ++row) {
+                auto index = schemes.model()->index(row, 0);
+                if (index.data(Qt::UserRole).toString().endsWith(filename)) { selected = index; break; }
+            }
+            schemes.activateScheme(selected);
+        }
+        for (const auto& update : translations) update();
+        auto status = error.isEmpty() ? (live ? tr("Live device", "实时设备") : tr("Isolated device preview", "独立设备预览")) : dynamic(error);
+        if (error.isEmpty() && !connectionError().isEmpty()) status = connectionError();
         message->setText(status); quickMessage->setText(status);
         for (const auto& binding : bindings) {
             const auto field = binding.field; auto widget = binding.widget;
             const auto group = state.value(field.value("group").toString()).toObject();
             const auto kind = field.value("kind").toString(); const auto current = value(field);
             QSignalBlocker block(widget); widget->setEnabled(enabled(field));
+            const auto label = text(field.value("label"));
+            widget->setAccessibleName(label); widget->setToolTip(label);
+            if (binding.label) binding.label->setText(label);
+            if (auto button = qobject_cast<QAbstractButton*>(widget)) button->setText(label);
             if (auto check = qobject_cast<QCheckBox*>(widget)) check->setChecked(current.toBool());
             if (auto slider = qobject_cast<QSlider*>(widget); slider && !slider->isSliderDown()) slider->setValue(current.toInt());
             if (auto label = qobject_cast<QLabel*>(widget)) {
-                label->setText(current.isArray() ? QString::fromUtf8(QJsonDocument(current.toArray()).toJson(QJsonDocument::Compact)) : current.toVariant().toString());
+                label->setText(display(current, field.value("key").toString()));
             }
             if (auto choice = qobject_cast<QComboBox*>(widget)) {
+                // Rebuilding an open combobox dismisses it on async snapshots.
+                if (choice->view()->isVisible()) continue;
                 choice->clear();
                 if (kind == "devices") {
                     for (auto item : current.toArray()) choice->addItem(item.toObject().value("name").toString(), item.toVariant());
-                    choice->setCurrentIndex(-1); choice->setEnabled(choice->count() > 0);
+                    choice->setCurrentIndex(-1); choice->setEnabled(choice->count() > 0 && state.value("connection").toObject().value("state") != "connected" && state.value("connection").toObject().value("state") != "connecting");
                     continue;
                 }
                 const auto source = field.value("source").toString();
                 if (!source.isEmpty()) {
                     for (auto item : group.value(source).toArray()) {
                         const auto entry = item.toObject();
-                        choice->addItem(entry.value("name").toString(), entry.value(field.value("valueKey").toString()).toVariant());
+                        choice->addItem(source == "devices" ? entry.value("name").toString() : dynamic(entry.value("name").toString()), entry.value(field.value("valueKey").toString()).toVariant());
                     }
                 } else {
                     for (auto item : field.value("options").toArray()) {
@@ -181,6 +244,7 @@ public:
     }
     void start(const QCommandLineParser& options) {
         locale = options.value("locale"); live = options.isSet("live");
+        schemes.setAutosaveChanges(false);
         QFile file(options.value("catalog"));
         if (!file.open(QIODevice::ReadOnly)) { throw std::runtime_error("Cannot read binding catalog"); }
         catalog = QJsonDocument::fromJson(file.readAll()).object();
@@ -191,32 +255,60 @@ public:
         for (const auto entry : catalog.value("pages").toArray()) {
             const auto page = entry.toObject();
             auto item = pages->addPage(makePage(page), text(page.value("label"))); pageItems.push_back(item);
+            translations.push_back([this, item, page] { item->setName(text(page.value("label"))); });
             if (page.value("id").toString() == options.value("route")) pages->setCurrentPage(item);
         }
         window.setCentralWidget(content); window.setWindowTitle("Sound Connect"); window.resize(900, 680);
         auto toolbar = window.addToolBar(tr("Actions", "操作")); toolbar->setMovable(false);
         auto action = toolbar->addAction(tr("Quick controls", "快捷控制")); connect(action, &QAction::triggered, this, [this] { showQuick(); });
+        translations.push_back([this, action] { action->setText(tr("Quick controls", "快捷控制")); });
         auto quit = toolbar->addAction(tr("Quit", "退出")); connect(quit, &QAction::triggered, qApp, &QApplication::quit);
+        translations.push_back([this, quit] { quit->setText(tr("Quit", "退出")); });
         quick.setWindowTitle(tr("Quick controls", "快捷控制")); quick.setMinimumWidth(410);
         auto quickLayout = new QVBoxLayout(&quick); quickMessage->setWordWrap(true); quickLayout->addWidget(quickMessage);
         auto quickPage = makePage(catalog.value("quick").toObject()); quickPage->setMinimumHeight(280); quickLayout->addWidget(quickPage);
         auto settings = new QPushButton(tr("All settings…", "全部设置…")); quickLayout->addWidget(settings);
+        translations.push_back([this, settings] { settings->setText(tr("All settings…", "全部设置…")); quick.setWindowTitle(tr("Quick controls", "快捷控制")); });
         connect(settings, &QPushButton::clicked, this, &App::showSettings);
         auto tray = new KStatusNotifierItem("SoundConnectNativePreview", this);
         tray->setTitle("Sound Connect"); tray->setIconByName("audio-headphones"); tray->setStatus(KStatusNotifierItem::Active);
         tray->setStandardActionsEnabled(false);
         auto menu = new QMenu;
-        menu->addAction(tr("All settings", "全部设置"), this, &App::showSettings);
-        menu->addAction(tr("Quick controls", "快捷控制"), this, [this] { showQuick(); });
-        menu->addAction(tr("Quit", "退出"), qApp, &QApplication::quit); tray->setContextMenu(menu);
+        const auto addMenu = [this, menu](const char* en, const char* zh, std::function<void()> callback) {
+            auto action = menu->addAction(tr(en, zh));
+            connect(action, &QAction::triggered, this, [callback] { callback(); });
+            translations.push_back([this, action, en, zh] { action->setText(tr(en, zh)); });
+        };
+        addMenu("All settings", "全部设置", [this] { showSettings(); });
+        addMenu("Quick controls", "快捷控制", [this] { showQuick(); });
+        addMenu("Play / Pause", "播放 / 暂停", [this] { send("playback", "togglePlayback"); });
+        addMenu("Next track", "下一曲", [this] { send("playback", "nextTrack"); });
+        addMenu("Disconnect", "断开连接", [this] { send("app", "disconnectDevice"); });
+        addMenu("Quit", "退出", [] { qApp->quit(); });
+        tray->setContextMenu(menu);
+        for (const auto key : {QString("P"), QString("N"), QString("M")}) {
+            auto shortcut = new QAction(this);
+            shortcut->setShortcut(QKeySequence("Ctrl+Alt+" + key));
+            shortcut->setShortcutContext(Qt::ApplicationShortcut);
+            window.addAction(shortcut); quick.addAction(shortcut);
+            connect(shortcut, &QAction::triggered, this, [this, key] {
+                if (key == "M") showQuick();
+                else send("playback", key == "P" ? "togglePlayback" : "nextTrack");
+            });
+        }
+        auto monitor = new QTimer(this);
+        connect(monitor, &QTimer::timeout, this, [this] {
+            if (!QSystemTrayIcon::isSystemTrayAvailable() && !window.isVisible()) showSettings();
+        });
+        monitor->start(2000);
         connect(tray, &KStatusNotifierItem::activateRequested, this, [this](bool, const QPoint& p) { showQuick(p); });
         connect(&backend, &QProcess::readyReadStandardOutput, this, [this] {
             pending += backend.readAllStandardOutput();
             while (pending.contains('\n')) {
                 const auto index = pending.indexOf('\n');
                 const auto event = QJsonDocument::fromJson(pending.left(index)).object(); pending.remove(0, index + 1);
-                if (event.value("type") == "state") state = event;
-                if (event.value("type") == "result") error = event.value("ok").toBool() ? QString() : event.value("error").toString();
+                if (event.value("type") == "state") { if (event.value("version").toInt() == 1) state = event; else { state = {}; error = "unsupported-version"; } }
+                if (event.value("type") == "result") error = event.value("ok").toBool() ? QString() : event.value("errorCode").toString();
                 refresh();
             }
         });
@@ -229,7 +321,10 @@ public:
             closing = true; backend.closeWriteChannel();
             if (!backend.waitForFinished(2000)) { backend.kill(); backend.waitForFinished(1000); }
         });
-        backend.start(options.value("backend"), live ? QStringList{"--live"} : QStringList{"--profile", options.value("profile")});
+        auto arguments = live ? QStringList{"--live"} : QStringList{"--profile", options.value("profile")};
+        if (options.isSet("locale")) arguments << "--locale" << options.value("locale");
+        if (options.isSet("theme")) arguments << "--theme" << options.value("theme");
+        backend.start(options.value("backend"), arguments);
         refresh();
         // Always keep an ordinary window reachable if no tray host is present.
         window.show(); if (options.isSet("panel")) showQuick();
@@ -246,8 +341,35 @@ public:
             if (b.field.value("key") == "volume") { auto s = qobject_cast<QSlider*>(b.widget); s->setValue(12); s->setValue(12); break; }
         }
         ok = ok && sent == 2;
-        std::cout << (ok ? "KDE native controls: PASS (all pages, startup isolation, toggle/slider writes)" : "KDE native controls: FAIL") << std::endl;
-        qApp->exit(ok ? 0 : 1);
+        const auto targetLocale = locale == "zh_CN" ? QString("en") : QString("zh_CN");
+        for (const auto& b : bindings) {
+            if (b.field.value("group") != "preferences") continue;
+            auto combo = qobject_cast<QComboBox*>(b.widget);
+            int index = combo->findData(b.field.value("key") == "locale" ? targetLocale : QString("dark"));
+            combo->setCurrentIndex(index);
+            QMetaObject::invokeMethod(combo, "activated", Q_ARG(int, index));
+        }
+        QTimer::singleShot(600, this, [this, ok, targetLocale] {
+            bool passed = ok && sent == 4 && locale == targetLocale && theme == "dark"
+                && !state.value("preferences").toObject().value("persistent").toBool();
+            passed = passed && dynamic("Device function 99") == (locale == "en" ? "Device function 99" : "设备功能 99");
+            for (auto action : window.actions()) {
+                if (action->shortcut() == QKeySequence("Ctrl+Alt+P")) action->trigger();
+            }
+            passed = passed && sent == 5;
+            passed = passed && qApp->palette().color(QPalette::Window).lightnessF() < 0.5;
+            QTimer::singleShot(0, this, [] {
+                if (auto dialog = qobject_cast<QMessageBox*>(QApplication::activeModalWidget())) dialog->done(QMessageBox::Cancel);
+            });
+            write({{"group", "playback"}, {"method", "powerOff"}, {"kind", "button"}});
+            passed = passed && sent == 5;
+            showQuick(); showSettings();
+            passed = passed && !quick.isVisible() && window.isVisible();
+            refresh(); passed = passed && sent == 5;
+            std::cout << (passed ? "KDE native controls: PASS (preferences, translations, theme, shortcuts, popup, single writes)" : "KDE native controls: FAIL") << std::endl;
+            qApp->exit(passed ? 0 : 1);
+        });
+
     }
 };
 
@@ -257,7 +379,8 @@ int main(int argc, char** argv) {
     QCommandLineParser parser; parser.addHelpOption();
     parser.addOption({"backend", "Absolute path to shared host", "path"});
     parser.addOption({"catalog", "Binding catalog", "path", QCoreApplication::applicationDirPath() + "/catalog.json"});
-    parser.addOption({"locale", "en or zh_CN", "locale", "zh_CN"});
+    parser.addOption({"locale", "en or zh_CN", "locale", "en"});
+    parser.addOption({"theme", "system, light or dark session override", "theme"});
     parser.addOption({"profile", "Isolated preview profile", "profile", "WH-1000XM6"});
     parser.addOption({"route", "Initial page", "route", "home"});
     parser.addOption({"live", "Enable real Bluetooth"}); parser.addOption({"panel", "Open quick controls"});

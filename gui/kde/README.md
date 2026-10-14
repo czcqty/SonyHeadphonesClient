@@ -9,7 +9,7 @@ retains the repository's Qt 6.5+ requirement.
 
 ```sh
 # Plasma 5 / Ubuntu 24.04 example; Plasma 6 needs the KF6 equivalents.
-sudo apt install cmake g++ qtbase5-dev libkf5widgetsaddons-dev libkf5notifications-dev
+sudo apt install cmake g++ qtbase5-dev libkf5widgetsaddons-dev libkf5notifications-dev libkf5configwidgets-dev
 cmake -S gui/kde -B build/kde
 cmake --build build/kde --parallel
 build/kde/SoundConnectKDE --backend "$PWD/build/backend/SoundConnectBackend"
@@ -47,3 +47,22 @@ The adapter now consumes the main branch's `SoundConnectBackend` and
 catalog copies have been removed. Advanced device operations are present in
 the shared catalog; application/desktop parity still follows the migration gate.
 Native widget smoke test passed again against the new standalone backend.
+
+## Preference and desktop follow-up
+
+- The application-settings page supports live persistent language and
+  system/light/dark, including migration of the old Qt preferences. Preview
+  changes are intentionally session-only. `--locale` / `--theme` override the
+  initial session without saving. Both device pages and dynamic choices/errors
+  update when switching English/Chinese.
+- Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls. Windows
+  uses global registration in live mode and reports conflicts with a local
+  fallback. Linux shortcuts are application-local, as in the previous Qt UI;
+  AppKit uses Control+Option menu equivalents.
+- Native dialogs confirm power-off and unpair; cancellation sends no command.
+  Separate quick/full layouts, native menu styling and Qt Quick removal gates
+  remain unchanged.
+
+Manual modes use installed official BreezeLight/BreezeDark schemes through
+KColorSchemeManager; system mode restores KDE tracking. No palette is painted
+by the adapter. KF5 5.89+ or KF6 ColorScheme is required for this integration.
