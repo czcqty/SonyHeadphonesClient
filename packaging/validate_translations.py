@@ -14,6 +14,7 @@ def main() -> None:
     qml = (root / "gui" / "qml" / "I18n.qml").read_text(encoding="utf-8")
     qml_files = list((root / "gui" / "qml").glob("*.qml"))
     quick_cpp_files = list((root / "gui" / "quick").glob("*.cpp"))
+    quick_cpp_files += list((root / "backend").glob("*.cpp"))
     source_tokens = []
     for path in qml_files:
         source_tokens.extend(re.findall(

@@ -23,10 +23,7 @@ set(GUI_SOURCES
     quick/main.cpp
     quick/PanelController.cpp
     quick/AppController.cpp
-    quick/DeviceProfileRepository.cpp
-    quick/MdrSession.cpp
-    quick/ViewModels.cpp
-    DeviceCapabilities.cpp
+
 )
 
 set(GUI_HEADERS
@@ -131,7 +128,7 @@ target_link_libraries(${GUI_APP_TARGET} PRIVATE
     Qt6::QuickControls2
     platform_appearance
     Qt6::Widgets
-    mdr
+    device_backend
 )
 target_compile_definitions(${GUI_APP_TARGET} PRIVATE
     MDR_GIT_COMMIT_HASH="${MDR_GIT_COMMIT_HASH}"
@@ -302,10 +299,7 @@ if(BUILD_TESTING)
     qt_add_executable(${GUI_VIEWMODEL_TEST_TARGET}
         tests/ViewModelTests.cpp
         quick/AppController.cpp
-        quick/DeviceProfileRepository.cpp
-        quick/MdrSession.cpp
-        quick/ViewModels.cpp
-        DeviceCapabilities.cpp
+
     )
     set_target_properties(${GUI_VIEWMODEL_TEST_TARGET}
         PROPERTIES WIN32_EXECUTABLE FALSE)
@@ -318,24 +312,13 @@ if(BUILD_TESTING)
         Qt6::Core
         platform_appearance
         Qt6::Gui
-        mdr
+        device_backend
     )
     add_test(NAME gui-viewmodels COMMAND ${GUI_VIEWMODEL_TEST_TARGET})
 
-    qt_add_executable(${GUI_BACKEND_TEST_TARGET}
-        tests/BackendTests.cpp
-    )
-    set_target_properties(${GUI_BACKEND_TEST_TARGET}
-        PROPERTIES WIN32_EXECUTABLE FALSE)
-    target_include_directories(${GUI_BACKEND_TEST_TARGET} PRIVATE
-        ${CMAKE_SOURCE_DIR}/libmdr/include
-    )
-    target_link_libraries(${GUI_BACKEND_TEST_TARGET} PRIVATE
-        Qt6::Test
-        Qt6::Core
-        mdr
-    )
-    add_test(NAME gui-backend-regressions COMMAND ${GUI_BACKEND_TEST_TARGET})
+    # Keep the legacy CTest name while running the shared protocol regressions.
+    set(GUI_BACKEND_TEST_TARGET mdr_regression_tests)
+    add_test(NAME gui-backend-regressions COMMAND mdr_regression_tests)
 
     qt_add_executable(SonyHeadphonesClient_panel_tests
         tests/PanelTests.cpp quick/PanelController.cpp quick/PanelController.hpp)
@@ -360,10 +343,7 @@ if(BUILD_TESTING)
     qt_add_executable(${GUI_QML_TEST_TARGET}
         tests/QmlQuickTestMain.cpp
         quick/AppController.cpp
-        quick/DeviceProfileRepository.cpp
-        quick/MdrSession.cpp
-        quick/ViewModels.cpp
-        DeviceCapabilities.cpp
+
     )
     set_target_properties(${GUI_QML_TEST_TARGET}
         PROPERTIES WIN32_EXECUTABLE FALSE)
@@ -391,7 +371,7 @@ if(BUILD_TESTING)
         Qt6::Qml
         Qt6::QuickControls2
         platform_appearance
-        mdr
+        device_backend
     )
     add_test(NAME gui-qml-quicktest
         COMMAND ${GUI_QML_TEST_TARGET}
