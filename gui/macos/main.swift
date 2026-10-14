@@ -26,7 +26,7 @@ struct Options {
             default: fatalError("Unknown option: \(key)")
             }
         }
-        if catalog.isEmpty { catalog = Bundle.main.path(forResource: "catalog", ofType: "json") ?? "gui/native/catalog.json" }
+        if catalog.isEmpty { catalog = Bundle.main.path(forResource: "catalog", ofType: "json") ?? "clients/common/catalog.json" }
         guard !backend.isEmpty, ["en", "zh_CN"].contains(locale) else {
             fatalError("Usage: SoundConnect --backend /absolute/host [--locale en|zh_CN] [--profile ID] [--panel] [--live]")
         }

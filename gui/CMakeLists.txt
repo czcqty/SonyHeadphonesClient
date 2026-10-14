@@ -248,17 +248,6 @@ else()
 endif()
 
 include(GNUInstallDirs)
-option(MDR_BUILD_NATIVE_BACKEND "Build the shared native frontend backend host" OFF)
-if(MDR_BUILD_NATIVE_BACKEND)
-    qt_add_executable(SonyHeadphonesClient_native_backend
-        native/BackendMain.cpp
-        quick/AppController.cpp quick/DeviceProfileRepository.cpp
-        quick/MdrSession.cpp quick/ViewModels.cpp DeviceCapabilities.cpp)
-    set_target_properties(SonyHeadphonesClient_native_backend PROPERTIES WIN32_EXECUTABLE FALSE)
-    target_include_directories(SonyHeadphonesClient_native_backend PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR}/libmdr/include)
-    target_link_libraries(SonyHeadphonesClient_native_backend PRIVATE platform_appearance mdr)
-endif()
 install(TARGETS ${GUI_APP_TARGET}
     BUNDLE DESTINATION .
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}

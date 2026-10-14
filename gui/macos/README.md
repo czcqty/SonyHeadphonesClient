@@ -14,7 +14,7 @@ dependencies described in [../native/README.md](../native/README.md).
 ```sh
 sh gui/macos/build.sh
 "build/macos/Sound Connect.app/Contents/MacOS/SoundConnect" \
-  --backend "$PWD/build/gui/SonyHeadphonesClient_native_backend" --locale zh_CN
+  --backend "$PWD/build/backend/SoundConnectBackend" --locale zh_CN
 ```
 
 `--panel`, `--route equalizer`, `--profile WF-1000XM5`, `--locale en`, `--live`
@@ -28,3 +28,11 @@ permission handling on real hardware, keyboard/VoiceOver acceptance and display
 placement remain target-Mac acceptance work. Source and build entry are provided;
 this Windows host has no macOS SDK, so AppKit compilation/runtime is not claimed.
 The branch's GitHub Actions workflow compiles the Swift frontend on macOS when run.
+
+## Shared backend migration
+
+The adapter now consumes the main branch's `SoundConnectBackend` and
+`clients/common/catalog.json`. The former branch-local backend source and
+catalog copies have been removed. Advanced device operations are present in
+the shared catalog; application/desktop parity still follows the migration gate.
+macOS build and runtime acceptance remain unrun: this host has no macOS SDK.
