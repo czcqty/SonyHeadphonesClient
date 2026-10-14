@@ -6,8 +6,13 @@ private child process. It does not construct a QGuiApplication, load QML,
 choose a widget style, or require Qt Gui/Quick/Widgets. KDE's presentation
 continues to use its own Qt/KDE dependencies.
 
-Configure with Qt 6.5+ and `-DMDR_BUILD_QT_FRONTEND=OFF
--DMDR_ENABLE_CODEGEN=OFF -DBUILD_TESTING=ON`, then build and run CTest.
+Configure with Qt 6.5+, then build and run CTest:
+
+```sh
+cmake -S . -B build -DMDR_BUILD_QT_FRONTEND=OFF -DMDR_ENABLE_CODEGEN=OFF -DBUILD_TESTING=ON
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+```
 With the option ON, the transitional Qt Quick application links the same
 library, rather than maintaining a second business implementation.
 
@@ -19,6 +24,13 @@ Only one live backend per user may own a device session. Preview processes
 can run concurrently. The frontend owns the child, drains stdout/stderr and
 closes stdin at exit; EOF drains queued requests and shuts down the session.
 Diagnostics use stderr. No TCP listener or system service is installed.
+
+For distribution use a Release build. Backend-only CPack produces ZIP on
+Windows and TGZ on other hosts. Windows uses CMake runtime dependency scanning
+(including Qt Core's dependencies) plus the MSVC redistributable libraries;
+it does not require windeployqt or ship a QML/widgets/plugin runtime. Debug
+binaries remain developer-machine builds. Native application packaging must
+include this backend and preserve its runtime layout.
 
 ## Pipe protocol v1
 
