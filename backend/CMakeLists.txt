@@ -17,13 +17,29 @@ target_link_libraries(SoundConnectBackend PRIVATE device_backend)
 set_target_properties(SoundConnectBackend PROPERTIES WIN32_EXECUTABLE FALSE MACOSX_BUNDLE FALSE)
 
 include(GNUInstallDirs)
-install(TARGETS SoundConnectBackend RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+if(WIN32 AND NOT MDR_BUILD_QT_FRONTEND)
+    # A console Qt Core host needs no plugins. vcpkg can supply Qt without
+    # windeployqt, so use CMake's PE dependency scanner for its runtime closure.
+    install(CODE "if(POLICY CMP0207)\n    cmake_policy(SET CMP0207 NEW)\nendif()")
+    install(TARGETS SoundConnectBackend
+        RUNTIME_DEPENDENCIES
+            DIRECTORIES "$<TARGET_FILE_DIR:Qt6::Core>" "$<TARGET_FILE_DIR:SoundConnectBackend>"
+            PRE_EXCLUDE_REGEXES "api-ms-.*" "ext-ms-.*"
+            POST_EXCLUDE_REGEXES ".*[\\\\/]Windows[\\\\/].*"
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+    set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION ${CMAKE_INSTALL_BINDIR})
+    include(InstallRequiredSystemLibraries)
+else()
+    install(TARGETS SoundConnectBackend RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+endif()
 install(FILES README.md DESTINATION ${CMAKE_INSTALL_DATADIR}/SoundConnectBackend)
 if(NOT MDR_BUILD_QT_FRONTEND)
     install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/SonyHeadphonesClient)
-    qt_generate_deploy_app_script(TARGET SoundConnectBackend OUTPUT_SCRIPT backend_deploy
-        NO_TRANSLATIONS NO_UNSUPPORTED_PLATFORM_ERROR)
-    install(SCRIPT ${backend_deploy})
+    if(NOT WIN32)
+        qt_generate_deploy_app_script(TARGET SoundConnectBackend OUTPUT_SCRIPT backend_deploy
+            NO_TRANSLATIONS NO_UNSUPPORTED_PLATFORM_ERROR)
+        install(SCRIPT ${backend_deploy})
+    endif()
 endif()
 
 if(BUILD_TESTING)
