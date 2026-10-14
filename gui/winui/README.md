@@ -75,8 +75,9 @@ check zero synchronization writes, then exercise one toggle and slider commit.
 
 - Windows 11 x64: .NET 8.0.426 / Windows App SDK 1.8 build succeeds.
 - Native widget smoke test passes with `ok: true, sentCommands: 2`.
-- The shared Qt Core backend passes 14 CTest suites with the transitional Qt UI,
-  and six suites with Qt Quick disabled. The installed headless host also passes
+- The initial shared Qt Core backend check passed 14 CTest suites with the
+  transitional Qt UI and six with Qt Quick disabled. After the preference follow-up,
+  the 2026-10-15 rerun passed 16/16 and 8/8 respectively (existing Windows builds). The installed headless host also passes
   the process contract test.
 - Offline NuGet restore reports unavailable vulnerability metadata (NU1900).
 - Real headset operation, multi-monitor/taskbar placement, accessibility,
@@ -90,9 +91,7 @@ check zero synchronization writes, then exercise one toggle and slider commit.
   initial session without saving. Both device pages and dynamic choices/errors
   update when switching English/Chinese.
 - Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls. Windows
-  uses global registration in live mode and reports conflicts with a local
-  fallback. Linux shortcuts are application-local, as in the previous Qt UI;
-  AppKit uses Control+Option menu equivalents.
+  uses global registration in live mode and reports conflicts with a local fallback.
 - Native dialogs confirm power-off and unpair; cancellation sends no command.
   Separate quick/full layouts, native menu styling and Qt Quick removal gates
   remain unchanged.
