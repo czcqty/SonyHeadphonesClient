@@ -32,6 +32,10 @@ features you tested.
 
 ## Developer notes
 
+- [Branch guide and repository workflow](branches.md)
+- [Shared backend build and pipe protocol](../backend/README.md)
+- [Native binding and localization contract](../clients/common/README.md)
+- [Backend migration, recorded checks, and remaining release gates](backend-migration.md)
 - [Qt Quick desktop client](../gui/README.md)
 - [libmdr](../libmdr/README.md)
 - [Code generation](../tooling/README.md)
@@ -42,8 +46,10 @@ features you tested.
 
 ## Current verification snapshot
 
-On 2026-08-04, the existing Windows Debug build passed all six registered CTest
-entries: ViewModel, backend regression, QML QuickTest, translation catalog,
-application icon, and package metadata. This snapshot is a local software
-baseline only; transport, reconnect, persistence, and per-model behavior still
-require real hardware.
+The Windows checks rerun on 2026-10-15 are **16/16 CTest suites** with
+the transitional frontend and **8/8 suites** in the backend-only Release build.
+Native WinUI and Linux toolkit smoke checks are recorded separately in
+[backend migration](backend-migration.md), together with their environment limits.
+macOS compilation/runtime, actual Linux desktops, clean-machine packaging, and
+real-device acceptance remain outstanding. These are recorded software results,
+not evidence that every platform or headset has passed validation.

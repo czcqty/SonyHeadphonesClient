@@ -40,6 +40,18 @@ establish BlueZ or real desktop integration. macOS needs its own SDK/runtime.
 - Native presentation parity and real-device desktop checks are still release
   gates. Do not delete the transitional frontend or claim parity from IPC tests.
 
+Branch ownership and build entries are listed in the [branch guide](branches.md).
+
+## Documentation maintenance check (2026-10-15)
+
+During repository documentation cleanup, the existing Windows build trees were
+retested: Debug with Qt Quick passed **16/16 CTest suites**; backend-only Release
+passed **8/8 suites**. TEMP/TMP pointed to an isolated workspace test directory.
+No application source changed or fresh build was performed in this check.
+Updated local Markdown links and bilingual catalog validation also passed.
+The native toolkit smoke results below remain the recorded 2026-10-14 results;
+this maintenance check does not add platform or real-device acceptance.
+
 ## Verified on 2026-10-14
 
 - Windows/MSVC/Qt 6.11 Debug: 14/14 CTest suites pass with the transitional Qt
