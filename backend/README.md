@@ -9,10 +9,16 @@ continues to use its own Qt/KDE dependencies.
 Configure with Qt 6.5+, then build and run CTest:
 
 ```sh
-cmake -S . -B build -DMDR_BUILD_QT_FRONTEND=OFF -DMDR_ENABLE_CODEGEN=OFF -DBUILD_TESTING=ON
-cmake --build build --parallel
-ctest --test-dir build --output-on-failure
+cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DMDR_BUILD_QT_FRONTEND=OFF -DMDR_ENABLE_CODEGEN=OFF -DBUILD_TESTING=ON
+cmake --build build --config Release --parallel 2
+ctest --test-dir build -C Release --output-on-failure
 ```
+Tests require Qt Test and Python 3. On Windows, use a Visual Studio developer
+shell and set `CMAKE_PREFIX_PATH` if needed. Multi-configuration generators put
+the executable under `build/backend/Release/`; single-configuration generators
+normally use `build/backend/`. See the [branch guide](../docs/branches.md) for
+the native frontend build entries.
+
 With the option ON, the transitional Qt Quick application links the same
 library, rather than maintaining a second business implementation.
 
