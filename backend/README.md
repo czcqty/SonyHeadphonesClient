@@ -32,6 +32,12 @@ it does not require windeployqt or ship a QML/widgets/plugin runtime. Debug
 binaries remain developer-machine builds. Native application packaging must
 include this backend and preserve its runtime layout.
 
+On macOS the headless process is packaged as a background-only bundle so Qt's
+official macdeployqt can deploy its frameworks. Launch the executable at
+`build/backend/SoundConnectBackend.app/Contents/MacOS/SoundConnectBackend`, not
+the bundle directory. This changes packaging, not the Qt Core process model.
+macOS packaging/runtime verification is still pending on a macOS host.
+
 ## Pipe protocol v1
 
 UTF-8 JSON objects, one per line. The initial message is a full `type: state`
