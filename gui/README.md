@@ -1,7 +1,11 @@
 # Qt Quick desktop client
 
-This directory contains the project's only desktop GUI: a fixed-portrait Qt
+This directory contains the project's only desktop GUI: a compact tray-first Qt
 Quick/QML application backed by C++ ViewModels and `libmdr`.
+
+See the root README for tray lifecycle, supported desktop prerequisites, and
+compact-panel navigation. `PanelController` owns window presentation; protocol
+and persistent settings remain in the existing session and ViewModels.
 
 ## Targets
 
@@ -53,10 +57,9 @@ capability, updates `MDRProperty::desired`, and lets `MdrSession` submit dirty
 values through the existing polling state machine. Unsupported operations must
 not modify desired state or emit a protocol command.
 
-The current Devices page is intentionally incomplete: `libmdr` can decode a
-paired-device list, but `DeviceManagerViewModel::devices()` still returns two
-deterministic placeholder rows. Pairing-mode and playback-target writes are
-wired; live list display, connect/disconnect, and unpair actions are not.
+The Devices page reads the backend paired-device list and calls the existing
+capability-gated pairing, source-switch, connect/disconnect, and unpair bindings.
+Preview profiles are deterministic fixtures, not evidence of hardware validation.
 
 ## Preview interface
 
@@ -138,7 +141,14 @@ Static APK measurements are documented under `docs/reference/`. Visual parity
 remains `reference-blocked` until the implementation and official application
 are captured at the same route, locale, device profile, viewport, and state.
 
-The current local Debug baseline contains six passing CTest entries: ViewModel,
+The pre-panel local Debug baseline contained original six CTest entries: ViewModel,
 backend, QML QuickTest, localization-catalog, application-icon, and package-
 metadata checks. This does not replace real-device or cross-platform release
 verification.
+
+## Panel verification
+
+`gui-panel-lifecycle` covers hidden tray startup, visible fallback, transient popup
+focus, dismissal on outside focus, and work-area clamping. QML tests instantiate
+the internal pages at 360 × 480. These offscreen tests do not emulate an actual
+Windows/macOS shell, GNOME extension, KDE/Xfce panel, or physical headset.

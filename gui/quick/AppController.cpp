@@ -76,6 +76,21 @@ AppController::AppController(bool previewMode, QObject* parent)
 
 AppController::~AppController() = default;
 
+QString AppController::desktopStyle() const
+{
+#if defined(_WIN32)
+    return QStringLiteral("windows");
+#elif defined(__APPLE__)
+    return QStringLiteral("macos");
+#else
+    const QString desktop = qEnvironmentVariable("XDG_CURRENT_DESKTOP").toLower();
+    if (desktop.contains(QStringLiteral("kde"))) return QStringLiteral("kde");
+    if (desktop.contains(QStringLiteral("gnome"))) return QStringLiteral("gnome");
+    if (desktop.contains(QStringLiteral("xfce"))) return QStringLiteral("xfce");
+    return QStringLiteral("linux");
+#endif
+}
+
 QString AppController::currentProfile() const { return m_profile ? m_profile->id : QString(); }
 QString AppController::modelName() const { return m_profile ? m_profile->modelName : QString(); }
 QString AppController::deviceFamily() const { return m_profile ? m_profile->family : QString(); }
@@ -163,6 +178,8 @@ void AppController::setCurrentRoute(const QString& route)
         QStringLiteral("connection"),
         QStringLiteral("home"),
         QStringLiteral("settings"),
+        QStringLiteral("sound"),
+        QStringLiteral("behavior"),
         QStringLiteral("touch"),
         QStringLiteral("voice"),
         QStringLiteral("noise"),

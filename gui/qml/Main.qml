@@ -1,15 +1,17 @@
 import QtQuick
 import QtQuick.Controls.Basic
+import QtQuick.Layouts
 
 ApplicationWindow {
     id: window
     width: Tokens.windowWidth
     height: Tokens.windowHeight
     minimumWidth: 360
-    minimumHeight: 600
-    visible: true
+    minimumHeight: 480
+    visible: appController.previewMode
     title: "SonyHeadphonesClient"
     color: Tokens.surface
+    font.family: Qt.application.font.family
     palette.window: Tokens.surface
     palette.windowText: Tokens.textPrimary
     palette.base: Tokens.surfaceContainer
@@ -27,6 +29,7 @@ ApplicationWindow {
     }
 
     Loader {
+        objectName: "panelRouteLoader"
         anchors.top: parent.top
         anchors.bottom: parent.bottom
         anchors.horizontalCenter: parent.horizontalCenter
@@ -34,7 +37,9 @@ ApplicationWindow {
         sourceComponent: {
             switch (appController.currentRoute) {
             case "connection": return connectionPage
-            case "settings": return settingsPage
+            case "settings": return soundPage
+            case "sound": return soundPage
+            case "behavior": return behaviorPage
             case "touch": return touchPage
             case "voice": return voicePage
             case "noise": return noisePage
@@ -47,7 +52,8 @@ ApplicationWindow {
 
     Component { id: connectionPage; ConnectionPage {} }
     Component { id: homePage; HomePage {} }
-    Component { id: settingsPage; SettingsPage {} }
+    Component { id: soundPage; DeviceOptionsPage { soundOptions: true } }
+    Component { id: behaviorPage; DeviceOptionsPage { soundOptions: false } }
     Component { id: touchPage; TouchAssignmentsPage {} }
     Component { id: voicePage; VoiceGuidancePage {} }
     Component { id: noisePage; NoiseControlPage {} }
@@ -119,19 +125,27 @@ ApplicationWindow {
         z: 150
     }
 
-    ThemeToggle {
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.rightMargin: 16
-        anchors.bottomMargin: 16
-        z: 200
-    }
-
-    LanguageToggle {
-        anchors.right: parent.right
-        anchors.bottom: parent.bottom
-        anchors.rightMargin: 76
-        anchors.bottomMargin: 16
-        z: 200
+    footer: ToolBar {
+        height: 48
+        background: Rectangle { color: Tokens.surfaceContainer; border.color: Tokens.outlineVariant }
+        RowLayout {
+            anchors.fill: parent
+            anchors.leftMargin: 8
+            anchors.rightMargin: 8
+            LanguageToggle { Layout.preferredWidth: 36; Layout.preferredHeight: 36 }
+            ThemeToggle { Layout.preferredWidth: 36; Layout.preferredHeight: 36 }
+            Item { Layout.fillWidth: true }
+            Button {
+                text: I18n.text("disconnect")
+                visible: appController.connection.state === "connected"
+                flat: true
+                onClicked: appController.disconnectDevice()
+            }
+            Button {
+                text: I18n.text("quit")
+                flat: true
+                onClicked: Qt.quit()
+            }
+        }
     }
 }

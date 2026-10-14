@@ -4,6 +4,8 @@ import QtQuick
 QtObject {
     function text(key) {
         switch (key) {
+        case "quit": return qsTr("Quit")
+        case "behavior": return qsTr("Headphone behavior")
         case "all.settings": return qsTr("All device settings")
         case "shortcuts": return qsTr("Shortcuts")
         case "edit": return qsTr("Edit")

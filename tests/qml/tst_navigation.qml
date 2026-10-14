@@ -50,8 +50,8 @@ TestCase {
     }
 
     function test_supported_routes() {
-        const routes = ["connection", "home", "settings", "touch", "voice", "noise", "equalizer", "devices"]
-        compare(routes.length, 8)
+        const routes = ["connection", "home", "settings", "sound", "behavior", "touch", "voice", "noise", "equalizer", "devices"]
+        compare(routes.length, 10)
         verify(routes.indexOf("playback") === -1)
         verify(routes.indexOf("account") === -1)
         verify(routes.indexOf("firmware") === -1)
@@ -60,6 +60,23 @@ TestCase {
     function test_preview_states() {
         const states = ["ready", "loading", "empty", "error", "disabled"]
         compare(states.length, 5)
+    }
+
+    Component { id: panelComponent; Main {} }
+
+    function test_panel_pages_load_in_compact_window() {
+        appController.applyProfile("generic-max")
+        const panel = createTemporaryObject(panelComponent, null, {width: 360, height: 480})
+        verify(panel !== null)
+        const loader = findChild(panel, "panelRouteLoader")
+        verify(loader !== null)
+        for (const route of ["home", "sound", "behavior", "noise", "equalizer", "touch", "voice", "devices", "connection"]) {
+            appController.currentRoute = route
+            tryCompare(loader, "status", Loader.Ready)
+            verify(loader.item !== null, route)
+            compare(loader.item.width, 360)
+            verify(loader.item.height <= 480)
+        }
     }
 
     function test_language_toggle_is_live_and_does_not_overlap_theme() {

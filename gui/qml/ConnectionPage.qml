@@ -16,58 +16,68 @@ Page {
             width: parent.width
             height: parent.height - Tokens.toolbarHeight
 
-            Column {
-                visible: appController.connection.state !== "scanning"
-                    && appController.connection.state !== "connecting"
-                    && appController.connection.state !== "initializing"
-                anchors.left: parent.left
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.margins: 24
-                spacing: 12
+            Flickable {
+                anchors.fill: parent
+                anchors.bottomMargin: connectionError.visible ? connectionError.height + 32 : 0
+                contentWidth: width
+                contentHeight: deviceList.height + 24
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                Column {
+                    id: deviceList
+                    visible: appController.connection.state !== "scanning"
+                        && appController.connection.state !== "connecting"
+                        && appController.connection.state !== "initializing"
+                    anchors.left: parent.left
+                    anchors.right: parent.right
+                    anchors.top: parent.top
+                    anchors.margins: 24
+                    spacing: 12
 
-                Repeater {
-                    model: appController.connection.devices
-                    delegate: Rectangle {
-                        required property var modelData
+                    Repeater {
+                        model: appController.connection.devices
+                        delegate: Rectangle {
+                            required property var modelData
+                            width: parent.width
+                            height: 72
+                            radius: Tokens.cardRadius
+                            color: Tokens.surfaceContainer
+
+                            Column {
+                                anchors.left: parent.left
+                                anchors.leftMargin: 16
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: 4
+                                Text {
+                                    text: modelData.name
+                                    color: Tokens.textPrimary
+                                    font.pixelSize: Tokens.fontS
+                                }
+                                Text {
+                                    text: modelData.mac
+                                    color: Tokens.textSecondary
+                                    font.pixelSize: Tokens.font3S
+                                }
+                            }
+                            Button {
+                                anchors.right: parent.right
+                                anchors.rightMargin: 8
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: I18n.text("connect")
+                                flat: true
+                                onClicked: appController.connectDevice(modelData.name, modelData.mac)
+                            }
+                        }
+                    }
+
+                    Button {
                         width: parent.width
-                        height: 72
-                        radius: Tokens.cardRadius
-                        color: Tokens.surfaceContainer
-
-                        Column {
-                            anchors.left: parent.left
-                            anchors.leftMargin: 16
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: 4
-                            Text {
-                                text: modelData.name
-                                color: Tokens.textPrimary
-                                font.pixelSize: Tokens.fontS
-                            }
-                            Text {
-                                text: modelData.mac
-                                color: Tokens.textSecondary
-                                font.pixelSize: Tokens.font3S
-                            }
-                        }
-                        Button {
-                            anchors.right: parent.right
-                            anchors.rightMargin: 8
-                            anchors.verticalCenter: parent.verticalCenter
-                            text: I18n.text("connect")
-                            flat: true
-                            onClicked: appController.connectDevice(modelData.name, modelData.mac)
-                        }
+                        height: 48
+                        text: I18n.text("scan")
+                        onClicked: appController.refreshDevices()
                     }
                 }
 
-                Button {
-                    width: parent.width
-                    height: 48
-                    text: I18n.text("scan")
-                    onClicked: appController.refreshDevices()
-                }
             }
 
             Column {
@@ -86,6 +96,7 @@ Page {
             }
 
             Text {
+                id: connectionError
                 visible: appController.connection.errorCode.length > 0
                 anchors.left: parent.left
                 anchors.right: parent.right

@@ -17,6 +17,7 @@ set(GUI_VISUAL_DIFF_TARGET ${PROJECT_NAME}_visual_diff)
 
 set(GUI_SOURCES
     quick/main.cpp
+    quick/PanelController.cpp
     quick/AppController.cpp
     quick/DeviceProfileRepository.cpp
     quick/MdrSession.cpp
@@ -25,6 +26,7 @@ set(GUI_SOURCES
 )
 
 set(GUI_HEADERS
+    quick/PanelController.hpp
     quick/AppController.hpp
     quick/DeviceProfileRepository.hpp
     quick/MdrSession.hpp
@@ -47,7 +49,7 @@ set(GUI_QML_FILES
     qml/ConnectionOverlay.qml
     qml/ShortcutCard.qml
     qml/HomePage.qml
-    qml/SettingsPage.qml
+    qml/DeviceOptionsPage.qml
     qml/TouchAssignmentsPage.qml
     qml/VoiceGuidancePage.qml
     qml/NoiseControlPage.qml
@@ -310,6 +312,13 @@ if(BUILD_TESTING)
     )
     add_test(NAME gui-backend-regressions COMMAND ${GUI_BACKEND_TEST_TARGET})
 
+    qt_add_executable(SonyHeadphonesClient_panel_tests
+        tests/PanelTests.cpp quick/PanelController.cpp quick/PanelController.hpp)
+    target_link_libraries(SonyHeadphonesClient_panel_tests PRIVATE Qt6::Test Qt6::Widgets)
+    add_test(NAME gui-panel-lifecycle COMMAND SonyHeadphonesClient_panel_tests)
+    set_tests_properties(gui-panel-lifecycle PROPERTIES ENVIRONMENT
+        "QT_QPA_PLATFORM=offscreen;QT_PLUGIN_PATH=${_GUI_QT_PLUGIN_ROOT};${_GUI_TEST_FONT_ENV}")
+
     if(Python3_Interpreter_FOUND)
         add_test(NAME gui-localization-catalog
             COMMAND ${Python3_EXECUTABLE}
@@ -347,6 +356,10 @@ if(BUILD_TESTING)
         OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/test-qml/HeadphonesClient"
         QML_FILES ${GUI_QML_FILES}
     )
+    qt_add_resources(${GUI_QML_TEST_TARGET} "test_device_assets"
+        PREFIX "/devices"
+        BASE "${CMAKE_CURRENT_SOURCE_DIR}/assets/devices"
+        FILES ${GUI_DEVICE_ASSETS})
     target_link_libraries(${GUI_QML_TEST_TARGET} PRIVATE
         Qt6::QuickTest
         Qt6::Quick
@@ -380,6 +393,7 @@ if(BUILD_TESTING)
         DEPENDS
             ${GUI_VIEWMODEL_TEST_TARGET}
             ${GUI_BACKEND_TEST_TARGET}
+            SonyHeadphonesClient_panel_tests
             ${GUI_QML_TEST_TARGET}
         USES_TERMINAL
     )

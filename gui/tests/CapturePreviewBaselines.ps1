@@ -7,7 +7,7 @@ param(
 
     [string[]]$Profiles = @("WH-1000XM6", "WF-1000XM6", "WF-C510", "WF-L910"),
 
-    [string[]]$ViewportSizes = @("360x600", "412x780", "720x900")
+    [string[]]$ViewportSizes = @("360x480", "412x600", "720x900")
 )
 
 $ErrorActionPreference = "Stop"
@@ -16,7 +16,7 @@ $resolvedExecutable = (Resolve-Path -LiteralPath $Executable).Path
 $resolvedOutput = [System.IO.Path]::GetFullPath($OutputDirectory)
 [System.IO.Directory]::CreateDirectory($resolvedOutput) | Out-Null
 
-$routes = @("connection", "home", "settings", "touch", "voice", "noise", "equalizer", "devices")
+$routes = @("connection", "home", "sound", "behavior", "touch", "voice", "noise", "equalizer", "devices")
 $locales = @("en", "zh_CN")
 $themes = @("light", "dark")
 $states = @("ready", "loading", "empty", "error", "disabled")

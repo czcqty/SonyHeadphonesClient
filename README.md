@@ -4,7 +4,7 @@ An unofficial, open-source Qt Quick desktop application for controlling the
 local features of supported Sony headphones without the mobile-only Sound
 Connect application.
 
-The application uses a fixed portrait QML interface and keeps all device
+The application uses a compact tray panel with internal QML pages and keeps all device
 communication in the existing C++ `libmdr` backend. Account, cloud, location,
 activity-learning, third-party service, and firmware-update flows are outside
 the application scope.
@@ -20,7 +20,9 @@ the application scope.
 - Pairing-mode and multipoint playback-target protocol commands when advertised
 - MDR v2 connection with automatic MDR v1 fallback for implemented legacy
   operations
-- Fixed 412 × 780 logical-pixel preview surface with system DPI scaling
+- Compact 412 × 600 logical-pixel panel with system DPI scaling
+- Start in the tray, click to open, and dismiss on focus loss; without a tray,
+  the same panel remains available as a normal window
 - Light/dark themes plus English and Simplified Chinese UI text, with persistent
   in-app theme and language switches
 
@@ -29,17 +31,40 @@ hidden or disabled and must not enqueue protocol commands.
 
 ## Current scope and known gaps
 
-The current GUI is complete enough for deterministic preview and local protocol
-development, but several decoded backend features are not yet finished as user
-features. Safe Listening has no QML surface, XM6 noise adaptation is not exposed,
-and the Devices page still uses placeholder paired-device rows rather than the
-live `libmdr` paired-device list. That page currently exercises pairing mode and
-playback-target selection only; it is not complete device management.
+The UI wiring includes the live paired-device list, pairing and device-management
+commands, Safe Listening pressure/preview, adaptive noise controls, and additional
+sound/behavior settings. These code paths are capability-gated; their presence
+is not a claim that every headset has passed hardware testing. EQ preset choices
+remain a fixed catalog rather than a per-device supported-preset list. Safe
+Listening history/dose tracking and cloud sync are not implemented.
 
 MDR v1 fallback currently reads and writes Noise Cancelling/Ambient Sound state.
 Other legacy operations remain unintegrated. See the
 [parity roadmap](docs/official-parity-roadmap.md) for the implementation boundary
 used by the project.
+
+## Tray panel
+
+The panel opens near the tray icon when the desktop exposes its position; otherwise
+it uses a corner of the available screen. Window positioning/activation is subject
+to the desktop compositor. The home page contains connection status, battery,
+playback, volume, and noise controls. Sound, headphone behavior, equalizer, and
+device-management pages open inside the same panel. There is no separate full
+settings window. The legacy preview route `settings` opens the sound page.
+
+Language/theme choices and existing shortcuts are retained. Ctrl+Alt+P controls
+playback, Ctrl+Alt+N skips forward, and Ctrl+Alt+M opens/toggles the panel (global
+on Windows; application shortcuts elsewhere, as before). The footer provides an
+explicit Quit action, including when no tray is available. No autostart is added.
+
+Linux targets KDE Plasma, GNOME, and Xfce. A working tray host is required for
+tray operation: GNOME needs compatible AppIndicator/KStatusNotifierItem support
+(often a distribution-provided extension), and Xfce needs its panel tray plugin.
+Nothing is installed or enabled automatically. Without a tray at startup the
+compact window stays visible on focus loss. Desktop-specific colors, spacing,
+and system fonts provide a native-looking Qt UI, not native system controls.
+Real desktop/compositor validation remains necessary, especially Wayland popup
+placement and GNOME activation behavior.
 
 ## Deterministic preview
 
@@ -50,14 +75,14 @@ SonyHeadphonesClient.exe `
   --preview-profile WH-1000XM6 `
   --preview-route home `
   --preview-state ready `
-  --preview-size 412x780 `
+  --preview-size 412x600 `
   --locale zh_CN
 ```
 
 Routes:
 
 ```text
-connection, home, settings, touch, voice, noise, equalizer, devices
+connection, home, sound, behavior, touch, voice, noise, equalizer, devices
 ```
 
 States:
@@ -67,7 +92,7 @@ ready, loading, empty, error, disabled
 ```
 
 Add `--capture <path.png>` to save the window as a deterministic PNG and exit.
-`--preview-size` accepts a viewport of at least `360x600`; the capture target
+`--preview-size` accepts a viewport of at least `360x480`; the capture target
 covers compact, default, and wide layouts for the four primary device profiles.
 Available profile identifiers are documented in
 [the GUI developer notes](gui/README.md).

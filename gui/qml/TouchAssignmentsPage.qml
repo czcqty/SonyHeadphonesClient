@@ -20,64 +20,73 @@ Page {
         return 0
     }
 
-    Column {
+    Flickable {
         anchors.fill: parent
-
-        Toolbar {
-            width: parent.width
-            title: I18n.text("touch")
-            onBackRequested: appController.goBack()
-        }
-
-        Item { width: 1; height: 28 }
+        contentWidth: width
+        contentHeight: pageContent.height + 12
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
 
         Column {
-            x: 16
-            width: parent.width - 32
-            spacing: 24
+            id: pageContent
+            width: parent.width
 
-            Text {
-                text: I18n.text("left")
-                color: Tokens.textPrimary
-                font.pixelSize: Tokens.fontS
-                font.bold: true
-            }
-            AppComboBox {
+            Toolbar {
                 width: parent.width
-                model: assignmentOptions
-                textRole: "name"
-                currentIndex: indexFor(assignmentOptions, appController.settings.touchLeft)
-                onActivated: index => appController.settings.setTouchLeft(assignmentOptions[index].value)
+                title: I18n.text("touch")
+                onBackRequested: appController.goBack()
             }
 
-            Text {
-                text: I18n.text("right")
-                color: Tokens.textPrimary
-                font.pixelSize: Tokens.fontS
-                font.bold: true
-            }
-            AppComboBox {
-                width: parent.width
-                model: assignmentOptions
-                textRole: "name"
-                currentIndex: indexFor(assignmentOptions, appController.settings.touchRight)
-                onActivated: index => appController.settings.setTouchRight(assignmentOptions[index].value)
-            }
+            Item { width: 1; height: 28 }
 
-            Text {
-                visible: appController.settings.ncButtonSupported
-                text: I18n.text("nc.button")
-                color: Tokens.textPrimary
-                font.pixelSize: Tokens.fontS
-                font.bold: true
-            }
-            AppComboBox {
-                visible: appController.settings.ncButtonSupported
-                width: parent.width
-                model: ncButtonOptions
-                textRole: "text"
-                currentIndex: indexFor(ncButtonOptions, appController.settings.ncButtonFunction)
-                onActivated: index => appController.settings.setNcButtonFunction(ncButtonOptions[index].value)
+            Column {
+                x: 16
+                width: parent.width - 32
+                spacing: 24
+
+                Text {
+                    text: I18n.text("left")
+                    color: Tokens.textPrimary
+                    font.pixelSize: Tokens.fontS
+                    font.bold: true
+                }
+                AppComboBox {
+                    width: parent.width
+                    model: assignmentOptions
+                    textRole: "name"
+                    currentIndex: indexFor(assignmentOptions, appController.settings.touchLeft)
+                    onActivated: index => appController.settings.setTouchLeft(assignmentOptions[index].value)
+                }
+
+                Text {
+                    text: I18n.text("right")
+                    color: Tokens.textPrimary
+                    font.pixelSize: Tokens.fontS
+                    font.bold: true
+                }
+                AppComboBox {
+                    width: parent.width
+                    model: assignmentOptions
+                    textRole: "name"
+                    currentIndex: indexFor(assignmentOptions, appController.settings.touchRight)
+                    onActivated: index => appController.settings.setTouchRight(assignmentOptions[index].value)
+                }
+
+                Text {
+                    visible: appController.settings.ncButtonSupported
+                    text: I18n.text("nc.button")
+                    color: Tokens.textPrimary
+                    font.pixelSize: Tokens.fontS
+                    font.bold: true
+                }
+                AppComboBox {
+                    visible: appController.settings.ncButtonSupported
+                    width: parent.width
+                    model: ncButtonOptions
+                    textRole: "text"
+                    currentIndex: indexFor(ncButtonOptions, appController.settings.ncButtonFunction)
+                    onActivated: index => appController.settings.setNcButtonFunction(ncButtonOptions[index].value)
+                }
             }
         }
     }

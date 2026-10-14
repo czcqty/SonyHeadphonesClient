@@ -3,6 +3,8 @@
 <TS version="2.1" language="zh_CN" sourcelanguage="en">
   <context>
     <name>I18n</name>
+    <message><source>Quit</source><translation>退出</translation></message>
+    <message><source>Headphone behavior</source><translation>耳机行为</translation></message>
     <message><source>All device settings</source><translation>所有设备设置</translation></message>
     <message><source>Shortcuts</source><translation>快捷方式</translation></message>
     <message><source>Edit</source><translation>编辑</translation></message>

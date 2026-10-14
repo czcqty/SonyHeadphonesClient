@@ -20,21 +20,22 @@ Page {
 
             Item {
                 width: parent.width
-                height: Tokens.bigHeaderHeight
+                height: 104
 
                 Toolbar {
                     z: 2
-                    width: parent.width
-                    title: appController.modelName
+                    x: 64
+                    width: parent.width - 80
+                    title: appController.modelName + " · " + I18n.text("connected")
                     backVisible: false
                 }
 
                 Image {
                     id: deviceImage
-                    x: (parent.width - width) / 2
-                    y: 72
-                    width: 236
-                    height: 236
+                    x: 16
+                    y: 14
+                    width: 40
+                    height: 40
                     source: appController.deviceImage
                     fillMode: Image.PreserveAspectFit
                     smooth: true
@@ -43,7 +44,7 @@ Page {
 
                 RowLayout {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    y: 315
+                    y: 60
                     spacing: 24
 
                     Repeater {
@@ -80,54 +81,8 @@ Page {
                 spacing: 12
 
                 Rectangle {
-                    visible: appController.playback.playbackSupported
                     width: parent.width
-                    height: 56
-                    radius: Tokens.cardRadius
-                    color: Tokens.surfaceContainer
-
-                    Text {
-                        anchors.left: parent.left
-                        anchors.leftMargin: 16
-                        anchors.verticalCenter: parent.verticalCenter
-                        text: I18n.text("all.settings")
-                        color: Tokens.textSecondary
-                        font.pixelSize: Tokens.font2S
-                        font.bold: true
-                    }
-                    TapHandler { onTapped: appController.currentRoute = "settings" }
-                }
-
-                Text {
-                    topPadding: 12
-                    bottomPadding: 0
-                    text: I18n.text("shortcuts")
-                    color: Tokens.textPrimary
-                    font.pixelSize: Tokens.fontM
-                    font.bold: true
-                }
-
-                ShortcutCard {
-                    visible: appController.noiseControl.supported
-                    title: I18n.text("noise")
-                    subtitle: appController.noiseControl.mode === 1
-                        ? I18n.text("noise.canceling")
-                        : (appController.noiseControl.mode === 2
-                           ? I18n.text("ambient") + " " + appController.noiseControl.ambientLevel
-                           : I18n.text("off"))
-                    route: "noise"
-                }
-
-                ShortcutCard {
-                    visible: appController.equalizer.supported
-                    title: I18n.text("equalizer")
-                    subtitle: I18n.presetName(appController.equalizer.presetId)
-                    route: "equalizer"
-                }
-
-                Rectangle {
-                    width: parent.width
-                    height: playbackContent.implicitHeight + 36
+                    height: playbackContent.implicitHeight + 24
                     radius: Tokens.cardRadius
                     color: Tokens.surfaceContainer
 
@@ -136,7 +91,7 @@ Page {
                         anchors.left: parent.left
                         anchors.right: parent.right
                         anchors.top: parent.top
-                        anchors.margins: 18
+                        anchors.margins: 12
                         spacing: 12
 
                         Text {
@@ -148,14 +103,16 @@ Page {
                         }
                         Text {
                             width: parent.width
+                            visible: appController.playback.title.length > 0
                             text: appController.playback.title
                             color: Tokens.textPrimary
-                            font.pixelSize: Tokens.fontM
+                            font.pixelSize: Tokens.fontS
                             font.bold: true
                             elide: Text.ElideRight
                         }
                         Text {
                             width: parent.width
+                            visible: appController.playback.artist.length > 0
                             text: appController.playback.artist
                             color: Tokens.textSecondary
                             font.pixelSize: Tokens.font2S
@@ -171,6 +128,7 @@ Page {
                         }
 
                         RowLayout {
+                            visible: appController.playback.playbackSupported
                             width: parent.width
                             spacing: 8
                             Button {
@@ -207,34 +165,51 @@ Page {
                             onMoved: appController.playback.setVolume(Math.round(value))
                         }
 
-                        Button {
-                            id: powerOffButton
-                            visible: appController.playback.powerOffSupported
-                            enabled: !appController.playback.powerOffPending
-                            width: parent.width
-                            height: 48
-                            text: appController.playback.powerOffPending
-                                ? I18n.text("powering.off") : I18n.text("power.off")
-                            onClicked: powerOffDialog.open()
 
-                            background: Rectangle {
-                                radius: Tokens.cardRadius
-                                color: "transparent"
-                                border.width: 1
-                                border.color: Tokens.error
-                            }
-
-                            contentItem: Text {
-                                text: powerOffButton.text
-                                color: powerOffButton.enabled ? Tokens.error : Tokens.disabled
-                                font.pixelSize: Tokens.fontS
-                                horizontalAlignment: Text.AlignHCenter
-                                verticalAlignment: Text.AlignVCenter
-                            }
-                        }
                     }
                 }
 
+                Column {
+                    width: parent.width
+                    spacing: 8
+                    visible: appController.noiseControl.supported || appController.noiseControl.ambientSupported
+                    Text { text: I18n.text("noise"); color: Tokens.textPrimary; font.bold: true }
+                    RowLayout {
+                        width: parent.width
+                        Repeater {
+                            model: [
+                                {label: I18n.text("off"), mode: 0, available: true},
+                                {label: I18n.text("noise.canceling"), mode: 1, available: appController.noiseControl.supported},
+                                {label: I18n.text("ambient"), mode: 2, available: appController.noiseControl.ambientSupported}
+                            ]
+                            delegate: SegmentButton {
+                                required property var modelData
+                                Layout.fillWidth: true
+                                text: modelData.label
+                                enabled: modelData.available
+                                selected: appController.noiseControl.mode === modelData.mode
+                                onClicked: appController.noiseControl.setMode(modelData.mode)
+                            }
+                        }
+                    }
+                    AppSlider {
+                        width: parent.width
+                        visible: appController.noiseControl.mode === 2
+                        from: 1; to: 20; stepSize: 1
+                        value: appController.noiseControl.ambientLevel
+                        Accessible.name: I18n.text("ambient.level")
+                        onMoved: appController.noiseControl.setAmbientLevel(Math.round(value))
+                    }
+                    ShortcutCard { title: I18n.text("ambient.control"); route: "noise" }
+                }
+                ShortcutCard {
+                    visible: appController.equalizer.supported
+                    title: I18n.text("equalizer")
+                    subtitle: I18n.presetName(appController.equalizer.presetId)
+                    route: "equalizer"
+                }
+                ShortcutCard { title: I18n.text("sound"); route: "sound" }
+                ShortcutCard { title: I18n.text("behavior"); route: "behavior" }
                 Rectangle {
                     visible: appController.playback.safeListeningSupported
                     width: parent.width
@@ -282,7 +257,32 @@ Page {
                     route: "devices"
                 }
 
-                Item { width: 1; height: 88 }
+                        Button {
+                            id: powerOffButton
+                            visible: appController.playback.powerOffSupported
+                            enabled: !appController.playback.powerOffPending
+                            width: parent.width
+                            height: 48
+                            text: appController.playback.powerOffPending
+                                ? I18n.text("powering.off") : I18n.text("power.off")
+                            onClicked: powerOffDialog.open()
+
+                            background: Rectangle {
+                                radius: Tokens.cardRadius
+                                color: "transparent"
+                                border.width: 1
+                                border.color: Tokens.error
+                            }
+
+                            contentItem: Text {
+                                text: powerOffButton.text
+                                color: powerOffButton.enabled ? Tokens.error : Tokens.disabled
+                                font.pixelSize: Tokens.fontS
+                                horizontalAlignment: Text.AlignHCenter
+                                verticalAlignment: Text.AlignVCenter
+                            }
+                        }
+                Item { width: 1; height: 12 }
             }
         }
     }

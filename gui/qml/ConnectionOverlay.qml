@@ -21,9 +21,9 @@ Item {
     Image {
         id: hero
         x: (root.width - width) / 2
-        y: 170
-        width: 280
-        height: 280
+        y: Math.max(32, (root.height - 260) / 2)
+        width: 160
+        height: 160
         source: appController.connection.selectedDeviceImage
         fillMode: Image.PreserveAspectFit
         smooth: true
@@ -53,10 +53,10 @@ Item {
 
     function resetVisuals() {
         root.opacity = 1
-        hero.x = (root.width - 280) / 2
-        hero.y = 170
-        hero.width = 280
-        hero.height = 280
+        hero.x = (root.width - 160) / 2
+        hero.y = Math.max(32, (root.height - 260) / 2)
+        hero.width = 160
+        hero.height = 160
         statusText.opacity = 1
     }
 
@@ -93,10 +93,10 @@ Item {
             easing.type: Easing.OutCubic
         }
         ParallelAnimation {
-            NumberAnimation { target: hero; property: "x"; to: 88; duration: 420; easing.type: Easing.OutCubic }
-            NumberAnimation { target: hero; property: "y"; to: 72; duration: 420; easing.type: Easing.OutCubic }
-            NumberAnimation { target: hero; property: "width"; to: 236; duration: 420; easing.type: Easing.OutCubic }
-            NumberAnimation { target: hero; property: "height"; to: 236; duration: 420; easing.type: Easing.OutCubic }
+            NumberAnimation { target: hero; property: "x"; to: 16; duration: 420; easing.type: Easing.OutCubic }
+            NumberAnimation { target: hero; property: "y"; to: 14; duration: 420; easing.type: Easing.OutCubic }
+            NumberAnimation { target: hero; property: "width"; to: 40; duration: 420; easing.type: Easing.OutCubic }
+            NumberAnimation { target: hero; property: "height"; to: 40; duration: 420; easing.type: Easing.OutCubic }
         }
         NumberAnimation { target: root; property: "opacity"; from: 1; to: 0; duration: 120 }
         ScriptAction {

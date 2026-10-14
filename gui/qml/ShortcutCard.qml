@@ -9,7 +9,7 @@ Rectangle {
     property bool available: true
 
     width: parent ? parent.width : 0
-    height: 120
+    height: subtitle.length > 0 ? 60 : 42
     radius: Tokens.cardRadius
     color: Tokens.surfaceContainer
     opacity: available ? 1 : 0.38
@@ -31,7 +31,7 @@ Rectangle {
         anchors.leftMargin: 18
         anchors.rightMargin: 18
         anchors.verticalCenter: parent.verticalCenter
-        spacing: 10
+        spacing: 4
 
         Text {
             width: parent.width
@@ -43,6 +43,7 @@ Rectangle {
         }
         Text {
             width: parent.width
+            visible: root.subtitle.length > 0
             text: root.subtitle
             color: Tokens.textSecondary
             font.pixelSize: Tokens.font2S

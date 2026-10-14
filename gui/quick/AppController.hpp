@@ -16,6 +16,7 @@ class AppController final : public QObject
     Q_PROPERTY(QString locale READ locale WRITE setLocale NOTIFY localeChanged)
     Q_PROPERTY(QString previewState READ previewState WRITE setPreviewState NOTIFY previewStateChanged)
     Q_PROPERTY(bool previewMode READ previewMode CONSTANT)
+    Q_PROPERTY(QString desktopStyle READ desktopStyle CONSTANT)
     Q_PROPERTY(bool darkMode READ darkMode NOTIFY darkModeChanged)
     Q_PROPERTY(QString currentProfile READ currentProfile NOTIFY profileChanged)
     Q_PROPERTY(QString modelName READ modelName NOTIFY profileChanged)
@@ -39,6 +40,7 @@ public:
     QString locale() const { return m_locale; }
     QString previewState() const { return m_previewState; }
     bool previewMode() const { return m_previewMode; }
+    QString desktopStyle() const;
     bool darkMode() const { return m_darkMode; }
     QString currentProfile() const;
     QString modelName() const;

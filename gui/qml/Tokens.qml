@@ -3,14 +3,21 @@ import QtQuick
 
 QtObject {
     property bool darkMode: false
+    readonly property string desktop: appController.desktopStyle
+    readonly property bool roundedDesktop: desktop === "macos" || desktop === "gnome"
 
-    readonly property color primary: darkMode ? "#b8c4ff" : "#364fa8"
-    readonly property color primaryContainer: darkMode ? "#273a80" : "#c5d4ff"
-    readonly property color primaryText: darkMode ? "#17265f" : "#ffffff"
-    readonly property color surface: darkMode ? "#111415" : "#f8fafa"
-    readonly property color surfaceContainer: darkMode ? "#1d2021" : "#eef1f1"
-    readonly property color surfaceContainerHigh: darkMode ? "#242829" : "#f2f4f4"
-    readonly property color surfaceContainerHighest: darkMode ? "#303435" : "#e1e3e3"
+    readonly property color primary: desktop === "macos" ? (darkMode ? "#64a8ff" : "#007aff")
+        : desktop === "windows" ? (darkMode ? "#60cdff" : "#0067c0")
+        : desktop === "kde" ? (darkMode ? "#70c5ed" : "#2980b9")
+        : desktop === "gnome" ? (darkMode ? "#78aeed" : "#3584e4")
+        : (darkMode ? "#80b9ef" : "#2777b5")
+    readonly property color primaryContainer: Qt.rgba(primary.r, primary.g, primary.b, darkMode ? 0.28 : 0.14)
+    readonly property color primaryText: darkMode ? "#202020" : "#ffffff"
+    readonly property color surface: darkMode ? (desktop === "gnome" ? "#242424" : "#202020")
+        : (desktop === "macos" ? "#f5f5f7" : "#f3f3f3")
+    readonly property color surfaceContainer: darkMode ? "#2d2d2d" : "#ffffff"
+    readonly property color surfaceContainerHigh: darkMode ? "#303030" : "#ffffff"
+    readonly property color surfaceContainerHighest: darkMode ? "#383838" : "#e9e9e9"
     readonly property color textPrimary: darkMode ? "#e1e3e3" : "#191c1d"
     readonly property color textSecondary: darkMode ? "#c4c7c7" : "#444748"
     readonly property color outline: darkMode ? "#8e9192" : "#747878"
@@ -23,16 +30,15 @@ QtObject {
     readonly property color scrim: darkMode ? "#e6111415" : "#e6f8fafa"
 
     readonly property int windowWidth: 412
-    readonly property int windowHeight: 780
-    readonly property int toolbarHeight: 56
-    readonly property int bigHeaderHeight: 402
+    readonly property int windowHeight: 600
+    readonly property int toolbarHeight: 44
     readonly property int horizontalMargin: 16
-    readonly property int cardRadius: 13
+    readonly property int cardRadius: roundedDesktop ? 10 : (desktop === "windows" ? 6 : 4)
 
     readonly property int font3S: 12
     readonly property int font2S: 13
-    readonly property int fontS: 16
-    readonly property int fontM: 18
-    readonly property int fontL: 20
-    readonly property int fontLL: 22
+    readonly property int fontS: 14
+    readonly property int fontM: 16
+    readonly property int fontL: 18
+    readonly property int fontLL: 16
 }

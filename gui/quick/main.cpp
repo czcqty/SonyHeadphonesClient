@@ -4,6 +4,7 @@
 #include <QAction>
 #include <QAbstractNativeEventFilter>
 #include <QIcon>
+#include <QCursor>
 #include <QMenu>
 #include <QQmlApplicationEngine>
 #include <QQmlContext>
@@ -14,6 +15,7 @@
 #include <QTranslator>
 
 #include "AppController.hpp"
+#include "PanelController.hpp"
 
 #if defined(_WIN32)
 #define NOMINMAX
@@ -22,8 +24,8 @@
 class GlobalHotkeyFilter final : public QAbstractNativeEventFilter
 {
 public:
-    GlobalHotkeyFilter(AppController* controller, QQuickWindow* window)
-        : m_controller(controller), m_window(window)
+    GlobalHotkeyFilter(AppController* controller, PanelController* panel)
+        : m_controller(controller), m_panel(panel)
     {
         RegisterHotKey(nullptr, 1, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'P');
         RegisterHotKey(nullptr, 2, MOD_CONTROL | MOD_ALT | MOD_NOREPEAT, 'N');
@@ -42,16 +44,13 @@ public:
             return false;
         if (msg->wParam == 1) m_controller->playback()->togglePlayback();
         if (msg->wParam == 2) m_controller->playback()->nextTrack();
-        if (msg->wParam == 3) {
-            if (m_window->isVisible()) m_window->hide();
-            else { m_window->show(); m_window->raise(); m_window->requestActivate(); }
-        }
+        if (msg->wParam == 3) m_panel->toggle();
         return false;
     }
 
 private:
     AppController* m_controller;
-    QQuickWindow* m_window;
+    PanelController* m_panel;
 };
 #endif
 
@@ -73,7 +72,7 @@ int main(int argc, char* argv[])
     parser.addOption({QStringLiteral("preview-route"), QStringLiteral("Route to open"), QStringLiteral("route"), QStringLiteral("home")});
     parser.addOption({QStringLiteral("preview-state"), QStringLiteral("State to reproduce"), QStringLiteral("state"), QStringLiteral("ready")});
     parser.addOption({QStringLiteral("preview-theme"), QStringLiteral("Theme to reproduce (system, light, or dark)"), QStringLiteral("theme"), QStringLiteral("system")});
-    parser.addOption({QStringLiteral("preview-size"), QStringLiteral("Viewport size in WIDTHxHEIGHT form"), QStringLiteral("size"), QStringLiteral("412x780")});
+    parser.addOption({QStringLiteral("preview-size"), QStringLiteral("Viewport size in WIDTHxHEIGHT form"), QStringLiteral("size"), QStringLiteral("412x600")});
     parser.addOption({QStringLiteral("locale"), QStringLiteral("Interface locale (en or zh_CN)"), QStringLiteral("locale")});
     parser.addOption({QStringLiteral("capture"), QStringLiteral("Save a deterministic window capture and exit"), QStringLiteral("path")});
     parser.process(app);
@@ -125,14 +124,15 @@ int main(int argc, char* argv[])
         bool heightOk = false;
         const int width = dimensions.value(0).toInt(&widthOk);
         const int height = dimensions.value(1).toInt(&heightOk);
-        if (dimensions.size() != 2 || !widthOk || !heightOk || width < 360 || height < 600) {
-            qCritical("Invalid --preview-size; expected WIDTHxHEIGHT with a minimum of 360x600");
+        if (dimensions.size() != 2 || !widthOk || !heightOk || width < 360 || height < 480) {
+            qCritical("Invalid --preview-size; expected WIDTHxHEIGHT with a minimum of 360x480");
             return EXIT_FAILURE;
         }
         window->resize(width, height);
     }
     std::unique_ptr<QSystemTrayIcon> tray;
     std::unique_ptr<QMenu> trayMenu;
+    std::unique_ptr<PanelController> panel;
     std::unique_ptr<QShortcut> playShortcut;
     std::unique_ptr<QShortcut> nextShortcut;
     std::unique_ptr<QShortcut> windowShortcut;
@@ -140,16 +140,16 @@ int main(int argc, char* argv[])
     std::unique_ptr<GlobalHotkeyFilter> globalHotkeys;
 #endif
 
-    const auto toggleWindow = [window]() {
-        if (!window)
-            return;
-        if (window->isVisible()) window->hide();
-        else { window->show(); window->raise(); window->requestActivate(); }
-    };
+    const bool hasTray = !previewMode && QSystemTrayIcon::isSystemTrayAvailable();
+    if (window && !previewMode) {
+        panel = std::make_unique<PanelController>(window, hasTray,
+            [&tray] { return tray ? tray->geometry() : QRect(); });
+    }
+    const auto toggleWindow = [&panel]() { if (panel) panel->toggle(); };
 
     if (window && !previewMode) {
 #if defined(_WIN32)
-        globalHotkeys = std::make_unique<GlobalHotkeyFilter>(&controller, window);
+        globalHotkeys = std::make_unique<GlobalHotkeyFilter>(&controller, panel.get());
         app.installNativeEventFilter(globalHotkeys.get());
 #else
         playShortcut = std::make_unique<QShortcut>(QKeySequence(QStringLiteral("Ctrl+Alt+P")), window);
@@ -163,7 +163,7 @@ int main(int argc, char* argv[])
 #endif
     }
 
-    if (window && !previewMode && QSystemTrayIcon::isSystemTrayAvailable()) {
+    if (window && hasTray) {
         app.setQuitOnLastWindowClosed(false);
         trayMenu = std::make_unique<QMenu>();
         auto* showAction = trayMenu->addAction(QObject::tr("Show / Hide"));
@@ -172,6 +172,14 @@ int main(int argc, char* argv[])
         auto* disconnectAction = trayMenu->addAction(QObject::tr("Disconnect"));
         trayMenu->addSeparator();
         auto* quitAction = trayMenu->addAction(QObject::tr("Quit"));
+        QObject::connect(&controller, &AppController::localeChanged, trayMenu.get(),
+            [showAction, playAction, nextAction, disconnectAction, quitAction] {
+                showAction->setText(QObject::tr("Show / Hide"));
+                playAction->setText(QObject::tr("Play / Pause"));
+                nextAction->setText(QObject::tr("Next track"));
+                disconnectAction->setText(QObject::tr("Disconnect"));
+                quitAction->setText(QObject::tr("Quit"));
+            });
         QObject::connect(showAction, &QAction::triggered, window, toggleWindow);
         QObject::connect(playAction, &QAction::triggered, window,
                          [&controller]() { controller.playback()->togglePlayback(); });
@@ -180,13 +188,24 @@ int main(int argc, char* argv[])
         QObject::connect(disconnectAction, &QAction::triggered, &controller,
                          &AppController::disconnectDevice);
         QObject::connect(quitAction, &QAction::triggered, &app, &QCoreApplication::quit);
+        QObject::connect(trayMenu.get(), &QMenu::aboutToHide, window, [&panel] {
+            QTimer::singleShot(200, panel.get(), &PanelController::checkFocus);
+        });
         tray = std::make_unique<QSystemTrayIcon>(app.windowIcon());
         tray->setToolTip(QStringLiteral("SonyHeadphonesClient"));
+#if !defined(__APPLE__)
         tray->setContextMenu(trayMenu.get());
+#endif
         QObject::connect(tray.get(), &QSystemTrayIcon::activated, window,
-                         [toggleWindow](QSystemTrayIcon::ActivationReason reason) {
-            if (reason == QSystemTrayIcon::Trigger || reason == QSystemTrayIcon::DoubleClick)
+                         [toggleWindow, &trayMenu](QSystemTrayIcon::ActivationReason reason) {
+            if (reason == QSystemTrayIcon::Trigger)
                 toggleWindow();
+#if defined(__APPLE__)
+            // Attaching a Cocoa tray menu consumes the primary click. Keep it
+            // for the panel and expose the existing actions on a context click.
+            if (reason == QSystemTrayIcon::Context)
+                trayMenu->popup(QCursor::pos());
+#endif
         });
         tray->show();
 
