@@ -51,7 +51,23 @@ finally:
     if process.poll() is None:
         process.kill()
         process.wait()
-for options in [('--profile', 'missing'), ('--live', '--profile', 'WH-1000XM6')]:
+for options in [('--profile', 'missing'), ('--live', '--profile', 'WH-1000XM6'), ('--locale', 'invalid'), ('--theme', 'invalid')]:
     result = subprocess.run([sys.argv[1], *options], input=b'', capture_output=True, timeout=10)
     assert result.returncode == 2, result
 print('PASS: ordered commands, legacy envelope, malformed/oversized frames, EOF shutdown, mode isolation')
+
+process, lines = start('--locale', 'zh_CN', '--theme', 'dark')
+try:
+    state = lines.get(timeout=10)
+    assert state['preferences'] == dict(locale='zh_CN', themeMode='dark', persistent=False)
+    for key, method, target in [('locale', 'setLocale', 'en'), ('themeMode', 'setThemeMode', 'system')]:
+        process.stdin.write((json.dumps(dict(target='preferences', method=method, args=[target])) + '\n').encode())
+        process.stdin.flush()
+        assert lines.get(timeout=10)['ok']
+        state = lines.get(timeout=10)
+        assert state['preferences'][key] == target
+    process.stdin.close()
+    assert process.wait(timeout=10) == 0
+finally:
+    if process.poll() is None: process.kill(); process.wait()
+print('PASS: session overrides and preview preference roundtrip')
