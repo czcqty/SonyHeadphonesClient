@@ -1,5 +1,6 @@
 # SonyHeadphonesClient
 
+This branch contains the native KDE presentation in [gui/kde](gui/kde/README.md).
 The project is migrating to a shared Qt Core backend with native presentation
 branches. Build the standalone process with `-DMDR_BUILD_QT_FRONTEND=OFF`; see
 [backend build and protocol](backend/README.md) and the
