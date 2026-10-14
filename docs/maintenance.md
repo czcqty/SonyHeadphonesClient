@@ -25,11 +25,12 @@ Qt Quick executable directly.
 The coroutine ownership and MDR v1 packet regressions live in
 `backend/tests/BackendTests.cpp`. ViewModel capability gating and desired-state
 mapping live in `gui/tests/ViewModelTests.cpp`; QML contracts live under
-`gui/tests/qml/`.
+`tests/qml/`.
 
-With Python available, CTest also registers translation-catalog, application-
-icon, and package-metadata validators. The existing Windows Debug build passed
-all six registered tests on 2026-08-04.
+CTest also registers translation-catalog, application-icon, and package-metadata
+validators. The six-test Windows Debug result from 2026-08-04 is historical;
+the expanded backend/frontend checks are recorded in
+[backend-migration.md](backend-migration.md).
 
 The protocol and Windows changes are compile-checked by the normal Windows
 build. Real-device verification remains required for transport, reconnect,
@@ -40,3 +41,16 @@ private process host. Native adapters consume that host and the common binding
 catalog; the transitional Qt Quick application links the same business library.
 Backend-only builds use `MDR_BUILD_QT_FRONTEND=OFF`. Current checks and the
 conditions for removing Qt Quick are in [backend-migration.md](backend-migration.md).
+
+## Repository organization (2026-10-15)
+
+- Shared backend, contract, and common documentation are maintained on `main`.
+  Five native branches contain toolkit-specific presentation adapters; see the
+  [branch guide](branches.md) for build entries and synchronization rules.
+- The former `rebuild` tip, `bfba8aa`, is an ancestor of `main`. Its compact Qt
+  tray frontend is retained in history and in the transitional build; retiring
+  that branch does not remove the frontend.
+- Build outputs and local worktrees under `cmake-build*/` are ignored. They can
+  contain active branch checkouts: inspect `git worktree list` before cleaning
+  build directories, and never recursively delete an active worktree as an
+  ordinary build artifact.
