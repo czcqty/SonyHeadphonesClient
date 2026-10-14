@@ -43,6 +43,12 @@ def dynamic(text, locale):
     return text  # Device names, metadata and OS diagnostics stay verbatim.
 
 
+def connection_error(state, locale):
+    connection = state.get('connection', {})
+    code, detail = connection.get('errorCode', ''), connection.get('errorDetail', '')
+    return (dynamic(code, locale) + (': ' + str(detail) if detail else '')) if code else str(detail)
+
+
 def display(value, locale):
     if value is None: return '—'
     if isinstance(value, bool): return dynamic('Yes' if value else 'No', locale)
