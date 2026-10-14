@@ -18,11 +18,11 @@ sh gui/macos/build.sh
 ```
 
 `--panel`, `--route equalizer`, `--profile WF-1000XM5`, `--locale en`, `--live`
-are optional. The bundled catalog is located automatically. The app follows
-macOS appearance; simulation and language choices do not write user preferences.
+are optional. The bundled catalog is located automatically. The app supports system/light/dark via AppKit. Live language/theme choices
+persist using the shared backend; simulation and CLI overrides do not save.
 Use `--catalog /path/catalog.json` only when developing outside the app bundle.
 
-This is a prototype with the shared nine-page scope/limitations documented in
+This is a prototype with the shared device pages and application-settings scope/limitations documented in
 `gui/native/README.md`. Signing, notarization, bundled Qt runtime, Bluetooth
 permission handling on real hardware, keyboard/VoiceOver acceptance and display
 placement remain target-Mac acceptance work. Source and build entry are provided;
@@ -36,3 +36,21 @@ The adapter now consumes the main branch's `SoundConnectBackend` and
 catalog copies have been removed. Advanced device operations are present in
 the shared catalog; application/desktop parity still follows the migration gate.
 macOS build and runtime acceptance remain unrun: this host has no macOS SDK.
+
+## Preference and desktop follow-up
+
+- The application-settings page supports live persistent language and
+  system/light/dark, including migration of the old Qt preferences. Preview
+  changes are intentionally session-only. `--locale` / `--theme` override the
+  initial session without saving. Both device pages and dynamic choices/errors
+  update when switching English/Chinese.
+- Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls. Windows
+  uses global registration in live mode and reports conflicts with a local
+  fallback. Linux shortcuts are application-local, as in the previous Qt UI;
+  AppKit uses Control+Option menu equivalents.
+- Native dialogs confirm power-off and unpair; cancellation sends no command.
+  Separate quick/full layouts, native menu styling and Qt Quick removal gates
+  remain unchanged.
+
+These are source changes only on this host: no macOS SDK compilation, AppKit
+runtime, menu-bar placement or VoiceOver verification has been performed.
