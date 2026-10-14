@@ -1,5 +1,14 @@
 # UI implementation preferences
 
+- The agreed target is a backend-only main branch with a shared Qt Core business
+  library and private backend process. Retain Qt in the backend for now.
+- Native branches contain presentation adapters only; use `SoundConnectBackend`
+  and the shared contract, not private copies of device logic or backend hosts.
+- Keep the transitional Qt Quick frontend until native functional parity and
+  platform/device checks in `docs/backend-migration.md` pass. Do not remove it
+  based only on successful builds or simulated-device tests.
+- KDE retains its own Qt/KDE Frameworks presentation dependencies.
+
 - Prefer existing system/framework controls and official styles over custom-painted replacements.
 - The main Qt frontend uses Qt Quick Controls with the platform's official default style; preserve externally configured styles. Do not recreate Fluent, AppKit, Breeze, Adwaita, or Xfce controls by hand.
 - Build experimental WinUI presentation work on its own branch and share the existing device/backend logic.

@@ -47,6 +47,7 @@ vcpkg_installed/
 
 # Backup files
 *.bak
+__pycache__/
 
 # Local interoperability references and analysis tools
 *.apk
