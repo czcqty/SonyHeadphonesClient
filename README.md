@@ -17,6 +17,20 @@ communication in the existing C++ `libmdr` backend. Account, cloud, location,
 activity-learning, third-party service, and firmware-update flows are outside
 the application scope.
 
+## Branches and project status
+
+`main` owns the shared backend and contract. Native presentation adapters live
+on `codex/winui`, `codex/macos-swift`, `codex/kde`, `codex/gnome`, and
+`codex/xfce`. See the [branch guide](docs/branches.md) for each build entry,
+checkout instructions, and validation limits. The old `rebuild` work is already
+included in `main`; it is no longer a development branch.
+
+The Qt Quick features, tray layout, previews, and desktop packages described
+below refer to the transitional frontend. Native adapters have separate quick
+controls and full settings layouts. They remain under platform/device acceptance;
+the latest recorded checks and open gates are in
+[backend migration](docs/backend-migration.md).
+
 ## Features
 
 - Noise cancelling, Ambient Sound Control, ambient level, and Focus on Voice
@@ -135,8 +149,9 @@ requirements are recorded in
 
 - CMake 3.31 or newer
 - A C++20 compiler
-- Qt 6.5 or newer with LinguistTools, Qml, Quick, and QuickControls2
-- Qt Test and QuickTest when `BUILD_TESTING=ON`
+- Qt 6.5 or newer with Core; the default Qt Quick build also needs Gui, Widgets,
+  LinguistTools, Qml, Quick, and QuickControls2
+- Qt Test and Python 3 when `BUILD_TESTING=ON`; the frontend also needs QuickTest
 - Git and network access during the first configure so CMake can fetch `fmt`
 - Linux only: BlueZ and D-Bus development packages
 
@@ -149,6 +164,9 @@ sudo apt install libbluetooth-dev libdbus-1-dev
 ```
 
 ### Configure and compile
+
+For the standalone backend, follow the [backend build guide](backend/README.md).
+For the transitional Qt Quick application:
 
 ```bash
 cmake -S . -B build \
@@ -196,16 +214,13 @@ may therefore show security warnings.
 ### Tests
 
 ```bash
-cmake --build build --config RelWithDebInfo --target \
-  SonyHeadphonesClient_viewmodel_tests \
-  SonyHeadphonesClient_backend_tests \
-  SonyHeadphonesClient_qml_tests \
-  SonyHeadphonesClient_visual_diff
+cmake --build build --config RelWithDebInfo --parallel 2
 ctest --test-dir build -C RelWithDebInfo --output-on-failure
 ```
 
-`run_gui_tests` builds and runs the three GUI/backend regression suites.
-When Python is available, CTest also validates the translation catalog,
+`run_gui_tests` builds and runs the registered `gui-*` suites. Use the full build
+and CTest commands above to include the standalone backend and contract tests.
+CTest also validates the translation catalog,
 application icons, and package metadata. `capture_qml_baselines` captures the
 Windows route/state/locale/theme preview matrix.
 
@@ -213,7 +228,8 @@ Windows route/state/locale/theme preview matrix.
 
 | Option | Default | Purpose |
 | --- | --- | --- |
-| `BUILD_TESTING` | `ON` | Build ViewModel, backend, and QML regression tests |
+| `BUILD_TESTING` | `ON` | Build backend/contract tests and, when enabled, frontend tests |
+| `MDR_BUILD_QT_FRONTEND` | `ON` | Retain the transitional Qt Quick application; `OFF` builds the headless backend |
 | `MDR_BUILD_WITH_ASAN` | `OFF` | Enable AddressSanitizer on supported compilers |
 | `MDR_DEBUG` | `OFF` | Enable additional `libmdr` diagnostics |
 | `MDR_ENABLE_CODEGEN` | `ON` | Enable LLVM/libclang protocol regeneration |
@@ -223,15 +239,20 @@ Windows route/state/locale/theme preview matrix.
 
 | Path | Purpose |
 | --- | --- |
-| [`gui/`](gui/README.md) | Qt Quick application, ViewModels, QML, tests, and device artwork |
+| [`backend/`](backend/README.md) | Shared Qt Core service, ViewModels, preferences, process host, and backend tests |
+| [`clients/common/`](clients/common/README.md) | Native binding/localization catalog, GTK pipe client, and contract checks |
+| [`gui/`](gui/README.md) | Transitional Qt Quick presentation, QML, frontend tests, and device artwork; native adapters on their branches |
+| `tests/qml/` | QML navigation and control contract tests |
 | `packaging/` | Icon generation, package metadata, validation, and AppImage tooling |
 | `libmdr/` | MDR protocol implementation and platform Bluetooth backends |
 | `tooling/` | LLVM-based enum, traits, serialization, and validation generators |
 | `contrib/` | CMake declarations for fetched third-party dependencies |
 | `docs/` | Device support matrices, reference measurements, and maintenance notes |
 
-The application depends on `libmdr`; `libmdr` selects a Windows, Linux, or
-macOS Bluetooth transport backend at configure time.
+The shared `device_backend` library depends on `libmdr`, which selects a Windows,
+Linux, or macOS Bluetooth transport at configure time. Qt Quick links that
+library directly; native adapters launch `SoundConnectBackend` through private
+process pipes and use the shared contract.
 
 ## License and credits
 
