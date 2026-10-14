@@ -15,8 +15,10 @@ The full settings dialog and quick-control window have independent layouts.
 GTK's XEmbed status icon supports Xfce's X11 notification area and a native context
 menu. If no tray host embeds the icon, closing the window exits normally. Escape
 closes the quick window; the settings link restores the full dialog. The quick
-window remains visible on focus loss in this prototype, so combo-box interaction
-cannot accidentally dismiss it. Wayland tray/positioning remains future work.
+window dismisses on focus loss only when an XEmbed tray host is present. An open
+combo or context menu defers dismissal. Without a tray, including Wayland, an
+ordinary window remains reachable and positioning belongs to the compositor.
+A Wayland status-notifier tray integration is not provided or claimed.
 
 ```sh
 xvfb-run -a python3 gui/xfce/main.py --backend /absolute/backend --smoke-test
@@ -43,3 +45,21 @@ The adapter now consumes the main branch's `SoundConnectBackend` and
 catalog copies have been removed. Advanced device operations are present in
 the shared catalog; application/desktop parity still follows the migration gate.
 Native widget smoke test passed again against the new standalone backend.
+
+## Preference and desktop follow-up
+
+- The application-settings page supports live persistent language and
+  system/light/dark, including migration of the old Qt preferences. Preview
+  changes are intentionally session-only. `--locale` / `--theme` override the
+  initial session without saving. Both device pages and dynamic choices/errors
+  update when switching English/Chinese.
+- Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls. Windows
+  uses global registration in live mode and reports conflicts with a local
+  fallback. Linux shortcuts are application-local, as in the previous Qt UI;
+  AppKit uses Control+Option menu equivalents.
+- Native dialogs confirm power-off and unpair; cancellation sends no command.
+  Separate quick/full layouts, native menu styling and Qt Quick removal gates
+  remain unchanged.
+
+GTK 3 requests its official dark variant; rendering depends on the installed
+GTK theme. It does not synthesize a replacement for themes without variants.
