@@ -23,10 +23,13 @@ int main(int argc, char** argv)
     QCoreApplication app(argc, argv);
     app.setApplicationName("SonyHeadphonesClient");
     app.setOrganizationName("czcqty");
+    app.setOrganizationDomain("czcqty.github.io");
     QCommandLineParser parser;
     parser.addHelpOption();
     parser.addOption({"live", "Connect to real Bluetooth devices (default: isolated preview)"});
     parser.addOption({"profile", "Isolated preview device profile", "profile", "WH-1000XM6"});
+    parser.addOption({"locale", "Session language override (en, zh_CN); does not save", "locale"});
+    parser.addOption({"theme", "Session appearance override (system, light, dark); does not save", "theme"});
     parser.process(app);
     const bool live = parser.isSet("live");
     if (live && parser.isSet("profile")) { std::cerr << "--profile cannot be combined with --live\n"; return 2; }
@@ -43,6 +46,8 @@ int main(int argc, char** argv)
     DeviceService service(!live);
     if (!live && !service.applyProfile(parser.value("profile"))) return 2;
     BackendProtocol protocol(service);
+    if (parser.isSet("locale") && !protocol.overridePreference("locale", parser.value("locale"))) return 2;
+    if (parser.isSet("theme") && !protocol.overridePreference("themeMode", parser.value("theme"))) return 2;
     QTimer pending;
     pending.setSingleShot(true);
     const auto snapshot = [&] { publish(protocol.snapshot()); };
