@@ -110,6 +110,7 @@ final class App: NSObject, NSApplicationDelegate, NSTableViewDataSource, NSTable
     var updates: [() -> Void] = [], pageViews: [NSView] = []
     var window: NSWindow!, status: NSStatusItem!, popover = NSPopover(), table = NSTableView()
     let message = NSTextField(wrappingLabelWithString: "")
+    let quickMessage = NSTextField(wrappingLabelWithString: "")
     func label(_ data: Any?) -> String { let labels = object(data); return string(labels[options.locale] ?? labels["en"] ?? data) }
     func tr(_ en: String, _ zh: String) -> String { options.locale == "zh_CN" ? zh : en }
     func bind(_ control: NSControl, _ body: @escaping (Any?) -> Void) {
@@ -160,12 +161,13 @@ final class App: NSObject, NSApplicationDelegate, NSTableViewDataSource, NSTable
         let quick = NSViewController(); quick.view = stack(.vertical)
         let quickStack = quick.view as! NSStackView
         quickStack.edgeInsets = NSEdgeInsets(top: 16, left: 16, bottom: 16, right: 16)
+        quickMessage.maximumNumberOfLines = 3; quickStack.addArrangedSubview(quickMessage)
         let quickPage = makePage(object(catalog["quick"])); quickStack.addArrangedSubview(quickPage)
         quickPage.widthAnchor.constraint(equalTo: quickStack.widthAnchor, constant: -32).isActive = true
         quickPage.heightAnchor.constraint(equalToConstant: 280).isActive = true
         quickStack.addArrangedSubview(button(tr("All settings…", "全部设置…")) { [weak self] in self?.showSettings() })
         quickStack.addArrangedSubview(button(tr("Quit", "退出")) { NSApp.terminate(nil) })
-        popover.contentViewController = quick; popover.contentSize = NSSize(width: 420, height: 410); popover.behavior = .transient
+        popover.contentViewController = quick; popover.contentSize = NSSize(width: 420, height: 460); popover.behavior = .transient
         backend.changed = { [weak self] in self?.refresh() }; backend.start(options); refresh()
         window.center()
         if options.panel { togglePanel() } else { showSettings() }
@@ -183,6 +185,7 @@ final class App: NSObject, NSApplicationDelegate, NSTableViewDataSource, NSTable
     }
     func refresh() {
         message.stringValue = backend.error.isEmpty ? (options.live ? tr("Live device", "实时设备") : tr("Isolated device preview", "独立设备预览")) : backend.error
+        quickMessage.stringValue = message.stringValue
         updates.forEach { $0() }
     }
     func makePage(_ page: Object) -> NSView {
@@ -200,7 +203,7 @@ final class App: NSObject, NSApplicationDelegate, NSTableViewDataSource, NSTable
                 let slider = NSSlider(value: 0, minValue: Double(integer(field["min"])), maxValue: Double(integer(field["max"])), target: nil, action: nil)
                 slider.isContinuous = false; slider.numberOfTickMarks = integer(field["max"]) - integer(field["min"]) + 1
                 slider.allowsTickMarkValuesOnly = true; control = slider
-            } else if kind == "choice" || kind == "devices" { control = NSPopUpButton() }
+            } else if kind == "choice" || kind == "devices" { control = NSPopUpButton(frame: .zero, pullsDown: false) }
             else if kind == "button" { control = button(label(field["label"])) { [weak self] in self?.backend.send(group, string(field["method"])) }; name.stringValue = "" }
             else { control = NSTextField(wrappingLabelWithString: "—") }
             control.setAccessibilityLabel(label(field["label"]))
