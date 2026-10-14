@@ -1,0 +1,759 @@
+{
+  "version": 1,
+  "pages": [
+    {
+      "id": "home",
+      "label": {
+        "en": "Overview",
+        "zh_CN": "概览"
+      },
+      "fields": [
+        {
+          "kind": "label",
+          "label": {
+            "en": "Model",
+            "zh_CN": "型号"
+          },
+          "group": "app",
+          "key": "modelName",
+          "method": "",
+          "capability": ""
+        },
+        {
+          "kind": "label",
+          "label": {
+            "en": "Battery (%)",
+            "zh_CN": "电量 (%)"
+          },
+          "group": "playback",
+          "key": "batteryLeft",
+          "method": "",
+          "capability": ""
+        },
+        {
+          "kind": "label",
+          "label": {
+            "en": "Track",
+            "zh_CN": "曲目"
+          },
+          "group": "playback",
+          "key": "title",
+          "method": "",
+          "capability": ""
+        },
+        {
+          "kind": "label",
+          "label": {
+            "en": "Artist",
+            "zh_CN": "艺术家"
+          },
+          "group": "playback",
+          "key": "artist",
+          "method": "",
+          "capability": ""
+        },
+        {
+          "kind": "label",
+          "label": {
+            "en": "Codec",
+            "zh_CN": "编码"
+          },
+          "group": "playback",
+          "key": "codec",
+          "method": "",
+          "capability": ""
+        },
+        {
+          "kind": "slider",
+          "label": {
+            "en": "Volume",
+            "zh_CN": "音量"
+          },
+          "group": "playback",
+          "key": "volume",
+          "method": "setVolume",
+          "capability": "volumeSupported",
+          "min": 0,
+          "max": 30
+        },
+        {
+          "kind": "button",
+          "label": {
+            "en": "Play / pause",
+            "zh_CN": "播放 / 暂停"
+          },
+          "group": "playback",
+          "key": "",
+          "method": "togglePlayback",
+          "capability": "playbackSupported"
+        },
+        {
+          "kind": "button",
+          "label": {
+            "en": "Previous track",
+            "zh_CN": "上一曲"
+          },
+          "group": "playback",
+          "key": "",
+          "method": "previousTrack",
+          "capability": "playbackSupported"
+        },
+        {
+          "kind": "button",
+          "label": {
+            "en": "Next track",
+            "zh_CN": "下一曲"
+          },
+          "group": "playback",
+          "key": "",
+          "method": "nextTrack",
+          "capability": "playbackSupported"
+        }
+      ]
+    },
+    {
+      "id": "connection",
+      "label": {
+        "en": "Connection",
+        "zh_CN": "设备连接"
+      },
+      "fields": [
+        {
+          "kind": "label",
+          "label": {
+            "en": "Status",
+            "zh_CN": "状态"
+          },
+          "group": "connection",
+          "key": "state",
+          "method": "",
+          "capability": ""
+        },
+        {
+          "kind": "label",
+          "label": {
+            "en": "Device error",
+            "zh_CN": "设备错误"
+          },
+          "group": "connection",
+          "key": "errorDetail",
+          "method": "",
+          "capability": ""
+        },
+        {
+          "kind": "button",
+          "label": {
+            "en": "Refresh paired devices",
+            "zh_CN": "刷新已配对设备"
+          },
+          "group": "app",
+          "key": "",
+          "method": "refreshDevices",
+          "capability": ""
+        },
+        {
+          "kind": "devices",
+          "label": {
+            "en": "Paired devices",
+            "zh_CN": "已配对设备"
+          },
+          "group": "connection",
+          "key": "devices",
+          "method": "",
+          "capability": ""
+        },
+        {
+          "kind": "button",
+          "label": {
+            "en": "Disconnect",
+            "zh_CN": "断开连接"
+          },
+          "group": "app",
+          "key": "",
+          "method": "disconnectDevice",
+          "capability": ""
+        }
+      ]
+    },
+    {
+      "id": "sound",
+      "label": {
+        "en": "Sound",
+        "zh_CN": "声音"
+      },
+      "fields": [
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "DSEE",
+            "zh_CN": "DSEE"
+          },
+          "group": "settings",
+          "key": "dseeEnabled",
+          "method": "setDseeEnabled",
+          "capability": "dseeSupported"
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Prioritize sound quality",
+            "zh_CN": "音质优先"
+          },
+          "group": "settings",
+          "key": "soundQualityPrior",
+          "method": "setSoundQualityPrior",
+          "capability": "connectionQualitySupported"
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Background music",
+            "zh_CN": "背景音乐"
+          },
+          "group": "settings",
+          "key": "listeningModeEnabled",
+          "method": "setListeningModeEnabled",
+          "capability": "listeningModeSupported"
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Cinema mode",
+            "zh_CN": "影院模式"
+          },
+          "group": "settings",
+          "key": "cinemaModeEnabled",
+          "method": "setCinemaModeEnabled",
+          "capability": "listeningModeSupported"
+        },
+        {
+          "kind": "choice",
+          "label": {
+            "en": "Room size",
+            "zh_CN": "房间大小"
+          },
+          "group": "settings",
+          "key": "listeningRoomSize",
+          "method": "setListeningRoomSize",
+          "capability": "listeningModeSupported",
+          "options": [
+            {
+              "value": 0,
+              "label": {
+                "en": "Small",
+                "zh_CN": "小"
+              }
+            },
+            {
+              "value": 1,
+              "label": {
+                "en": "Medium",
+                "zh_CN": "中"
+              }
+            },
+            {
+              "value": 2,
+              "label": {
+                "en": "Large",
+                "zh_CN": "大"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Adaptive volume",
+            "zh_CN": "自适应音量"
+          },
+          "group": "settings",
+          "key": "adaptiveVolumeEnabled",
+          "method": "setAdaptiveVolumeEnabled",
+          "capability": "adaptiveVolumeSupported"
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Safe listening",
+            "zh_CN": "安全聆听"
+          },
+          "group": "settings",
+          "key": "safeListeningEnabled",
+          "method": "setSafeListeningEnabled",
+          "capability": "safeListeningSupported"
+        }
+      ]
+    },
+    {
+      "id": "noise",
+      "label": {
+        "en": "Noise control",
+        "zh_CN": "降噪 / 环境声"
+      },
+      "fields": [
+        {
+          "kind": "choice",
+          "label": {
+            "en": "Noise control",
+            "zh_CN": "噪声控制"
+          },
+          "group": "noiseControl",
+          "key": "mode",
+          "method": "setMode",
+          "capability": "supported",
+          "options": [
+            {
+              "value": 0,
+              "label": {
+                "en": "Off",
+                "zh_CN": "关闭"
+              }
+            },
+            {
+              "value": 1,
+              "label": {
+                "en": "Noise cancelling",
+                "zh_CN": "降噪"
+              }
+            },
+            {
+              "value": 2,
+              "label": {
+                "en": "Ambient sound",
+                "zh_CN": "环境声"
+              },
+              "capability": "ambientSupported"
+            }
+          ]
+        },
+        {
+          "kind": "slider",
+          "label": {
+            "en": "Ambient level",
+            "zh_CN": "环境声等级"
+          },
+          "group": "noiseControl",
+          "key": "ambientLevel",
+          "method": "setAmbientLevel",
+          "capability": "ambientSupported",
+          "min": 1,
+          "max": 20
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Focus on voice",
+            "zh_CN": "聚焦人声"
+          },
+          "group": "noiseControl",
+          "key": "focusOnVoice",
+          "method": "setFocusOnVoice",
+          "capability": "ambientSupported"
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Adaptive noise control",
+            "zh_CN": "自适应降噪"
+          },
+          "group": "noiseControl",
+          "key": "adaptiveEnabled",
+          "method": "setAdaptiveEnabled",
+          "capability": "adaptiveSupported"
+        }
+      ]
+    },
+    {
+      "id": "equalizer",
+      "label": {
+        "en": "Equalizer",
+        "zh_CN": "均衡器"
+      },
+      "fields": [
+        {
+          "kind": "choice",
+          "label": {
+            "en": "Preset",
+            "zh_CN": "预设"
+          },
+          "group": "equalizer",
+          "key": "presetId",
+          "method": "selectPreset",
+          "capability": "supported",
+          "source": "presetOptions",
+          "valueKey": "id"
+        },
+        {
+          "kind": "slider",
+          "label": {
+            "en": "400 Hz",
+            "zh_CN": "400 Hz"
+          },
+          "group": "equalizer",
+          "key": "bands",
+          "method": "setBand",
+          "capability": "supported",
+          "min": -10,
+          "max": 10,
+          "index": 0
+        },
+        {
+          "kind": "slider",
+          "label": {
+            "en": "1 kHz",
+            "zh_CN": "1 kHz"
+          },
+          "group": "equalizer",
+          "key": "bands",
+          "method": "setBand",
+          "capability": "supported",
+          "min": -10,
+          "max": 10,
+          "index": 1
+        },
+        {
+          "kind": "slider",
+          "label": {
+            "en": "2.5 kHz",
+            "zh_CN": "2.5 kHz"
+          },
+          "group": "equalizer",
+          "key": "bands",
+          "method": "setBand",
+          "capability": "supported",
+          "min": -10,
+          "max": 10,
+          "index": 2
+        },
+        {
+          "kind": "slider",
+          "label": {
+            "en": "6.3 kHz",
+            "zh_CN": "6.3 kHz"
+          },
+          "group": "equalizer",
+          "key": "bands",
+          "method": "setBand",
+          "capability": "supported",
+          "min": -10,
+          "max": 10,
+          "index": 3
+        },
+        {
+          "kind": "slider",
+          "label": {
+            "en": "16 kHz",
+            "zh_CN": "16 kHz"
+          },
+          "group": "equalizer",
+          "key": "bands",
+          "method": "setBand",
+          "capability": "supported",
+          "min": -10,
+          "max": 10,
+          "index": 4
+        },
+        {
+          "kind": "slider",
+          "label": {
+            "en": "Clear Bass",
+            "zh_CN": "清晰低音"
+          },
+          "group": "equalizer",
+          "key": "clearBass",
+          "method": "setClearBass",
+          "capability": "supported",
+          "min": -10,
+          "max": 10
+        }
+      ]
+    },
+    {
+      "id": "behavior",
+      "label": {
+        "en": "Headphone behavior",
+        "zh_CN": "耳机行为"
+      },
+      "fields": [
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Speak to chat",
+            "zh_CN": "智能免摘"
+          },
+          "group": "settings",
+          "key": "speakToChatEnabled",
+          "method": "setSpeakToChatEnabled",
+          "capability": "speakToChatSupported"
+        },
+        {
+          "kind": "choice",
+          "label": {
+            "en": "Speech sensitivity",
+            "zh_CN": "语音检测灵敏度"
+          },
+          "group": "settings",
+          "key": "speakToChatSensitivity",
+          "method": "setSpeakToChatSensitivity",
+          "capability": "speakToChatSupported",
+          "options": [
+            {
+              "value": 0,
+              "label": {
+                "en": "Automatic",
+                "zh_CN": "自动"
+              }
+            },
+            {
+              "value": 1,
+              "label": {
+                "en": "High",
+                "zh_CN": "高"
+              }
+            },
+            {
+              "value": 2,
+              "label": {
+                "en": "Low",
+                "zh_CN": "低"
+              }
+            }
+          ]
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Auto pause",
+            "zh_CN": "自动暂停"
+          },
+          "group": "settings",
+          "key": "autoPauseEnabled",
+          "method": "setAutoPauseEnabled",
+          "capability": "autoPauseSupported"
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Auto power off",
+            "zh_CN": "自动关机"
+          },
+          "group": "settings",
+          "key": "autoPowerOffEnabled",
+          "method": "setAutoPowerOffEnabled",
+          "capability": "autoPowerOffSupported"
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Head gestures",
+            "zh_CN": "头部手势"
+          },
+          "group": "settings",
+          "key": "headGestureEnabled",
+          "method": "setHeadGestureEnabled",
+          "capability": "headGestureSupported"
+        },
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Capture voice",
+            "zh_CN": "捕捉语音"
+          },
+          "group": "settings",
+          "key": "captureVoiceEnabled",
+          "method": "setCaptureVoiceEnabled",
+          "capability": "captureVoiceSupported"
+        }
+      ]
+    },
+    {
+      "id": "touch",
+      "label": {
+        "en": "Touch controls",
+        "zh_CN": "触控"
+      },
+      "fields": [
+        {
+          "kind": "choice",
+          "label": {
+            "en": "Left",
+            "zh_CN": "左侧"
+          },
+          "group": "settings",
+          "key": "touchLeft",
+          "method": "setTouchLeft",
+          "capability": "touchSupported",
+          "source": "touchOptions",
+          "valueKey": "value"
+        },
+        {
+          "kind": "choice",
+          "label": {
+            "en": "Right",
+            "zh_CN": "右侧"
+          },
+          "group": "settings",
+          "key": "touchRight",
+          "method": "setTouchRight",
+          "capability": "touchSupported",
+          "source": "touchOptions",
+          "valueKey": "value"
+        }
+      ]
+    },
+    {
+      "id": "voice",
+      "label": {
+        "en": "Voice guidance",
+        "zh_CN": "语音提示"
+      },
+      "fields": [
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Voice guidance",
+            "zh_CN": "语音提示"
+          },
+          "group": "settings",
+          "key": "voiceGuidanceEnabled",
+          "method": "setVoiceGuidanceEnabled",
+          "capability": "voiceGuidanceSupported"
+        },
+        {
+          "kind": "slider",
+          "label": {
+            "en": "Voice guidance volume",
+            "zh_CN": "语音提示音量"
+          },
+          "group": "settings",
+          "key": "voiceGuidanceVolume",
+          "method": "setVoiceGuidanceVolume",
+          "capability": "voiceGuidanceVolumeSupported",
+          "min": -2,
+          "max": 2
+        }
+      ]
+    },
+    {
+      "id": "devices",
+      "label": {
+        "en": "Device management",
+        "zh_CN": "设备管理"
+      },
+      "fields": [
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Pairing mode",
+            "zh_CN": "配对模式"
+          },
+          "group": "deviceManager",
+          "key": "pairingMode",
+          "method": "setPairingMode",
+          "capability": "supported"
+        },
+        {
+          "kind": "label",
+          "label": {
+            "en": "Connected devices",
+            "zh_CN": "连接设备"
+          },
+          "group": "deviceManager",
+          "key": "devices",
+          "method": "",
+          "capability": ""
+        }
+      ]
+    }
+  ],
+  "quick": {
+    "id": "quick",
+    "label": {
+      "en": "Quick controls",
+      "zh_CN": "快捷控制"
+    },
+    "fields": [
+      {
+        "kind": "label",
+        "label": {
+          "en": "Model",
+          "zh_CN": "型号"
+        },
+        "group": "app",
+        "key": "modelName",
+        "method": "",
+        "capability": ""
+      },
+      {
+        "kind": "label",
+        "label": {
+          "en": "Battery (%)",
+          "zh_CN": "电量 (%)"
+        },
+        "group": "playback",
+        "key": "batteryLeft",
+        "method": "",
+        "capability": ""
+      },
+      {
+        "kind": "slider",
+        "label": {
+          "en": "Volume",
+          "zh_CN": "音量"
+        },
+        "group": "playback",
+        "key": "volume",
+        "method": "setVolume",
+        "capability": "volumeSupported",
+        "min": 0,
+        "max": 30
+      },
+      {
+        "kind": "choice",
+        "label": {
+          "en": "Noise control",
+          "zh_CN": "噪声控制"
+        },
+        "group": "noiseControl",
+        "key": "mode",
+        "method": "setMode",
+        "capability": "supported",
+        "options": [
+          {
+            "value": 0,
+            "label": {
+              "en": "Off",
+              "zh_CN": "关闭"
+            }
+          },
+          {
+            "value": 1,
+            "label": {
+              "en": "Noise cancelling",
+              "zh_CN": "降噪"
+            }
+          },
+          {
+            "value": 2,
+            "label": {
+              "en": "Ambient sound",
+              "zh_CN": "环境声"
+            },
+            "capability": "ambientSupported"
+          }
+        ]
+      },
+      {
+        "kind": "button",
+        "label": {
+          "en": "Play / pause",
+          "zh_CN": "播放 / 暂停"
+        },
+        "group": "playback",
+        "key": "",
+        "method": "togglePlayback",
+        "capability": "playbackSupported"
+      }
+    ]
+  }
+}
