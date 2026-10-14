@@ -17,7 +17,7 @@ Build the backend first as documented in [../native/README.md](../native/README.
 GNOME does not provide a default app tray: quick controls use their own small
 native window, reachable from the settings header or `--panel`. No Shell extension
 is required. Escape closes quick controls, and All settings opens the full window.
-Closing the main window quits the prototype and its backend. Settings are session-only.
+Closing the main window quits the prototype and its backend. Live preferences persist through the shared backend; preview preferences remain session-only.
 
 Optional isolated smoke test (never combine with `--live`):
 
@@ -44,3 +44,18 @@ The adapter now consumes the main branch's `SoundConnectBackend` and
 catalog copies have been removed. Advanced device operations are present in
 the shared catalog; application/desktop parity still follows the migration gate.
 Native widget smoke test passed again against the new standalone backend.
+
+## Preference and desktop follow-up
+
+- The application-settings page supports live persistent language and
+  system/light/dark, including migration of the old Qt preferences. Preview
+  changes are intentionally session-only. `--locale` / `--theme` override the
+  initial session without saving. Both device pages and dynamic choices/errors
+  update when switching English/Chinese.
+- Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls. Windows
+  uses global registration in live mode and reports conflicts with a local
+  fallback. Linux shortcuts are application-local, as in the previous Qt UI;
+  AppKit uses Control+Option menu equivalents.
+- Native dialogs confirm power-off and unpair; cancellation sends no command.
+  Separate quick/full layouts, native menu styling and Qt Quick removal gates
+  remain unchanged.
