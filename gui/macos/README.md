@@ -44,10 +44,8 @@ macOS build and runtime acceptance remain unrun: this host has no macOS SDK.
   changes are intentionally session-only. `--locale` / `--theme` override the
   initial session without saving. Both device pages and dynamic choices/errors
   update when switching English/Chinese.
-- Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls. Windows
-  uses global registration in live mode and reports conflicts with a local
-  fallback. Linux shortcuts are application-local, as in the previous Qt UI;
-  AppKit uses Control+Option menu equivalents.
+- Control+Option+P / N / M invoke play/pause, next track and quick controls
+  through AppKit menu equivalents within the application.
 - Native dialogs confirm power-off and unpair; cancellation sends no command.
   Separate quick/full layouts, native menu styling and Qt Quick removal gates
   remain unchanged.
