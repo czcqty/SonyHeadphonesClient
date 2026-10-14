@@ -718,5 +718,145 @@
   "Backend error: %1": {
     "en": "Backend error: %1",
     "zh_CN": "后台错误：%1"
+  },
+  "flat": {
+    "en": "Flat",
+    "zh_CN": "平坦"
+  },
+  "rock": {
+    "en": "Rock",
+    "zh_CN": "摇滚"
+  },
+  "pop": {
+    "en": "Pop",
+    "zh_CN": "流行"
+  },
+  "jazz": {
+    "en": "Jazz",
+    "zh_CN": "爵士"
+  },
+  "dance": {
+    "en": "Dance",
+    "zh_CN": "舞曲"
+  },
+  "edm": {
+    "en": "EDM",
+    "zh_CN": "电子舞曲"
+  },
+  "r-and-b": {
+    "en": "R&B / Hip-Hop",
+    "zh_CN": "节奏蓝调 / 嘻哈"
+  },
+  "acoustic": {
+    "en": "Acoustic",
+    "zh_CN": "原声"
+  },
+  "bright": {
+    "en": "Bright",
+    "zh_CN": "明亮"
+  },
+  "excited": {
+    "en": "Excited",
+    "zh_CN": "激昂"
+  },
+  "mellow": {
+    "en": "Mellow",
+    "zh_CN": "柔和"
+  },
+  "relaxed": {
+    "en": "Relaxed",
+    "zh_CN": "舒缓"
+  },
+  "vocal": {
+    "en": "Vocal",
+    "zh_CN": "人声"
+  },
+  "treble": {
+    "en": "Treble Boost",
+    "zh_CN": "高音增强"
+  },
+  "bass": {
+    "en": "Bass Boost",
+    "zh_CN": "低音增强"
+  },
+  "speech": {
+    "en": "Speech",
+    "zh_CN": "语音"
+  },
+  "gaming": {
+    "en": "Gaming",
+    "zh_CN": "游戏"
+  },
+  "heavy": {
+    "en": "Heavy",
+    "zh_CN": "重低音"
+  },
+  "clear": {
+    "en": "Clear",
+    "zh_CN": "清晰"
+  },
+  "hard": {
+    "en": "Hard",
+    "zh_CN": "强劲"
+  },
+  "soft": {
+    "en": "Soft",
+    "zh_CN": "轻柔"
+  },
+  "user-1": {
+    "en": "User 1",
+    "zh_CN": "用户 1"
+  },
+  "user-2": {
+    "en": "User 2",
+    "zh_CN": "用户 2"
+  },
+  "user-3": {
+    "en": "User 3",
+    "zh_CN": "用户 3"
+  },
+  "user-4": {
+    "en": "User 4",
+    "zh_CN": "用户 4"
+  },
+  "user-5": {
+    "en": "User 5",
+    "zh_CN": "用户 5"
+  },
+  "custom": {
+    "en": "Custom",
+    "zh_CN": "自定义"
+  },
+  "bluetooth-backend-unavailable": {
+    "en": "No Bluetooth backend available",
+    "zh_CN": "没有可用的蓝牙后端"
+  },
+  "bluetooth-scan-failed": {
+    "en": "Bluetooth scan failed",
+    "zh_CN": "蓝牙扫描失败"
+  },
+  "connection-timeout": {
+    "en": "Connection timed out",
+    "zh_CN": "连接超时"
+  },
+  "connection-failed": {
+    "en": "Connection failed",
+    "zh_CN": "连接失败"
+  },
+  "initialization-failed": {
+    "en": "Unable to initialize the headphones",
+    "zh_CN": "无法初始化耳机"
+  },
+  "initialization-timeout": {
+    "en": "Headphone initialization timed out",
+    "zh_CN": "耳机初始化超时"
+  },
+  "protocol-error": {
+    "en": "Protocol error",
+    "zh_CN": "协议错误"
+  },
+  "unexpected-error": {
+    "en": "Unexpected error",
+    "zh_CN": "意外错误"
   }
 }
