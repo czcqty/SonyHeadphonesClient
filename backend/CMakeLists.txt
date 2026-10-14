@@ -73,5 +73,7 @@ if(BUILD_TESTING)
         "${CMAKE_SOURCE_DIR}/clients/common/test_backend.py" "$<TARGET_FILE:SoundConnectBackend>")
     add_test(NAME backend-native-catalog COMMAND ${Python3_EXECUTABLE}
         "${CMAKE_SOURCE_DIR}/clients/common/test_catalog.py" "$<TARGET_FILE:SoundConnectBackend>")
+    add_test(NAME backend-native-localization COMMAND ${Python3_EXECUTABLE}
+        "${CMAKE_SOURCE_DIR}/clients/common/test_localization.py")
     set_tests_properties(backend-process-contract PROPERTIES TIMEOUT 90)
 endif()
