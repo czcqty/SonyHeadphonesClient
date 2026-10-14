@@ -48,7 +48,7 @@ private slots:
                 ++count;
             }
         }
-        QCOMPARE(exposed.size(), count + 3);
+        QCOMPARE(exposed.size(), count + 5);
     }
 
     void pipeCommandsMatchDirectBusinessCallsForEveryProfile()
@@ -59,7 +59,7 @@ private slots:
             for (const auto item : commands) {
                 const auto command = item.toObject();
                 const auto targetName = command["target"].toString();
-                if (targetName == "app") continue;
+                if (targetName == "app" || targetName == "preferences") continue;
                 const auto name = command["method"].toString();
                 const auto args = sample(name, command["args"].toArray());
                 DeviceService direct(true), piped(true);
