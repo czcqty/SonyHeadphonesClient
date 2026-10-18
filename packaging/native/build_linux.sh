@@ -22,6 +22,9 @@ ctest --test-dir "$build/backend" --output-on-failure --output-junit "$build/rep
 if [[ "$desktop" == kde ]]; then
   cmake -S "$root/gui/kde" -B "$build/kde" -DCMAKE_BUILD_TYPE=Release
   cmake --build "$build/kde" --parallel "${CMAKE_BUILD_PARALLEL_LEVEL:-2}"
+  ctest --test-dir "$build/kde" --output-on-failure --output-junit "$build/reports/kde-transport.xml"
 fi
+package_args=()
+if [[ "$distro" == ubuntu24.04 ]]; then package_args+=(--qt-root "$SOUNDCONNECT_QT_ROOT"); fi
 python3 "$root/packaging/native/package_linux.py" --desktop "$desktop" --distro "$distro" \
-  --build "$build" --output "$build/packages" ${SOUNDCONNECT_QT_ROOT:+--qt-root "$SOUNDCONNECT_QT_ROOT"}
+  --build "$build" --output "$build/packages" "${package_args[@]}"

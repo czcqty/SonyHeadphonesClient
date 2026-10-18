@@ -12,7 +12,7 @@ case "$ID:$VERSION_ID" in
     apt-get install -y qtbase5-dev libkf5widgetsaddons-dev libkf5notifications-dev libkf5configwidgets-dev libxcb-cursor0
     python3 -m venv /opt/soundconnect-tools
     /opt/soundconnect-tools/bin/pip install 'cmake==3.31.6' 'aqtinstall==3.3.0'
-    /opt/soundconnect-tools/bin/aqt install-qt linux desktop 6.8.3 linux_gcc_64 --archives qtbase -O /opt/qt
+    /opt/soundconnect-tools/bin/aqt install-qt linux desktop 6.8.3 linux_gcc_64 --archives qtbase icu -O /opt/qt
     ;;
   debian:13)
     apt-get install -y cmake qt6-base-dev libkf6widgetsaddons-dev libkf6statusnotifieritem-dev libkf6colorscheme-dev
