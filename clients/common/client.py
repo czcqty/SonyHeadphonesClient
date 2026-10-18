@@ -2,8 +2,7 @@
 import argparse
 import json
 from pathlib import Path
-import subprocess
-import threading
+from process_client import ProcessClient
 
 
 CATALOG = json.loads(Path(__file__).with_name('catalog.json').read_text(encoding='utf-8'))
@@ -11,7 +10,7 @@ CATALOG = json.loads(Path(__file__).with_name('catalog.json').read_text(encoding
 
 def options():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--backend', required=True, type=Path)
+    parser.add_argument('--backend', type=Path, default=Path('/usr/libexec/soundconnect/SoundConnectBackend'))
     parser.add_argument('--profile', default='WH-1000XM6')
     parser.add_argument('--live', action='store_true')
     parser.add_argument('--locale', choices=['en', 'zh_CN'])
@@ -66,7 +65,11 @@ def value(state, field):
 
 
 def enabled(state, field):
-    if field['kind'] == 'label' or field['group'] in ('app', 'preferences'):
+    if field['kind'] == 'label':
+        return True
+    if not state:
+        return False
+    if field['group'] in ('app', 'preferences'):
         return True
     cap = field.get('capability')
     return (state.get('connection', {}).get('state') == 'connected'
@@ -90,75 +93,10 @@ def command(field, new_value=None):
     return dict(target=field['group'], method=field['method'], args=args)
 
 
-class Client:
+class Client(ProcessClient):
     def __init__(self, args, dispatch, changed):
-        self.state, self.error, self.sent = {}, '', 0
-        self.closed = False
-        self.dispatch, self.changed = dispatch, changed
-        self.process = None
-        try:
-            argv = [str(args.backend.resolve())]
-            argv += ['--live'] if args.live else ['--profile', args.profile]
-            if args.locale: argv += ['--locale', args.locale]
-            if args.theme: argv += ['--theme', args.theme]
-            self.process = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                                            stderr=subprocess.PIPE, text=True, encoding='utf-8', bufsize=1)
-            threading.Thread(target=self._read, daemon=True).start()
-            threading.Thread(target=self._diagnostics, daemon=True).start()
-        except OSError as error:
-            self.error = str(error)
-            dispatch(changed)
-
-    def _diagnostics(self):
-        for line in self.process.stderr:
-            # Bound memory even for a noisy backend. Device diagnostics stay local.
-            self.last_diagnostic = line[-4096:]
-
-    def _read(self):
-        for line in self.process.stdout:
-            try:
-                event = json.loads(line)
-                self.dispatch(lambda event=event: self._receive(event))
-            except (ValueError, TypeError):
-                pass
-        self.dispatch(self._stopped)
-
-    def _receive(self, event):
-        if self.closed:
-            return
-        if event.get('type') == 'state':
-            if event.get('version') != 1:
-                self.error, self.state = 'unsupported-version', {}
-            else:
-                self.state = event
-        elif event.get('type') == 'result':
-            self.error = '' if event.get('ok') else event.get('errorCode', 'Command rejected')
-        self.changed()
-
-    def _stopped(self):
-        if not self.closed:
-            self.error, self.state = 'Backend stopped', {}
-            self.changed()
-
-    def send(self, request):
-        if self.closed or not self.process:
-            return
-        try:
-            request = dict(request, version=1, id=str(self.sent + 1))
-            self.process.stdin.write(json.dumps(request) + '\n')
-            self.process.stdin.flush()
-            self.sent += 1
-        except (OSError, ValueError) as error:
-            self.error = str(error)
-            self.changed()
-
-    def close(self):
-        self.closed = True
-        if not self.process:
-            return
-        try:
-            self.process.stdin.close()
-            self.process.wait(timeout=2)
-        except (OSError, ValueError, subprocess.TimeoutExpired):
-            self.process.kill()
-            self.process.wait()
+        argv = [str(args.backend.resolve())]
+        argv += ['--live'] if args.live else ['--profile', args.profile]
+        if args.locale: argv += ['--locale', args.locale]
+        if args.theme: argv += ['--theme', args.theme]
+        super().__init__(argv, dispatch, changed)
