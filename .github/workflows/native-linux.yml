@@ -1,0 +1,42 @@
+name: Package native Linux adapter
+on:
+  workflow_dispatch:
+    inputs:
+      desktop:
+        description: Adapter present on this branch
+        type: choice
+        options: [kde, gnome, xfce]
+        required: true
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ['ubuntu:24.04', 'debian:13']
+    container: ${{ matrix.image }}
+    steps:
+      - name: Bootstrap checkout tools
+        run: apt-get update && apt-get install -y git ca-certificates
+      - uses: actions/checkout@v6
+      - name: Install build and desktop dependencies
+        run: bash packaging/native/linux_dependencies.sh
+      - name: Build, test and package
+        shell: bash
+        run: |
+          export PATH=/opt/soundconnect-tools/bin:$PATH
+          if [ -d /opt/qt/6.8.3/gcc_64 ]; then export SOUNDCONNECT_QT_ROOT=/opt/qt/6.8.3/gcc_64; fi
+          bash packaging/native/build_linux.sh '${{ inputs.desktop }}'
+      - name: Verify installed application
+        run: bash packaging/native/verify_linux.sh build/native-linux/packages '${{ inputs.desktop }}'
+      - name: Upload packages and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ inputs.desktop }}-${{ strategy.job-index }}
+          path: |
+            build/native-linux/packages/
+            build/native-linux/reports/
+          if-no-files-found: error
