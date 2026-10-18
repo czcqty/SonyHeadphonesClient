@@ -1937,6 +1937,34 @@
     "unexpected-error": {
       "en": "Unexpected error",
       "zh_CN": "意外错误"
+    },
+    "backend-starting": {
+      "en": "Starting backend…",
+      "zh_CN": "正在启动后端…"
+    },
+    "backend-start-failed": {
+      "en": "Could not start the backend",
+      "zh_CN": "无法启动后端"
+    },
+    "backend-start-timeout": {
+      "en": "The backend did not respond within 10 seconds",
+      "zh_CN": "后端在 10 秒内未响应"
+    },
+    "backend-stopped": {
+      "en": "The backend stopped",
+      "zh_CN": "后端已停止"
+    },
+    "backend-protocol-error": {
+      "en": "The backend sent an invalid response",
+      "zh_CN": "后端返回了无效响应"
+    },
+    "backend-write-failed": {
+      "en": "Could not send the command to the backend",
+      "zh_CN": "无法向后端发送命令"
+    },
+    "backend-retry": {
+      "en": "Retry startup",
+      "zh_CN": "重试启动"
     }
   },
   "quick": {
