@@ -45,7 +45,7 @@ def main():
         raise SystemExit('This package recipe targets amd64')
     version = re.search(r'\bVERSION\s+(\d+\.\d+\.\d+)', (ROOT / 'CMakeLists.txt').read_text())[1]
     version += '-1~' + args.distro
-    revision = run('git', '-C', ROOT, 'rev-parse', 'HEAD')
+    revision = os.environ.get('SOUNDCONNECT_SOURCE_REVISION') or run('git', '-C', ROOT, 'rev-parse', 'HEAD')
     with tempfile.TemporaryDirectory(prefix='soundconnect-deb-') as temporary:
         temp = Path(temporary)
         packages = {name: temp / name for name in ('soundconnect-common', 'soundconnect-backend', 'soundconnect-' + args.desktop)}
