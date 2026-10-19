@@ -65,7 +65,16 @@ jobs:
         run: >
           ctest --test-dir build
           -C ${{ env.BUILD_TYPE }}
-          --output-on-failure
+          --output-on-failure --output-junit test-results.xml
+
+      - name: Keep test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tests-${{ matrix.os }}-frontend-${{ matrix.frontend }}
+          path: |
+            build/test-results.xml
+            build/Testing/Temporary/LastTest.log
 
       - name: Package standalone backend
         if: matrix.frontend == 'OFF'
