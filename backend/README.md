@@ -90,6 +90,12 @@ See [migration status](../docs/backend-migration.md). Qt Quick removal is
 conditional on native feature parity and platform/hardware validation; a
 successful simulation or compile alone does not satisfy that condition.
 
+Native installer recipes and installed child lookup/recovery behavior are in
+[the native packaging guide](../packaging/native/README.md).
+`MDR_DEPLOY_BACKEND_RUNTIME` defaults to `ON`. Set it to `OFF` when a distro
+package supplies system dependencies, or a native recipe stages a private
+runtime itself. This does not change the backend's Qt Core requirement.
+
 ## Application preferences
 
 `preferences.setLocale("en" | "zh_CN")` and
