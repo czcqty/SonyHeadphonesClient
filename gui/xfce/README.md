@@ -61,3 +61,17 @@ Native widget smoke test passed again against the new standalone backend.
 
 GTK 3 requests its official dark variant; rendering depends on the installed
 GTK theme. It does not synthesize a replacement for themes without variants.
+
+## Installed packages and recovery
+
+Ubuntu 24.04 and Debian 13 DEB recipes are documented in the
+[shared native packaging guide](../../packaging/native/README.md). Installed
+launchers find the shared backend and catalog without a source checkout or
+`--backend`; the explicit override remains available. Menu entries pass `--live`,
+while a command without that flag remains an isolated preview.
+
+Commands remain disabled until a valid initial snapshot arrives. Startup has a
+ten-second timeout; backend failure clears old state and exposes Retry startup
+in full settings. Retry obtains fresh state without replaying commands or
+reconnecting headphones. Normal exit drains stdin/EOF, allowing two seconds
+before terminating the owned child. Desktop/headphone migration gates remain.

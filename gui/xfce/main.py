@@ -30,6 +30,9 @@ class App:
         self.window.connect('response', lambda _, response: self.show_quick() if response == 1 else self.close_main())
         area = self.window.get_content_area(); area.set_spacing(10); area.set_border_width(12)
         self.status = Gtk.Label(xalign=0, wrap=True); area.pack_start(self.status, False, False, 0)
+        self.retry = Gtk.Button(label=dynamic('backend-retry', self.locale))
+        self.retry.connect('clicked', lambda *_: self.client.restart())
+        area.pack_start(self.retry, False, False, 0)
         self.notebook = Gtk.Notebook(); self.notebook.set_tab_pos(Gtk.PositionType.LEFT)
         area.pack_start(self.notebook, True, True, 0)
         for page in CATALOG['pages']:
@@ -87,7 +90,7 @@ class App:
         GLib.idle_add(run)
 
     def show_settings(self, *_):
-        self.window.show_all(); self.window.present(); self.quick.hide()
+        self.window.show_all(); self.window.present(); self.quick.hide(); self.refresh()
 
     def show_quick(self, *_):
         self.quick.show_all(); self.position_quick(); self.quick.present()
@@ -202,9 +205,17 @@ class App:
         if locale != self.locale:
             self.locale = locale
             self.retranslate()
-        self.apply_theme(prefs.get('themeMode', 'system'))
+        self.apply_theme(prefs.get('themeMode', self.theme or 'system'))
         message = (dynamic('Backend error: %1', self.locale).replace('%1', dynamic(self.client.error, self.locale)) if self.client.error else '') or connection_error(state, self.locale) or self.tr('Live device' if self.args.live else 'Isolated device preview', '实时设备' if self.args.live else '独立设备预览')
+        if self.client.diagnostic and not self.client.ready:
+            message += '\n' + self.client.diagnostic
         self.status.set_text(message); self.quick_status.set_text(message)
+        self.retry.set_label(dynamic('backend-retry', self.locale))
+        self.retry.set_visible(not self.client.ready)
+        self.retry.set_sensitive(self.client.error != 'backend-starting')
+        for item, en, _ in self.menu_labels:
+            if en in ('Play / Pause', 'Next track', 'Disconnect'):
+                item.set_sensitive(self.client.ready)
         for b in self.bindings:
             field, widget = b['field'], b['widget']; current = value(state, field)
             if field['key'] == 'errorDetail': current = connection_error(state, self.locale)
@@ -358,6 +369,24 @@ class App:
         except Exception as error:
             self.exit_code = 1
             print('Native preference smoke failed:', repr(error), file=sys.stderr)
+        if self.exit_code:
+            self.quit()
+        else:
+            self.client.restart()
+            assert not self.client.ready and self.retry.get_visible()
+            assert not enabled(self.client.state, dict(kind='button', group='app'))
+            GLib.timeout_add_seconds(2, self.smoke_restarted)
+        return GLib.SOURCE_REMOVE
+
+    def smoke_restarted(self):
+        try:
+            assert self.client.ready, self.client.error
+            assert self.client.sent == 5, 'Recovery replayed a command'
+            assert not self.retry.get_visible()
+            print('PASS: native retry, disabled offline commands, fresh snapshot and no replay', flush=True)
+        except Exception as error:
+            self.exit_code = 1
+            print('Native recovery smoke failed:', repr(error), file=sys.stderr)
         self.quit()
         return GLib.SOURCE_REMOVE
 
