@@ -55,7 +55,7 @@ public partial class App : Application
         Backend.Start(Option("--backend", Path.Combine(AppContext.BaseDirectory, "backend", "SoundConnectBackend.exe")),
             Live, Option("--profile", "WH-1000XM6"), Option("--locale", ""), Option("--theme", ""));
         if (arguments.Contains("--panel")) TogglePanel();
-        if (arguments.Contains("--smoke-test"))
+        if (arguments.Contains("--smoke-test") || arguments.Contains("--parity-test"))
         {
             if (Live) throw new InvalidOperationException("Smoke testing cannot use --live");
             var smokeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(3) };
@@ -63,12 +63,13 @@ public partial class App : Application
                 smokeTimer.Stop();
                 try {
                     await main.SmokeTestAsync();
+                    if (arguments.Contains("--parity-test")) await main.ParityTestAsync();
                     File.WriteAllText(Option("--smoke-report", Path.Combine(AppContext.BaseDirectory, "smoke.json")),
-                        System.Text.Json.JsonSerializer.Serialize(new { ok = true, sentCommands = Backend.SentCommandCount }));
+                        System.Text.Json.JsonSerializer.Serialize(new { ok = true, sentCommands = Backend.SentCommandCount, parity = main.ParityResults }));
                 } catch (Exception error) {
                     Environment.ExitCode = 1;
                     File.WriteAllText(Option("--smoke-report", Path.Combine(AppContext.BaseDirectory, "smoke.json")),
-                        System.Text.Json.JsonSerializer.Serialize(new { ok = false, error = error.ToString() }));
+                        System.Text.Json.JsonSerializer.Serialize(new { ok = false, error = error.ToString(), parity = main.ParityResults }));
                 }
                 Quit();
             };
@@ -112,10 +113,11 @@ public partial class App : Application
         }
     }
     internal void ShowMain() { main?.Activate(); }
+    internal MainWindow QuickWindow => panel ??= new MainWindow(true);
     internal void TogglePanel()
     {
         if (!HasTray) { ShowMain(); return; }
-        panel ??= new MainWindow(true);
+        panel = QuickWindow;
         if (panel.AppWindow.IsVisible) panel.AppWindow.Hide();
         else { panel.PositionAtTray(); panel.Activate(); }
     }
@@ -132,17 +134,17 @@ public partial class App : Application
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add(T("退出", "Quit"), null, (_, _) => Quit());
         tray.ContextMenuStrip = menu; old?.Dispose();
-        foreach (Forms.ToolStripItem item in menu.Items) if (item.Name == "device") item.Enabled = Backend.Ready;
+        foreach (Forms.ToolStripItem item in menu.Items) if (item.Name == "device") item.Enabled = Backend.Connected;
     }
     internal void InvokeShortcut(int id)
     {
         if (id == 3) TogglePanel();
-        else Backend.Send("playback", id == 1 ? "togglePlayback" : "nextTrack");
+        else if (Backend.Connected && Backend.Flag("playback", "playbackSupported")) Backend.Send("playback", id == 1 ? "togglePlayback" : "nextTrack");
     }
     private void ApplyPreferences()
     {
         if (tray?.ContextMenuStrip is not null)
-            foreach (Forms.ToolStripItem item in tray.ContextMenuStrip.Items) if (item.Name == "device") item.Enabled = Backend.Ready;
+            foreach (Forms.ToolStripItem item in tray.ContextMenuStrip.Items) if (item.Name == "device") item.Enabled = Backend.Connected;
         var prefs = Backend.State["preferences"];
         if (prefs is null) return;
         bool chinese = prefs["locale"]?.ToString() == "zh_CN";

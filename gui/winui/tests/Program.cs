@@ -27,6 +27,10 @@ if (args.Length > 0 && args[0] == "--fixture") {
         var request = JsonNode.Parse(line)!;
         state["app"]!["writes"] = ++writes;
         state["app"]!["lastId"] = request["id"]!.ToString();
+        Console.WriteLine(new JsonObject { ["type"] = "result", ["version"] = 1, ["id"] = request["id"]!.ToString(),
+            ["ok"] = mode != "reject", ["errorCode"] = mode == "reject" ? "invalid-args" : "" }.ToJsonString());
+        Console.Out.Flush();
+        if (mode == "delayed") await Task.Delay(200);
         Publish();
     }
     return;
@@ -75,6 +79,37 @@ using (var client = Make("crash")) {
     await Pump(() => client.Ready);
     await Pump(() => client.Error == "backend-stopped");
     Check(client.State.Count == 0, "Crash retained state");
+}
+using (var client = Make("delayed")) {
+    await Pump(() => client.Ready);
+    int changes = 0; client.Changed += () => changes++;
+    var edit = client.RequestAsync("settings", "test", 1);
+    await Pump(() => changes > 0);
+    Check(!edit.IsCompleted, "Finished an edit before its resulting snapshot");
+    await Pump(() => edit.IsCompleted);
+    Check((await edit)["ok"]!.GetValue<bool>() && client.Number("app", "writes") == 1, "Lost acknowledged state");
+}
+using (var client = Make("reject")) {
+    await Pump(() => client.Ready);
+    var edit = client.RequestAsync("settings", "test");
+    await Pump(() => edit.IsCompleted);
+    Check(!(await edit)["ok"]!.GetValue<bool>() && client.Error == "invalid-args", "Lost command rejection");
+}
+using (var client = Make("hang")) {
+    await Pump(() => client.Ready);
+    var edit = client.RequestAsync("settings", "test");
+    client.Restart();
+    await Pump(() => edit.IsCompleted);
+    Check(edit.IsCanceled, "Old edit survived a backend restart");
+}
+using (var client = Make("hang")) {
+    await Pump(() => client.Ready);
+    client.CommandTimeout = TimeSpan.FromMilliseconds(200);
+    var edit = client.RequestAsync("settings", "test");
+    await Pump(() => edit.IsCompleted);
+    try { await edit; throw new Exception("Command never timed out"); }
+    catch (TimeoutException) { }
+    Check(!client.Ready && client.Error == "backend-command-timeout", "Lost operation timeout and retry state");
 }
 using (var client = Make("hang")) {
     await Pump(() => client.Ready);

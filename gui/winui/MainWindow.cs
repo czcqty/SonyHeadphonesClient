@@ -29,8 +29,9 @@ internal sealed partial class MainWindow : Window
     private NavigationView? navigation;
     private string route = "home";
     private bool updating;
-    private Action? smokeSliderCommit;
     private bool exiting;
+    private string actionMessage = "";
+    private bool popupEscape;
     private readonly DispatcherTimer dismissTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
     private string T(string zh, string en) => app.T(zh, en);
 
@@ -50,7 +51,7 @@ internal sealed partial class MainWindow : Window
             AppWindow.IsShownInSwitchers = false;
         }
         double scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
-        AppWindow.Resize(new SizeInt32((int)((compact ? 420 : 1080) * scale), (int)((compact ? 400 : 800) * scale)));
+        AppWindow.Resize(new SizeInt32((int)((compact ? 440 : 1080) * scale), (int)((compact ? 560 : 800) * scale)));
         AppWindow.Closing += (_, e) => {
             if (!exiting) { e.Cancel = true; if (app.HasTray) AppWindow.Hide(); else app.Quit(); }
         };
@@ -77,10 +78,10 @@ internal sealed partial class MainWindow : Window
 
     internal void Rebuild()
     {
-        bindings.Clear(); smokeSliderCommit = null;
+        bindings.Clear();
         root = new Grid { RequestedTheme = app.Theme };
         root.KeyDown += (_, e) => {
-            if (compact && e.Key == VirtualKey.Escape && !GetOpenPopups().Any()) {
+            if (compact && e.Key == VirtualKey.Escape && !popupEscape && !GetOpenPopups().Any()) {
                 AppWindow.Hide(); if (!app.HasTray) app.ShowMain(); e.Handled = true;
             }
         };
@@ -124,9 +125,18 @@ internal sealed partial class MainWindow : Window
     private void BuildPage()
     {
         bindings.Clear();
+        fields.Clear(); deviceButtons.Clear();
         page = new StackPanel { Spacing = compact ? 16 : 24, Margin = new Thickness(compact ? 20 : 32), MaxWidth = 860, HorizontalAlignment = HorizontalAlignment.Stretch };
         var scroll = new ScrollViewer { Content = page, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-        if (compact) { root.Children.Clear(); root.Children.Add(scroll); }
+        if (compact) {
+            root.Children.Clear(); root.RowDefinitions.Clear();
+            root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
+            root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            root.Children.Add(scroll);
+            var open = ActionButton(T("打开完整设置", "Open full settings"), () => { AppWindow.Hide(); app.ShowMain(); });
+            open.Margin = new Thickness(20, 8, 20, 12); open.HorizontalAlignment = HorizontalAlignment.Stretch;
+            Grid.SetRow(open, 1); root.Children.Add(open);
+        }
         else navigation!.Content = scroll;
         var status = new InfoBar { IsClosable = false, Severity = InfoBarSeverity.Informational };
         page.Children.Add(status);
@@ -137,12 +147,18 @@ internal sealed partial class MainWindow : Window
             retry.IsEnabled = backend.Error != "backend-starting";
         });
         bindings.Add(() => {
-            status.IsOpen = !app.Live || backend.Error.Length > 0 || ConnectionError().Length > 0 || app.ShortcutError.Length > 0 || !backend.Connected;
+            status.IsOpen = !app.Live || backend.Error.Length > 0 || ConnectionError().Length > 0 || app.ShortcutError.Length > 0 || !backend.Connected || actionMessage.Length > 0;
             status.Severity = backend.Error.Length > 0 ? InfoBarSeverity.Error : InfoBarSeverity.Informational;
-            status.Title = backend.Error.Length > 0 ? T("连接错误", "Connection error") : app.Live ? T("设备连接", "Device connection") : T("预览模式", "Preview mode");
+            status.Title = backend.Error.Length > 0 ? T("操作未完成", "Operation failed") : app.Live ? T("设备连接", "Device connection") : T("预览模式", "Preview mode");
             status.Message = backend.Error.Length > 0 ? Dynamic("Backend error: %1").Replace("%1", Dynamic(backend.Error)) : ConnectionError().Length > 0 ? ConnectionError() : app.ShortcutError.Length > 0 ? T("快捷键注册失败（可能已被占用）：", "Shortcut registration failed (possibly already in use): ") + app.ShortcutError : app.Live ? T("请在设备页连接耳机。", "Connect headphones on the Devices page.") : T("使用模拟设备，操作不会发送至真实耳机。", "Simulated device. Changes are not sent to real headphones.");
         });
+        bindings.Add(() => { if (backend.Error.Length == 0 && ConnectionError().Length == 0 && actionMessage.Length > 0) status.Message = actionMessage; });
         bindings.Add(() => { if (!backend.Ready && backend.Diagnostic.Length > 0) status.Message += "\n" + backend.Diagnostic; });
+        if (!compact) {
+            var connect = ActionButton(T("打开连接页", "Open Connection"), () => Navigate("connection"));
+            bindings.Add(() => connect.Visibility = backend.Ready && !backend.Connected && route != "connection" ? Visibility.Visible : Visibility.Collapsed);
+            page.Children.Add(connect);
+        }
         if (compact) Overview();
         else {
             CatalogPage(route);
@@ -152,6 +168,13 @@ internal sealed partial class MainWindow : Window
             }
         }
         Refresh();
+    }
+
+    private void Navigate(string destination)
+    {
+        var item = navigation?.MenuItems.Cast<NavigationViewItem>().FirstOrDefault(x => (string)x.Tag == destination);
+        if (item is not null && !ReferenceEquals(navigation!.SelectedItem, item)) navigation.SelectedItem = item;
+        else { route = destination; BuildPage(); }
     }
 
     private void Refresh()
@@ -174,104 +197,14 @@ internal sealed partial class MainWindow : Window
         button.Click += (_, _) => action(); return button;
     }
 
-    private StackPanel Row(params UIElement[] elements)
-    {
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        foreach (var element in elements) row.Children.Add(element);
-        return row;
-    }
-
-    private void Toggle(string label, string group, string property, string supported, string method)
-    {
-        var toggle = new ToggleSwitch { Header = label, OnContent = T("开", "On"), OffContent = T("关", "Off") };
-        toggle.Toggled += (_, _) => { if (!updating) backend.Send(group, method, toggle.IsOn); };
-        bindings.Add(() => { toggle.IsEnabled = backend.Connected && backend.Flag(group, supported); toggle.IsOn = backend.Flag(group, property); });
-        page.Children.Add(toggle);
-    }
-
-    private void Slider(string label, string group, string supported, int min, int max, Func<int> value, Action<int> commit)
-    {
-        var slider = new Slider { Header = label, Minimum = min, Maximum = max, StepFrequency = 1, TickFrequency = 1, HorizontalAlignment = HorizontalAlignment.Stretch };
-        AutomationProperties.SetName(slider, label);
-        bool dirty = false;
-        slider.ValueChanged += (_, _) => { if (!updating) dirty = true; };
-        void Commit() { if (!dirty) return; dirty = false; commit((int)Math.Round(slider.Value)); }
-        smokeSliderCommit = Commit;
-        slider.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler((_, _) => Commit()), true);
-        slider.AddHandler(UIElement.KeyUpEvent, new KeyEventHandler((_, _) => Commit()), true);
-        slider.LostFocus += (_, _) => Commit();
-        bindings.Add(() => {
-            slider.IsEnabled = backend.Connected && backend.Flag(group, supported);
-            if (!dirty) slider.Value = value();
-        });
-        page.Children.Add(slider);
-    }
-
-    private void Choice(string label, string group, string property, string supported, string method, string[] labels, int[]? values = null)
-    {
-        values ??= Enumerable.Range(0, labels.Length).ToArray();
-        var combo = new ComboBox { Header = label, ItemsSource = labels, MinWidth = compact ? 200 : 280, HorizontalAlignment = HorizontalAlignment.Left };
-        combo.SelectionChanged += (_, _) => { if (!updating && combo.SelectedIndex >= 0) backend.Send(group, method, values[combo.SelectedIndex]); };
-        bindings.Add(() => { combo.IsEnabled = backend.Connected && backend.Flag(group, supported); combo.SelectedIndex = Array.IndexOf(values, backend.Number(group, property)); });
-        page.Children.Add(combo);
-    }
-
     private void Overview()
     {
-        var model = Heading("Sound Connect", !compact);
-        var battery = new TextBlock { TextWrapping = TextWrapping.Wrap };
-        page.Children.Add(battery);
-        bindings.Add(() => {
-            model.Text = backend.Text("app", "modelName");
-            var parts = new List<string> { T("电量", "Battery") + $" {backend.Number("playback", "batteryLeft")}%" };
-            if (backend.Flag("playback", "hasRightBattery")) parts.Add(T("右", "R") + $" {backend.Number("playback", "batteryRight")}%");
-            if (backend.Flag("playback", "hasCaseBattery")) parts.Add(T("充电盒", "Case") + $" {backend.Number("playback", "batteryCase")}%");
-            battery.Text = backend.Connected ? string.Join("   ·   ", parts) : T("未连接耳机", "Headphones disconnected");
-        });
-        NoiseModes();
-        Slider(T("音量", "Volume"), "playback", "volumeSupported", 0, 30,
-            () => backend.Number("playback", "volume"), v => backend.Send("playback", "setVolume", v));
-        var playback = Row(ActionButton(T("上一曲", "Previous"), () => backend.Send("playback", "previousTrack")),
-            ActionButton(T("播放 / 暂停", "Play / Pause"), () => backend.Send("playback", "togglePlayback")),
-            ActionButton(T("下一曲", "Next"), () => backend.Send("playback", "nextTrack")));
-        bindings.Add(() => {
-            foreach (var button in playback.Children.Cast<Button>())
-                button.IsEnabled = backend.Connected && backend.Flag("playback", "playbackSupported");
-        });
-        page.Children.Add(playback);
-        if (compact)
-        {
-            var open = ActionButton(T("打开完整设置", "Open full settings"), () => { AppWindow.Hide(); app.ShowMain(); });
-            open.HorizontalAlignment = HorizontalAlignment.Stretch;
-            page.Children.Add(open);
-        }
-        else
-        {
-            var details = new TextBlock { TextWrapping = TextWrapping.Wrap };
-            page.Children.Add(details);
-            bindings.Add(() => details.Text = $"{T("固件", "Firmware")}  {backend.Text("playback", "firmware")}    ·    {backend.Text("playback", "codec")}");
-            page.Children.Add(ActionButton(T("打开托盘快捷面板", "Open tray quick controls"), app.TogglePanel));
-        }
-    }
-
-    private void NoiseModes()
-    {
-        page.Children.Add(new TextBlock { Text = T("环境声音控制", "Ambient sound control") });
-        var modes = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12 };
-        var labels = new[] { T("关闭", "Off"), T("降噪", "Noise canceling"), T("环境声", "Ambient sound") };
-        for (int i = 0; i < labels.Length; i++) {
-            int mode = i;
-            var radio = new RadioButton { Content = labels[i], MinWidth = 0, GroupName = "NoiseMode" };
-            // Click is a user action; SelectionChanged also fires when WinUI
-            // realizes the items or the backend synchronizes their state.
-            radio.Click += (_, _) => backend.Send("noiseControl", "setMode", mode);
-            bindings.Add(() => {
-                radio.IsEnabled = backend.Connected && backend.Flag("noiseControl", mode == 2 ? "ambientSupported" : "supported");
-                radio.IsChecked = backend.Number("noiseControl", "mode") == mode;
-            });
-            modes.Children.Add(radio);
-        }
-        page.Children.Add(modes);
+        CatalogPage("quick");
+        var media = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        page.Children.Add(media);
+        bindings.Add(() => media.Text = backend.Connected ? string.Join(" · ", new[] {
+            backend.Text("playback", "title"), backend.Text("playback", "artist"), backend.Text("playback", "codec")
+        }.Where(s => s.Length > 0)) : "");
     }
 
     internal void PositionAtTray()

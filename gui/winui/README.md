@@ -79,9 +79,15 @@ preferences, migration, dynamic-option localization and Windows global shortcuts
 are implemented. Actual desktop/hardware acceptance remains tracked in
 `docs/backend-migration.md`.
 
-Run `--smoke-test` with the preview backend to traverse every device page,
-check zero synchronization writes, then exercise one toggle and slider commit.
+Run `--smoke-test` with the preview backend for the short desktop check, or
+`--parity-test` for native control roundtrips across all twelve configurations,
+all available choice values, numeric/slider edits, paired-device actions,
+confirmation accept/cancel, discovery, quick controls and failure/retry states.
 `--smoke-report <absolute.json>` selects the report path. Never use with `--live`.
+
+The installed English/Chinese verification runs `--parity-test`. It checks
+exactly one request per interaction and the returned snapshot, rather than
+merely counting widgets. Preview acceptance is not physical device acceptance.
 
 ## Shared-backend verification (2026-10-14)
 

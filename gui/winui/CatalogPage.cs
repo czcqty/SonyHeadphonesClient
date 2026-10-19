@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
+using System.Threading.Tasks;
 
 namespace SoundConnect.WinUI;
 
@@ -13,6 +14,82 @@ namespace SoundConnect.WinUI;
 // operations and capabilities. No device command mapping is duplicated here.
 internal sealed partial class MainWindow
 {
+    private sealed class FieldBinding
+    {
+        internal required JsonObject Field;
+        internal required Control Control;
+        internal required FrameworkElement Row;
+        internal required TextBlock Reason;
+        internal bool Pending;
+        internal Task LastWrite = Task.CompletedTask;
+        internal Action? Commit;
+        internal NumberBox? Number;
+        internal readonly List<JsonNode?> Values = new();
+    }
+    private readonly List<FieldBinding> fields = new();
+    private bool ConnectionBusy => backend.Text("connection", "state") is "scanning" or "connecting" or "initializing";
+
+    private JsonNode? FieldValue(JsonObject field)
+    {
+        var value = backend.State[field["group"]!.ToString()]?[field["key"]!.ToString()];
+        if (field["index"] is JsonNode index) {
+            int i = index.GetValue<int>();
+            return value is JsonArray array && i < array.Count ? array[i] : null;
+        }
+        return value;
+    }
+    private string UnavailableReason(JsonObject field)
+    {
+        if (!backend.Ready) return T("正在等待后端状态。", "Waiting for backend state.");
+        string group = field["group"]!.ToString(), method = field["method"]!.ToString();
+        if (group is "app" or "preferences") {
+            if (method == "refreshDevices" && (backend.Connected || ConnectionBusy))
+                return T("请先取消或断开当前连接。", "Cancel or disconnect the current connection first.");
+            if (method == "disconnectDevice" && !backend.Connected && !ConnectionBusy)
+                return T("当前没有设备连接。", "No connection is active.");
+            return "";
+        }
+        if (!backend.Connected) return T("请先在“连接”页连接耳机。", "Connect headphones on the Connection page first.");
+        string cap = field["capability"]!.ToString();
+        if (cap.Length > 0 && !backend.Flag(group, cap))
+            return T("此耳机未报告对该功能的支持。", "These headphones do not report support for this feature.");
+        if (field["index"] is not null && FieldValue(field) is null)
+            return T("此耳机未提供该均衡器频段。", "This equalizer band is not provided by these headphones.");
+        if (method == "powerOff" && backend.Flag("playback", "powerOffPending"))
+            return T("正在关闭耳机电源。", "Powering off headphones.");
+        return "";
+    }
+    private bool FieldVisible(JsonObject field)
+    {
+        string key = field["key"]!.ToString();
+        return key switch {
+            "ambientLevel" or "focusOnVoice" => backend.Number("noiseControl", "mode") == 2,
+            "adaptiveSensitivity" => backend.Flag("noiseControl", "adaptiveEnabled"),
+            "listeningRoomSize" => backend.Flag("settings", "listeningModeEnabled"),
+            "speakToChatSensitivity" or "speakToChatModeOut" => backend.Flag("settings", "speakToChatEnabled"),
+            "batteryRight" or "batteryRightCharging" => backend.Flag("playback", "hasRightBattery"),
+            "batteryCase" or "batteryCaseCharging" => backend.Flag("playback", "hasCaseBattery"),
+            "safeListeningPressure" => backend.Flag("playback", "safeListeningSupported"),
+            _ => true
+        };
+    }
+    private async Task EditAsync(FieldBinding binding, object? value)
+    {
+        if (updating || binding.Pending || UnavailableReason(binding.Field).Length > 0) return;
+        var field = binding.Field;
+        string group = field["group"]!.ToString(), method = field["method"]!.ToString();
+        var args = new List<object>();
+        if (field["index"] is JsonNode index) args.Add(index.GetValue<int>());
+        if (field["kind"]!.ToString() != "button") args.Add(value!);
+        binding.Pending = true;
+        Refresh();
+        try {
+            if (method is "powerOff" or "unpairDevice") await ConfirmCommand(group, method, args.ToArray());
+            else await backend.RequestAsync(group, method, args.ToArray());
+        } catch (OperationCanceledException) { }
+        catch (TimeoutException) { }
+        finally { binding.Pending = false; Refresh(); }
+    }
     private static readonly JsonObject Catalog = JsonNode.Parse(
         File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "catalog.json")))!.AsObject();
     private string CatalogText(JsonNode? node) => node is JsonObject labels
@@ -20,6 +97,7 @@ internal sealed partial class MainWindow
         : node?.ToString() ?? "";
     internal string Dynamic(string text)
     {
+        if (text == "backend-command-timeout") return T("后端未能及时完成操作，请重试启动。", "The backend did not finish the operation in time. Retry startup.");
         var messages = Catalog["messages"]!.AsObject();
         if (messages[text] is JsonNode labels) return CatalogText(labels);
         foreach (var pair in messages) {
@@ -62,22 +140,26 @@ internal sealed partial class MainWindow
         }
         if (backend.SentCommandCount != before) throw new InvalidOperationException("Page synchronization emitted a command");
         route = "sound"; BuildPage();
-        var toggle = page.Children.OfType<ToggleSwitch>().First(t => t.IsEnabled);
+        var toggleBinding = fields.First(b => b.Control is ToggleSwitch && b.Control.IsEnabled);
+        var toggle = (ToggleSwitch)toggleBinding.Control;
         toggle.IsOn = !toggle.IsOn; Refresh();
+        await toggleBinding.LastWrite;
         if (backend.SentCommandCount != before + 1) throw new InvalidOperationException("Toggle emitted duplicate commands");
         route = "home"; BuildPage();
-        var slider = page.Children.OfType<Slider>().First(s => s.IsEnabled);
+        var sliderBinding = fields.First(b => b.Control is Slider && b.Control.IsEnabled);
+        var slider = (Slider)sliderBinding.Control;
         slider.Value = slider.Value == 12 ? 13 : 12;
-        smokeSliderCommit!(); smokeSliderCommit!(); Refresh();
+        sliderBinding.Commit!(); sliderBinding.Commit!(); Refresh();
+        await sliderBinding.LastWrite;
         if (backend.SentCommandCount != before + 2) throw new InvalidOperationException("Slider emitted duplicate commands");
         bool chinese = app.Chinese;
         route = "application"; BuildPage();
-        var choices = page.Children.OfType<ComboBox>().ToArray();
-        choices[0].SelectedIndex = chinese ? 0 : 1;
-        await System.Threading.Tasks.Task.Delay(250);
-        choices = page.Children.OfType<ComboBox>().ToArray();
-        choices[1].SelectedIndex = 2;
-        await System.Threading.Tasks.Task.Delay(250);
+        var languageBinding = fields.Single(b => b.Field["method"]!.ToString() == "setLocale");
+        ((ComboBox)languageBinding.Control).SelectedIndex = chinese ? 0 : 1;
+        await languageBinding.LastWrite;
+        var themeBinding = fields.Single(b => b.Field["method"]!.ToString() == "setThemeMode");
+        ((ComboBox)themeBinding.Control).SelectedIndex = 2;
+        await themeBinding.LastWrite;
         if (app.Chinese == chinese || app.Theme != ElementTheme.Dark || backend.Flag("preferences", "persistent"))
             throw new InvalidOperationException("Preference state did not reach native controls");
         if (backend.SentCommandCount != before + 4) throw new InvalidOperationException("Preference synchronization emitted duplicate writes");
@@ -124,93 +206,150 @@ internal sealed partial class MainWindow
             PrimaryButtonText = power ? T("关机", "Power off") : T("取消配对", "Unpair"),
             CloseButtonText = T("取消", "Cancel"), DefaultButton = ContentDialogButton.Close };
         confirmation = dialog;
-        try { if (await dialog.ShowAsync() == ContentDialogResult.Primary) backend.Send(group, method, args); }
+        try { if (await dialog.ShowAsync() == ContentDialogResult.Primary) await backend.RequestAsync(group, method, args); }
         finally { confirmation = null; }
     }
 
+
     private void CatalogPage(string id)
     {
-        var spec = Catalog["pages"]!.AsArray().First(p => p!["id"]!.GetValue<string>() == id)!;
+        var spec = id == "quick" ? Catalog["quick"]!.DeepClone() : Catalog["pages"]!.AsArray().First(p => p!["id"]!.ToString() == id)!;
+        if (id == "quick") {
+            foreach (string method in new[] { "previousTrack", "nextTrack" })
+                spec!["fields"]!.AsArray().Add(Catalog["pages"]!.AsArray().First(p => p!["id"]!.ToString() == "home")!["fields"]!.AsArray().First(f => f!["method"]!.ToString() == method)!.DeepClone());
+            foreach (string key in new[] { "ambientLevel", "focusOnVoice" })
+                spec!["fields"]!.AsArray().Add(Catalog["pages"]!.AsArray().First(p => p!["id"]!.ToString() == "noise")!["fields"]!.AsArray().First(f => f!["key"]!.ToString() == key)!.DeepClone());
+        }
         Heading(CatalogText(spec["label"]), true);
         foreach (var entry in spec["fields"]!.AsArray()) {
             var field = entry!.AsObject();
-            string group = field["group"]!.GetValue<string>(), key = field["key"]!.GetValue<string>();
-            string method = field["method"]!.GetValue<string>(), kind = field["kind"]!.GetValue<string>();
-            string cap = field["capability"]!.GetValue<string>(), label = CatalogText(field["label"]);
-            JsonNode? Current() {
-                var value = backend.State[group]?[key];
-                if (field["index"] is JsonNode index) {
-                    int i = index.GetValue<int>();
-                    return value is JsonArray array && i < array.Count ? array[i] : null;
-                }
-                return value;
-            }
-            bool Enabled() => kind == "label" || (backend.Ready && (group == "app" || group == "preferences")) ||
-                (backend.Connected && (cap.Length == 0 || backend.Flag(group, cap)) &&
-                 (field["index"] is null || Current() is not null));
-            void Send(object? value = null) {
-                if (updating) return;
-                var args = new List<object>();
-                if (field["index"] is JsonNode index) args.Add(index.GetValue<int>());
-                if (kind != "button") args.Add(value!);
-                if (method is "powerOff" or "unpairDevice") _ = ConfirmCommand(group, method, args.ToArray());
-                else backend.Send(group, method, args.ToArray());
-            }
-            if (kind == "toggle") {
-                Toggle(label, group, key, cap, method);
-            } else if (kind == "slider") {
-                Slider(label, group, cap, field["min"]!.GetValue<int>(), field["max"]!.GetValue<int>(),
-                    () => Current()?.GetValue<int>() ?? 0, v => Send(v));
-                var slider = (Slider)page.Children.Last();
-                bindings.Add(() => slider.IsEnabled = Enabled());
-            } else if (kind == "button") {
-                var button = ActionButton(label, () => Send());
-                bindings.Add(() => button.IsEnabled = Enabled());
-                page.Children.Add(button);
-            } else if (kind == "choice" || kind == "devices") {
-                var combo = new ComboBox { Header = label, MinWidth = 200,
-                    HorizontalAlignment = HorizontalAlignment.Stretch };
-                var values = new List<JsonNode?>();
-                string signature = "";
+            string group = field["group"]!.ToString(), key = field["key"]!.ToString();
+            string method = field["method"]!.ToString(), kind = field["kind"]!.ToString();
+            string label = CatalogText(field["label"]);
+            if (id == "devices" && (field["source"]?.ToString() == "devices" || key == "devices")) continue;
+            if (id == "connection" && kind == "devices") continue;
+            if (kind == "label") {
+                var text = new TextBlock { TextWrapping = TextWrapping.Wrap };
                 bindings.Add(() => {
-                    var names = new List<string>();
-                    var next = new List<JsonNode?>();
-                    var source = field["source"]?.GetValue<string>();
-                    if (kind == "devices") {
-                        foreach (var item in Current()?.AsArray() ?? new JsonArray()) {
-                            names.Add(item?["name"]?.ToString() ?? ""); next.Add(item);
-                        }
-                    } else if (source is not null) {
-                        foreach (var item in backend.State[group]?[source]?.AsArray() ?? new JsonArray()) {
-                            names.Add(source == "devices" ? item?["name"]?.ToString() ?? "" : Dynamic(item?["name"]?.ToString() ?? ""));
-                            next.Add(item?[field["valueKey"]!.GetValue<string>()]);
-                        }
-                    } else {
-                        foreach (var item in field["options"]?.AsArray() ?? new JsonArray()) {
-                            string optionCap = item?["capability"]?.ToString() ?? "";
-                            if (optionCap.Length > 0 && !backend.Flag(group, optionCap)) continue;
-                            names.Add(CatalogText(item?["label"])); next.Add(item?["value"]);
-                        }
+                    text.Visibility = FieldVisible(field) ? Visibility.Visible : Visibility.Collapsed;
+                    text.Text = label + ": " + Display(backend.Connected || group is "app" or "connection" ? FieldValue(field) : null, key);
+                });
+                page.Children.Add(text); continue;
+            }
+            var reason = new TextBlock { TextWrapping = TextWrapping.Wrap, Opacity = .8, FontSize = 13 };
+            Control control;
+            FrameworkElement row;
+            if (kind == "toggle") control = new ToggleSwitch { Header = label, OnContent = T("开", "On"), OffContent = T("关", "Off") };
+            else if (kind == "slider") control = new Slider { Header = label, Minimum = field["min"]!.GetValue<int>(),
+                Maximum = field["max"]!.GetValue<int>(), StepFrequency = 1, HorizontalAlignment = HorizontalAlignment.Stretch };
+            else if (kind == "button") control = new Button { Content = label };
+            else control = new ComboBox { Header = label, MinWidth = 200, HorizontalAlignment = HorizontalAlignment.Stretch };
+            row = control;
+            var b = new FieldBinding { Field = field, Control = control, Row = row, Reason = reason };
+            fields.Add(b);
+            AutomationProperties.SetName(control, label);
+            AutomationProperties.SetAutomationId(control, group + "." + method + (field["index"] is null ? "" : "." + field["index"]));
+            void Send(object? value = null) { if (!updating && !b.Pending) b.LastWrite = EditAsync(b, value); }
+            if (control is ToggleSwitch toggle) {
+                toggle.Toggled += (_, _) => Send(toggle.IsOn);
+                bindings.Add(() => { if (!b.Pending) toggle.IsOn = FieldValue(field)?.GetValue<bool>() ?? false; });
+            } else if (control is Slider slider) {
+                var grid = new Grid { ColumnSpacing = 16 };
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+                grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(112) });
+                var number = new NumberBox { Header = label, Minimum = slider.Minimum, Maximum = slider.Maximum,
+                    SmallChange = 1, LargeChange = 1, SpinButtonPlacementMode = NumberBoxSpinButtonPlacementMode.Compact };
+                AutomationProperties.SetName(number, label + T("（数值）", " (value)"));
+                AutomationProperties.SetAutomationId(number, AutomationProperties.GetAutomationId(slider) + ".value");
+                Grid.SetColumn(number, 1); grid.Children.Add(slider); grid.Children.Add(number);
+                b.Row = grid; b.Number = number;
+                bool dirty = false;
+                slider.ValueChanged += (_, _) => { if (!updating) dirty = true; };
+                b.Commit = () => { if (!dirty) return; dirty = false; Send((int)Math.Round(slider.Value)); };
+                slider.AddHandler(UIElement.PointerReleasedEvent, new Microsoft.UI.Xaml.Input.PointerEventHandler((_, _) => b.Commit()), true);
+                slider.AddHandler(UIElement.KeyUpEvent, new Microsoft.UI.Xaml.Input.KeyEventHandler((_, _) => b.Commit()), true);
+                slider.LostFocus += (_, _) => b.Commit();
+                number.ValueChanged += (_, _) => { if (!updating && !double.IsNaN(number.Value)) Send((int)Math.Round(number.Value)); };
+                bindings.Add(() => {
+                    if (!b.Pending && !dirty) {
+                        var current = FieldValue(field)?.GetValue<int>() ?? 0;
+                        slider.Value = current; number.Value = current;
                     }
-                    var nextSignature = string.Join("\n", names.Zip(next, (n, v) => n + ":" + v?.ToJsonString()));
-                    if (signature != nextSignature) { signature = nextSignature; combo.ItemsSource = names; values = next; }
-                    combo.SelectedIndex = kind == "devices" || key.Length == 0 ? -1
-                        : values.FindIndex(v => JsonNode.DeepEquals(v, Current()));
-                    combo.IsEnabled = kind == "devices" ? backend.Ready && values.Count > 0 && !backend.Connected && backend.Text("connection", "state") != "connecting"
-                        : Enabled() && values.Count > 0;
+                });
+            } else if (control is Button button) button.Click += (_, _) => Send();
+            else if (control is ComboBox combo) {
+                string signature = "";
+                bool selectionDirty = false;
+                bindings.Add(() => {
+                    // Device polling must not reset a keyboard highlight or an
+                    // open picker. The next closed refresh uses the newest state.
+                    if (combo.IsDropDownOpen || b.Pending) return;
+                    var names = new List<string>(); var next = new List<JsonNode?>();
+                    string? sourceKey = field["source"]?.ToString();
+                    if (sourceKey is not null) {
+                        foreach (var item in backend.State[group]?[sourceKey]?.AsArray() ?? new JsonArray()) {
+                            names.Add(sourceKey == "devices" ? item?["name"]?.ToString() ?? "" : Dynamic(item?["name"]?.ToString() ?? ""));
+                            next.Add(item?[field["valueKey"]!.ToString()]);
+                        }
+                    } else foreach (var item in field["options"]?.AsArray() ?? new JsonArray()) {
+                        string cap = item?["capability"]?.ToString() ?? "";
+                        if (cap.Length > 0 && !backend.Flag(group, cap)) continue;
+                        names.Add(CatalogText(item?["label"])); next.Add(item?["value"]);
+                    }
+                    string nextSignature = string.Join("\n", names.Zip(next, (n, v) => n + ":" + v?.ToJsonString()));
+                    if (signature != nextSignature) {
+                        signature = nextSignature; b.Values.Clear(); b.Values.AddRange(next);
+                        combo.ItemsSource = names;
+                    }
+                    combo.SelectedIndex = key.Length == 0 ? -1 : b.Values.FindIndex(v => JsonNode.DeepEquals(v, FieldValue(field)));
                 });
                 combo.SelectionChanged += (_, _) => {
-                    if (updating || combo.SelectedIndex < 0 || combo.SelectedIndex >= values.Count) return;
-                    var selected = values[combo.SelectedIndex];
-                    if (kind == "devices") backend.Send("app", "connectDevice", selected!["name"]!.ToString(), selected["mac"]!.ToString());
-                    else Send(Argument(selected));
+                    if (updating || combo.SelectedIndex < 0 || combo.SelectedIndex >= b.Values.Count) return;
+                    if (combo.IsDropDownOpen) { selectionDirty = true; return; }
+                    selectionDirty = false;
+                    if (!JsonNode.DeepEquals(b.Values[combo.SelectedIndex], FieldValue(field))) Send(Argument(b.Values[combo.SelectedIndex]));
                 };
-                AutomationProperties.SetName(combo, label);
-                page.Children.Add(combo);
-            } else {
-                var text = new TextBlock { TextWrapping = TextWrapping.Wrap };
-                bindings.Add(() => text.Text = label + ": " + Display(Current(), key));
-                page.Children.Add(text);
+                combo.DropDownClosed += (_, _) => {
+                    if (selectionDirty && combo.SelectedIndex >= 0 && combo.SelectedIndex < b.Values.Count) {
+                        selectionDirty = false;
+                        if (!JsonNode.DeepEquals(b.Values[combo.SelectedIndex], FieldValue(field))) Send(Argument(b.Values[combo.SelectedIndex]));
+                    }
+                    Refresh();
+                };
+                combo.PreviewKeyDown += (_, e) => {
+                    if (e.Key != Windows.System.VirtualKey.Escape || !combo.IsDropDownOpen) return;
+                    selectionDirty = false; popupEscape = true;
+                    // Escape cancels the picker; it must neither submit a
+                    // highlighted value nor dismiss its parent quick panel.
+                    bool previous = updating; updating = true;
+                    try { combo.SelectedIndex = b.Values.FindIndex(v => JsonNode.DeepEquals(v, FieldValue(field))); }
+                    finally { updating = previous; }
+                    DispatcherQueue.TryEnqueue(() => popupEscape = false);
+                };
+            }
+            bindings.Add(() => {
+                bool visible = FieldVisible(field);
+                b.Row.Visibility = visible ? Visibility.Visible : Visibility.Collapsed;
+                string unavailable = UnavailableReason(field);
+                if (unavailable.Length == 0 && control is ComboBox && b.Values.Count == 0)
+                    unavailable = T("正在等待耳机提供可用选项。", "Waiting for available choices from the headphones.");
+                string explanation = b.Pending ? T("正在应用设置…", "Applying setting…") : unavailable;
+                control.IsEnabled = !b.Pending && unavailable.Length == 0;
+                if (b.Number is not null) b.Number.IsEnabled = control.IsEnabled;
+                reason.Text = explanation;
+                reason.Visibility = visible && explanation.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+                ToolTipService.SetToolTip(control, explanation.Length > 0 ? explanation : label);
+                AutomationProperties.SetHelpText(control, explanation);
+            });
+            page.Children.Add(b.Row); page.Children.Add(reason);
+        }
+        if (id == "connection") ConnectionDevices();
+        if (id == "devices") ManagedDevices();
+        if (id == "home") {
+            foreach (string target in new[] { "noise", "equalizer", "sound", "behavior", "devices" }) {
+                string destination = target;
+                var title = Catalog["pages"]!.AsArray().First(p => p!["id"]!.ToString() == target)!["label"];
+                page.Children.Add(ActionButton(CatalogText(title), () => Navigate(destination)));
             }
         }
     }

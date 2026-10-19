@@ -1,5 +1,6 @@
 using System;
 using System.Diagnostics;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -21,6 +22,8 @@ internal sealed class BackendClient : IDisposable
         internal string Diagnostic = "";
         internal int DiagnosticPending;
         internal Task? Cleanup;
+        internal readonly Dictionary<string, TaskCompletionSource<JsonObject>> Requests = new();
+        internal readonly Dictionary<string, JsonObject> Results = new();
     }
     private readonly Action<Action> dispatch;
     private Session? session;
@@ -32,7 +35,10 @@ internal sealed class BackendClient : IDisposable
     public string Diagnostic { get; private set; } = "";
     public bool Ready { get; private set; }
     public int SentCommandCount { get; private set; }
+    public long StateRevision { get; private set; }
+    internal string ExecutablePath => executable;
     public TimeSpan StartupTimeout { get; set; } = TimeSpan.FromSeconds(10);
+    internal TimeSpan CommandTimeout { get; set; } = TimeSpan.FromSeconds(10);
     public event Action? Changed;
     public bool Connected => Ready && Text("connection", "state") == "connected";
     public bool Flag(string group, string key) => State[group]?[key]?.GetValue<bool>() ?? false;
@@ -66,6 +72,7 @@ internal sealed class BackendClient : IDisposable
     {
         if (disposed) return;
         var old = session;
+        if (old is not null) CancelRequests(old);
         var source = session = new Session();
         State = new(); Ready = false; Error = "backend-starting"; Diagnostic = "";
         Changed?.Invoke();
@@ -147,9 +154,17 @@ internal sealed class BackendClient : IDisposable
                 Fail(source, "backend-protocol-error"); return;
             }
             if (!Ready) Error = "";
-            State = data; Ready = true;
+            State = data; Ready = true; StateRevision++;
+            // v1 sends a result followed by its full state before reading the
+            // next request. Finish edits only after that state has arrived.
+            foreach (var pair in source.Results.ToArray()) {
+                if (source.Requests.Remove(pair.Key, out var request)) request.TrySetResult(pair.Value);
+            }
+            source.Results.Clear();
         } else if (data["type"]?.GetValue<string>() == "result") {
             Error = data["ok"]?.GetValue<bool>() == true ? "" : data["errorCode"]?.GetValue<string>() ?? "Command rejected";
+            string id = data["id"]?.ToString() ?? "";
+            if (source.Requests.ContainsKey(id)) source.Results[id] = data;
         }
         Changed?.Invoke();
     }
@@ -158,15 +173,38 @@ internal sealed class BackendClient : IDisposable
         State = new(); Ready = false; Error = code;
         Diagnostic = detail.Length > 0 ? detail : source.Diagnostic;
         if (Diagnostic.Length > 4096) Diagnostic = Diagnostic[^4096..];
+        CancelRequests(source);
         _ = RetireAsync(source, true);
         Changed?.Invoke();
     }
     public void Send(string target, string method, params object[] args)
+        => Queue(target, method, args, null);
+
+    public async Task<JsonObject> RequestAsync(string target, string method, params object[] args)
     {
-        if (disposed || !Ready || session is null) return;
-        var frame = JsonSerializer.Serialize(new { version = 1, id = (SentCommandCount + 1).ToString(), target, method, args });
-        if (session.Outgoing.Writer.TryWrite(frame)) SentCommandCount++;
-        else Fail(session, "backend-write-failed");
+        var source = session;
+        var completion = new TaskCompletionSource<JsonObject>(TaskCreationOptions.RunContinuationsAsynchronously);
+        if (!Queue(target, method, args, completion)) throw new OperationCanceledException("Backend is not ready");
+        try { return await completion.Task.WaitAsync(CommandTimeout); }
+        catch (TimeoutException) {
+            if (session == source && source is not null) Fail(source, "backend-command-timeout", "Backend did not finish the command");
+            throw;
+        }
+    }
+    private bool Queue(string target, string method, object[] args, TaskCompletionSource<JsonObject>? completion)
+    {
+        if (disposed || !Ready || session is null) return false;
+        string id = (SentCommandCount + 1).ToString();
+        var frame = JsonSerializer.Serialize(new { version = 1, id, target, method, args });
+        if (completion is not null) session.Requests.Add(id, completion);
+        if (session.Outgoing.Writer.TryWrite(frame)) { SentCommandCount++; return true; }
+        Fail(session, "backend-write-failed");
+        return false;
+    }
+    private static void CancelRequests(Session source)
+    {
+        foreach (var request in source.Requests.Values) request.TrySetCanceled();
+        source.Requests.Clear(); source.Results.Clear();
     }
     private async Task WriteAsync(Session source)
     {
@@ -205,6 +243,7 @@ internal sealed class BackendClient : IDisposable
     public Task CloseAsync()
     {
         disposed = true; Ready = false; State = new();
+        if (session is not null) CancelRequests(session);
         return session is null ? Task.CompletedTask : RetireAsync(session, false);
     }
     public void Dispose() => CloseAsync().GetAwaiter().GetResult();
