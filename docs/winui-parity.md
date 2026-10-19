@@ -50,3 +50,18 @@ This verifies presentation behavior and backend acceptance. Multipoint fixture
 states and preview responses do not establish headphone acknowledgements. The
 user's specific physical setup remains an acceptance gate; no claim of complete
 migration is made from these checks.
+
+Local results: both locales completed all twelve configurations and all 43
+operation entry points, with 1,376 emitted requests per run including the quick
+panel and recovery checks. Both processes exited normally. An actual window
+input check also confirmed numeric volume entry, slider synchronization,
+keyboard picker navigation, Escape cancellation, and ambient-mode dependent
+controls. Real tray focus and system shortcut behavior remain separate platform
+acceptance items.
+
+Hosted install verification of source `e08219a` also passed:
+[run 39253165152](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39253165152).
+It includes backend 9/9, the native transport harness, NSIS assembly,
+install/reinstall, both installed parity runs with no developer SDK path, and
+uninstall. The [installer and reports artifact](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39253165152/artifacts/12187690347)
+has ZIP SHA256 `c1a1ab7584e7ca1ba9604f9dd41fdbeb983a83b71f71a1d93b3fe51a7f55ca50`.
