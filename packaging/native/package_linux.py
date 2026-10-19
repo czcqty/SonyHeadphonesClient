@@ -22,11 +22,14 @@ def copy(source, destination, executable=False):
 
 
 def dependencies(binary, staging):
+    (staging / 'DEBIAN').mkdir(exist_ok=True)
     control = staging / 'debian/control'
     control.parent.mkdir()
     control.write_text('Source: soundconnect\nSection: sound\nPriority: optional\nMaintainer: Sound Connect contributors <noreply@github.com>\n\nPackage: soundconnect\nArchitecture: any\nDescription: Sound Connect\n')
-    result = run('dpkg-shlibdeps', '--ignore-missing-info', '-O', '-e' + str(binary),
-                 '-l' + str(binary.parent / 'lib'), cwd=staging)
+    binaries = [binary, *sorted((binary.parent / 'lib').glob('*.so*'))]
+    excluded = ['-xlibqt6core6t64'] if (binary.parent / 'lib/libQt6Core.so.6').exists() else []
+    result = run('dpkg-shlibdeps', '--ignore-missing-info', '-O', '-S' + str(staging), *excluded,
+                 *['-e' + str(item) for item in binaries], '-l' + str(binary.parent / 'lib'), cwd=staging)
     shutil.rmtree(control.parent)
     return result.removeprefix('shlibs:Depends=')
 
@@ -109,7 +112,7 @@ def main():
         for name, directory in packages.items():
             deps = 'python3' if name == 'soundconnect-common' else backend_deps if name == 'soundconnect-backend' else native_deps + ', soundconnect-backend (= ' + version + '), soundconnect-common (= ' + version + ')'
             metadata = directory / 'DEBIAN'
-            metadata.mkdir()
+            metadata.mkdir(exist_ok=True)
             (metadata / 'control').write_text(f'Package: {name}\nVersion: {version}\nArchitecture: {"all" if name == "soundconnect-common" else "amd64"}\nMaintainer: Sound Connect contributors <noreply@github.com>\nSection: sound\nPriority: optional\nDepends: {deps}\nDescription: Native Sound Connect {name.removeprefix("soundconnect-")}\n Shared local controls for supported Sony headphones.\n')
             copy(ROOT / 'LICENSE', directory / 'usr/share/doc' / name / 'copyright')
             archive = output / (name + '_' + version + '_' + ('all' if name == 'soundconnect-common' else 'amd64') + '.deb')
