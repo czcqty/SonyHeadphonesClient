@@ -33,8 +33,12 @@ class ProcessClient:
         self._generation += 1
         self.state, self.error, self.diagnostic, self.ready = {}, 'backend-starting', '', False
         session = dict(cancel=threading.Event(), outgoing=queue.Queue(64), process=None,
-                       diagnostic='', timer=None, generation=self._generation)
+                       diagnostic='', diagnostic_pending=False, timer=None, generation=self._generation)
         self._session = session
+        timer = threading.Timer(self.START_TIMEOUT, lambda: self._post(session, lambda: self._timeout(session)))
+        timer.daemon = True
+        session['timer'] = timer
+        timer.start()
         self.changed()
         threading.Thread(target=self._start, args=(session,)).start()
 
@@ -47,11 +51,6 @@ class ProcessClient:
                 self._shutdown(session)
                 return
             self._post(session, lambda: setattr(self, 'process', process))
-            timer = threading.Timer(self.START_TIMEOUT,
-                lambda: self._post(session, lambda: self._timeout(session)))
-            timer.daemon = True
-            session['timer'] = timer
-            timer.start()
             threading.Thread(target=self._write, args=(session,), daemon=True).start()
             threading.Thread(target=self._diagnostics, args=(session,), daemon=True).start()
             self._read(session)
@@ -66,11 +65,14 @@ class ProcessClient:
         try:
             while data := session['process'].stderr.read(1024):
                 session['diagnostic'] = (session['diagnostic'] + data.decode('utf-8', errors='replace'))[-self.DIAGNOSTIC_LIMIT:]
-                self._post(session, lambda: self._update_diagnostic(session))
+                if not session['diagnostic_pending']:
+                    session['diagnostic_pending'] = True
+                    self._post(session, lambda: self._update_diagnostic(session))
         except (OSError, ValueError):
             pass
 
     def _update_diagnostic(self, session):
+        session['diagnostic_pending'] = False
         self.diagnostic = session['diagnostic']
 
     def _read(self, session):
