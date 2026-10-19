@@ -15,7 +15,7 @@ case "$ID:$VERSION_ID" in
     /opt/soundconnect-tools/bin/aqt install-qt linux desktop 6.8.3 linux_gcc_64 --archives qtbase icu -O /opt/qt
     ;;
   debian:13)
-    apt-get install -y kde-style-breeze-data cmake qt6-base-dev libkf6widgetsaddons-dev libkf6statusnotifieritem-dev libkf6colorscheme-dev
+    apt-get install -y kde-style-breeze-data cmake qt6-base-dev libkf6widgetsaddons-dev libkf6statusnotifieritem-dev libkf6colorscheme-dev libkf6config-dev libkf6guiaddons-dev libkf6i18n-dev libkf6windowsystem-dev
     ;;
   *) echo 'Only Ubuntu 24.04 and Debian 13 are package targets' >&2; exit 2;;
 esac
