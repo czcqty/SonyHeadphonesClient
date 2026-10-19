@@ -64,3 +64,17 @@ Native widget smoke test passed again against the new standalone backend.
 Manual modes use installed official BreezeLight/BreezeDark schemes through
 KColorSchemeManager; system mode restores KDE tracking. No palette is painted
 by the adapter. KF5 5.89+ or KF6 ColorScheme is required for this integration.
+
+## Installed packages and recovery
+
+Ubuntu 24.04 and Debian 13 DEB recipes are documented in the
+[shared native packaging guide](../../packaging/native/README.md). Installed
+launchers find the shared backend and catalog without a source checkout or
+`--backend`; the explicit override remains available. Menu entries pass `--live`,
+while a command without that flag remains an isolated preview.
+
+Commands remain disabled until a valid initial snapshot arrives. Startup has a
+ten-second timeout; backend failure clears old state and exposes Retry startup
+in full settings. Retry obtains fresh state without replaying commands or
+reconnecting headphones. Normal exit drains stdin/EOF, allowing two seconds
+before terminating the owned child. Desktop/headphone migration gates remain.

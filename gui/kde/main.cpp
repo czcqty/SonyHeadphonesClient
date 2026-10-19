@@ -1,3 +1,5 @@
+#include "BackendClient.hpp"
+#include <QFileInfo>
 #include <QApplication>
 #include <QAbstractItemView>
 #include <QCheckBox>
@@ -51,7 +53,8 @@ public:
     KPageWidget* pages = new KPageWidget;
     QLabel* message = new QLabel;
     QLabel* quickMessage = new QLabel;
-    QProcess backend;
+    BackendClient backend;
+    QPushButton* retry = new QPushButton;
     QJsonObject state, catalog;
     QByteArray pending;
     std::vector<Binding> bindings;
@@ -61,6 +64,7 @@ public:
     std::vector<std::function<void()>> translations;
     bool syncing = false, live = false, closing = false;
     int sent = 0;
+    std::vector<QAction*> deviceActions;
 
     QString text(const QJsonValue& label) const {
         return label.isObject() ? label.toObject().value(locale).toString(label.toObject().value("en").toString()) : label.toString();
@@ -104,7 +108,9 @@ public:
         return current;
     }
     bool enabled(const QJsonObject& field) const {
-        if (field.value("kind") == "label" || field.value("group") == "app" || field.value("group") == "preferences") return true;
+        if (field.value("kind") == "label") return true;
+        if (!backend.ready) return false;
+        if (field.value("group") == "app" || field.value("group") == "preferences") return true;
         auto group = state.value(field.value("group").toString()).toObject();
         const auto cap = field.value("capability").toString();
         return state.value("connection").toObject().value("state") == "connected"
@@ -112,10 +118,9 @@ public:
             && (!field.contains("index") || !value(field).isNull());
     }
     void send(const QString& target, const QString& method, const QJsonArray& args = {}) {
-        if (syncing || closing || backend.state() != QProcess::Running) return;
-        auto data = QJsonDocument(QJsonObject{{"version", 1}, {"id", QString::number(sent + 1)}, {"target", target}, {"method", method}, {"args", args}}).toJson(QJsonDocument::Compact) + '\n';
-        if (backend.write(data) < 0) { error = backend.errorString(); refresh(); }
-        else ++sent;
+        if (syncing || closing) return;
+        backend.send(target, method, args);
+        sent = backend.sent;
     }
     void write(const QJsonObject& field, const QJsonValue& value = {}) {
         QJsonArray args;
@@ -188,8 +193,13 @@ public:
             schemes.activateScheme(selected);
         }
         for (const auto& update : translations) update();
+        for (auto action : deviceActions) action->setEnabled(backend.ready);
+        retry->setText(dynamic("backend-retry"));
+        retry->setVisible(!backend.ready);
+        retry->setEnabled(error != "backend-starting");
         auto status = error.isEmpty() ? (live ? tr("Live device", "实时设备") : tr("Isolated device preview", "独立设备预览")) : dynamic(error);
         if (error.isEmpty() && !connectionError().isEmpty()) status = connectionError();
+        if (!backend.ready && !backend.diagnostic.isEmpty()) status += "\n" + backend.diagnostic;
         message->setText(status); quickMessage->setText(status);
         for (const auto& binding : bindings) {
             const auto field = binding.field; auto widget = binding.widget;
@@ -235,6 +245,7 @@ public:
     void showSettings() { quick.hide(); window.show(); window.raise(); window.activateWindow(); }
     void showQuick(QPoint position = QCursor::pos()) {
         if (quick.isVisible()) { quick.hide(); return; }
+        quick.setWindowFlags(QSystemTrayIcon::isSystemTrayAvailable() ? Qt::Popup : Qt::Window);
         quick.adjustSize();
         auto screen = QApplication::screenAt(position); if (!screen) screen = QApplication::primaryScreen();
         const auto rect = screen->availableGeometry();
@@ -250,7 +261,8 @@ public:
         catalog = QJsonDocument::fromJson(file.readAll()).object();
         if (catalog.value("version").toInt() != 1) throw std::runtime_error("Invalid binding catalog");
         auto content = new QWidget; auto layout = new QVBoxLayout(content);
-        message->setWordWrap(true); layout->addWidget(message); layout->addWidget(pages);
+        message->setWordWrap(true); layout->addWidget(message); layout->addWidget(retry); layout->addWidget(pages);
+        connect(retry, &QPushButton::clicked, this, [this] { backend.restart(); });
         pages->setFaceType(KPageView::List);
         for (const auto entry : catalog.value("pages").toArray()) {
             const auto page = entry.toObject();
@@ -276,6 +288,7 @@ public:
         auto menu = new QMenu;
         const auto addMenu = [this, menu](const char* en, const char* zh, std::function<void()> callback) {
             auto action = menu->addAction(tr(en, zh));
+            if (QString(en) == "Play / Pause" || QString(en) == "Next track" || QString(en) == "Disconnect") deviceActions.push_back(action);
             connect(action, &QAction::triggered, this, [callback] { callback(); });
             translations.push_back([this, action, en, zh] { action->setText(tr(en, zh)); });
         };
@@ -302,24 +315,12 @@ public:
         });
         monitor->start(2000);
         connect(tray, &KStatusNotifierItem::activateRequested, this, [this](bool, const QPoint& p) { showQuick(p); });
-        connect(&backend, &QProcess::readyReadStandardOutput, this, [this] {
-            pending += backend.readAllStandardOutput();
-            while (pending.contains('\n')) {
-                const auto index = pending.indexOf('\n');
-                const auto event = QJsonDocument::fromJson(pending.left(index)).object(); pending.remove(0, index + 1);
-                if (event.value("type") == "state") { if (event.value("version").toInt() == 1) state = event; else { state = {}; error = "unsupported-version"; } }
-                if (event.value("type") == "result") error = event.value("ok").toBool() ? QString() : event.value("errorCode").toString();
-                refresh();
-            }
-        });
-        connect(&backend, &QProcess::readyReadStandardError, this, [this] { backend.readAllStandardError(); });
-        connect(&backend, &QProcess::errorOccurred, this, [this](QProcess::ProcessError) { error = backend.errorString(); refresh(); });
-        connect(&backend, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, [this](int, QProcess::ExitStatus) {
-            if (!closing) { error = tr("Backend stopped", "后端已停止"); state = {}; refresh(); }
-        });
+        backend.changed = [this] {
+            state = backend.state; error = backend.error; sent = backend.sent;
+            refresh();
+        };
         connect(qApp, &QApplication::aboutToQuit, this, [this] {
-            closing = true; backend.closeWriteChannel();
-            if (!backend.waitForFinished(2000)) { backend.kill(); backend.waitForFinished(1000); }
+            closing = true; backend.shutdown();
         });
         auto arguments = live ? QStringList{"--live"} : QStringList{"--profile", options.value("profile")};
         if (options.isSet("locale")) arguments << "--locale" << options.value("locale");
@@ -377,15 +378,16 @@ int main(int argc, char** argv) {
     QApplication application(argc, argv);
     application.setApplicationName("SoundConnectKDE"); application.setQuitOnLastWindowClosed(false);
     QCommandLineParser parser; parser.addHelpOption();
-    parser.addOption({"backend", "Absolute path to shared host", "path"});
-    parser.addOption({"catalog", "Binding catalog", "path", QCoreApplication::applicationDirPath() + "/catalog.json"});
+    parser.addOption({"backend", "Absolute path to shared host", "path", "/usr/libexec/soundconnect/SoundConnectBackend"});
+    const auto localCatalog = QCoreApplication::applicationDirPath() + "/catalog.json";
+    parser.addOption({"catalog", "Binding catalog", "path", QFileInfo::exists(localCatalog) ? localCatalog : "/usr/share/soundconnect/clients/common/catalog.json"});
     parser.addOption({"locale", "en or zh_CN", "locale", "en"});
     parser.addOption({"theme", "system, light or dark session override", "theme"});
     parser.addOption({"profile", "Isolated preview profile", "profile", "WH-1000XM6"});
     parser.addOption({"route", "Initial page", "route", "home"});
     parser.addOption({"live", "Enable real Bluetooth"}); parser.addOption({"panel", "Open quick controls"});
     parser.addOption({"smoke-test", "Test native bindings in preview and exit"}); parser.process(application);
-    if (!parser.isSet("backend") || (parser.isSet("live") && parser.isSet("smoke-test"))
+    if ((parser.isSet("live") && parser.isSet("smoke-test"))
         || (parser.value("locale") != "en" && parser.value("locale") != "zh_CN")) parser.showHelp(2);
     App app;
     try { app.start(parser); } catch (const std::exception& e) { std::cerr << e.what() << std::endl; return 2; }
