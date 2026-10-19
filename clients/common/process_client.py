@@ -28,21 +28,24 @@ class ProcessClient:
         if self.closed:
             return
         old = self._session
-        if old:
-            self._retire(old)
+        previous_cleanup = self._retire(old) if old else None
         self._generation += 1
         self.state, self.error, self.diagnostic, self.ready = {}, 'backend-starting', '', False
         session = dict(cancel=threading.Event(), outgoing=queue.Queue(64), process=None,
-                       diagnostic='', diagnostic_pending=False, timer=None, generation=self._generation)
+                       diagnostic='', diagnostic_pending=False, timer=None, generation=self._generation, cleanup=None)
         self._session = session
         timer = threading.Timer(self.START_TIMEOUT, lambda: self._post(session, lambda: self._timeout(session)))
         timer.daemon = True
         session['timer'] = timer
         timer.start()
         self.changed()
-        threading.Thread(target=self._start, args=(session,)).start()
+        threading.Thread(target=self._start, args=(session, previous_cleanup)).start()
 
-    def _start(self, session):
+    def _start(self, session, previous_cleanup):
+        if previous_cleanup:
+            previous_cleanup.join()
+        if session['cancel'].is_set():
+            return
         try:
             process = subprocess.Popen(self.argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, bufsize=0)
@@ -171,11 +174,14 @@ class ProcessClient:
                     pass
 
     def _retire(self, session):
+        if session['cleanup']:
+            return session['cleanup']
         session['cancel'].set()
         if session['timer']:
             session['timer'].cancel()
         # Non-daemon cleanup survives UI shutdown and reaps only our own child.
         thread = threading.Thread(target=self._shutdown, args=(session,))
+        session['cleanup'] = thread
         thread.start()
         return thread
 

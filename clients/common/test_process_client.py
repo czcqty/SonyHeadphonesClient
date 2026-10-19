@@ -40,6 +40,8 @@ def fixture(mode):
         snapshot['app']['lastId'] = request['id']
         snapshot['app']['writes'] = snapshot['app'].get('writes', 0) + 1
         print(json.dumps(snapshot), flush=True)
+    if mode == 'slow-exit':
+        time.sleep(.3)
     return 0
 
 
@@ -121,6 +123,14 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(client.state['app'], {})
         self.assertEqual(client.sent, 20)
         old_process.wait(timeout=5)
+
+    def test_restart_reaps_previous_owner_before_launch(self):
+        client = self.make('slow-exit')
+        self.pump(lambda: client.ready)
+        old_process = client.process
+        client.restart()
+        self.pump(lambda: client.ready)
+        self.assertIsNotNone(old_process.poll(), 'New child raced the old session owner')
 
     def test_crash_clears_state(self):
         client = self.make('stop')
