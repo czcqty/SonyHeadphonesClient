@@ -85,9 +85,9 @@ this maintenance check does not add platform or real-device acceptance.
   bilingual choices/errors and baseline shortcuts are now implemented, but the
   automated checks below do not replace platform-specific desktop acceptance.
 - macOS SDK build and actual AppKit runtime checks (no macOS host is available).
-- Linux Qt 6.5+ backend build, BlueZ/hardware checks, KDE Frameworks 6, and real
-  Plasma/GNOME/Xfce desktop validation. Installed WSL Qt is 6.4; the supported
-  minimum is not lowered to make this environment pass.
+- Linux BlueZ/hardware checks and real Plasma/GNOME/Xfce desktop validation.
+  The Ubuntu/Debian backend and KF6 build checks are covered by the native package
+  follow-up below; the supported backend minimum remains Qt 6.5.
 - Real headphones, disconnect/reconnect and protocol fallback, clean-machine
   packaging, multi-monitor/DPI, accessibility and attached popups on each OS.
 
@@ -161,8 +161,9 @@ Implemented on main and consumed by all five native branches:
 1. **macOS**: compile Swift/AppKit and Qt backend on a Mac; native menu-bar/popup,
    theme switching, preference-file migration, keyboard/VoiceOver, permission and
    packaging/signing/notarization acceptance. AppKit changes are source-only here.
-2. **Linux**: Qt 6.5+ backend build (installed WSL Qt is 6.4.2), BlueZ, KF6 build,
-   and real Plasma/GNOME/Xfce sessions. Verify compositor/Wayland popup focus,
+2. **Linux**: BlueZ and real Plasma/GNOME/Xfce sessions. Native Ubuntu/Debian
+   backend and KF6 builds are now automated checks, not desktop acceptance.
+   Verify compositor/Wayland popup focus,
    attached menus, tray disappearance/reappearance and system-theme changes.
    Xfce currently supplies an XEmbed tray on X11; **no Wayland status-notifier
    indicator is implemented**. Its no-tray ordinary-window fallback must be tested
@@ -180,3 +181,64 @@ Implemented on main and consumed by all five native branches:
 
 Qt Quick is still present and enabled by default. No Qt Quick source, platform
 support, protocol mapping or backend Qt dependency was removed in this follow-up.
+
+## Native installer and recovery follow-up (2026-10-19)
+
+Shared changes live on main and are merged into WinUI, KDE, GNOME and Xfce.
+The backend still uses Qt Core and protocol v1. Qt Quick remains enabled by
+default; no frontend or hardware support was removed.
+
+- Native transports wait for a valid initial snapshot, time out startup after ten
+  seconds, disable commands and clear stale state on failure, and offer explicit
+  retry. Retry retires the old child first and does not replay queued commands or
+  reconnect devices. Normal exit allows two seconds for EOF shutdown. Diagnostics
+  are bounded and preserve UTF-8 across reads. GTK shares the Python transport;
+  C# and KDE use their own native process APIs against the same contract.
+- `MDR_DEPLOY_BACKEND_RUNTIME` defaults to ON. Native Debian packages use system
+  Qt; Ubuntu privately bundles Qt Core 6.8.3 and matching ICU without modifying
+  KDE/GTK library search paths. Installed adapters find backend/catalog resources
+  without a source checkout or a required `--backend` parameter.
+- WinUI uses a dedicated backend build, self-contained Release publish, and the
+  generated application PRI resource map. Its NSIS installer is per-user, has
+  separate identity from Qt, live-mode menu shortcuts, upgrade and file-list-based
+  uninstall. User preferences and unrelated files are preserved. Tray recovery
+  keeps settings reachable when the shell tray disappears/reappears.
+- Ubuntu 24.04 uses KF5; Debian 13 uses Qt 6.8.2/KF6 6.13. Each emits backend and
+  common DEBs plus KDE/GNOME/Xfce adapters with matching-version dependencies.
+  Installed menu entries explicitly pass `--live`; CLI defaults remain isolated
+  preview. No autostart service is added. Xfce creates XEmbed icons only on X11;
+  Wayland uses ordinary windows and no status-notifier indicator is claimed.
+- Manual native CI workflows build, test, package, install/reinstall/uninstall and
+  retain artifacts/reports. Wrong-branch Linux adapter selections fail before SDK
+  provisioning. These workflow definitions have not been dispatched on hosted
+  Actions by this local check. See [build and package instructions](../packaging/native/README.md).
+
+### Recorded automated evidence
+
+- Windows/MSVC/Qt 6.11: backend-only Release **9/9 CTest suites pass**; Qt Quick
+  Debug **17/17 suites pass**. Shared Python transport has **10 deterministic
+  failure/recovery cases**, also passing on Linux; C# and KDE transport tests
+  cover missing/failed children, timeout, incompatible/malformed output, bounded
+  diagnostics, ordered writes, restart without replay, and child shutdown.
+- Windows NSIS package installs and reinstalls, passes English/Chinese native
+  widget and restart smoke tests using default child lookup with PATH restricted
+  to System32 and an unavailable SDK root, then uninstalls. Both reports contain
+  `ok: true, sentCommands: 6`. An unrelated installed-directory sentinel survives.
+  This is an installation/runtime isolation check, not a fresh Windows OS image.
+- Ubuntu 24.04 Qt 6.8.3 backend: **9/9 CTest suites pass**. All three installed
+  adapters pass English/Chinese native-control and recovery checks, reinstall and
+  uninstall with isolated preferences. Dependency inspection finds Qt Core as the
+  backend's only Qt module, resolving from its private installed directory.
+- Debian 13 Qt 6.8.2 backend: **9/9 CTest suites pass**; KF6 builds and its native
+  transport test passes. All three installed adapters pass English/Chinese
+  control/recovery smoke tests, reinstall and uninstall in the isolated Debian
+  root filesystem. Dependency inspection finds Qt Core as the backend's only Qt
+  module, resolving from the distro runtime. Native DEBs and manifests are generated.
+- Xfce's fallback also passes the automated control/restart smoke on the available
+  WSLg Wayland backend with GTK criticals treated as failures. This does not
+  establish an actual Xfce Wayland desktop or tray implementation.
+
+Real headphones/BlueZ, real desktop focus and tray behavior, accessibility,
+multiple monitors/DPI, Windows 10, clean-machine OS checks and signing remain
+release gates. Xvfb/WSLg and a restricted development-machine PATH do not replace
+those checks. macOS remains outside this follow-up.
