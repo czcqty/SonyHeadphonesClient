@@ -6,6 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'clients' / 'common
 import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
+gi.require_version('GdkX11', '3.0')
 gi.require_version('Libxfce4ui', '2.0')
 from gi.repository import Gdk, GdkX11, GLib, Gtk, Libxfce4ui
 from client import CATALOG, Client, choices, command, enabled, options, title, value, dynamic, display, connection_error
@@ -396,6 +397,10 @@ class App:
         return GLib.SOURCE_REMOVE
 
 if __name__ == '__main__':
-    app = App(options())
+    args = options()
+    if not Gtk.init_check()[0]:
+        print('Cannot open a GTK display', file=sys.stderr)
+        sys.exit(2)
+    app = App(args)
     Gtk.main()
     sys.exit(app.exit_code)
