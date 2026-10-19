@@ -10,7 +10,7 @@ apt-get install -y --no-install-recommends "$packages"/*.deb
 # Reinstall exercises upgrade paths while retaining a user-owned preferences file.
 testroot=$(mktemp -d)
 trap 'rm -rf -- "$testroot"' EXIT
-export HOME="$testroot" XDG_CONFIG_HOME="$testroot/config" XDG_DATA_HOME="$testroot/data"
+export XDG_CONFIG_HOME="$testroot/config" XDG_DATA_HOME="$testroot/data"
 export XDG_CACHE_HOME="$testroot/cache" XDG_RUNTIME_DIR="$testroot/runtime"
 mkdir -p "$XDG_RUNTIME_DIR" "$XDG_CONFIG_HOME/czcqty"
 chmod 700 "$XDG_RUNTIME_DIR"
