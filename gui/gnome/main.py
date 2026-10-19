@@ -39,6 +39,9 @@ class App(Adw.Application):
         self.status = Gtk.Label(wrap=True, margin_start=12, margin_end=12, margin_top=6, margin_bottom=6)
         content = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
         content.append(self.status)
+        self.retry = Gtk.Button(label=dynamic('backend-retry', self.locale))
+        self.retry.connect('clicked', lambda *_: self.client.restart())
+        content.append(self.retry)
         pane = Gtk.Paned(orientation=Gtk.Orientation.HORIZONTAL, wide_handle=True, vexpand=True)
         self.stack = Gtk.Stack(hexpand=True, vexpand=True)
         sidebar = Gtk.StackSidebar(stack=self.stack, width_request=170)
@@ -200,9 +203,14 @@ class App(Adw.Application):
         if locale != self.locale:
             self.locale = locale
             self.retranslate()
-        self.apply_theme(prefs.get('themeMode', 'system'))
+        self.apply_theme(prefs.get('themeMode', self.theme or 'system'))
         message = (dynamic('Backend error: %1', self.locale).replace('%1', dynamic(self.client.error, self.locale)) if self.client.error else '') or connection_error(state, self.locale) or self.tr('Live device' if self.args.live else 'Isolated device preview', '实时设备' if self.args.live else '独立设备预览')
+        if self.client.diagnostic and not self.client.ready:
+            message += '\n' + self.client.diagnostic
         self.status.set_label(message); self.quick_status.set_label(message)
+        self.retry.set_label(dynamic('backend-retry', self.locale))
+        self.retry.set_visible(not self.client.ready)
+        self.retry.set_sensitive(self.client.error != 'backend-starting')
         for b in self.bindings:
             field, widget, row = b['field'], b['widget'], b['row']
             current = value(state, field)
@@ -310,6 +318,24 @@ class App(Adw.Application):
         except Exception as error:
             self.exit_code = 1
             print('Native preference smoke failed:', repr(error), file=sys.stderr)
+        if self.exit_code:
+            self.quit()
+        else:
+            self.client.restart()
+            assert not self.client.ready and self.retry.get_visible()
+            assert not enabled(self.client.state, dict(kind='button', group='app'))
+            GLib.timeout_add_seconds(2, self.smoke_restarted)
+        return GLib.SOURCE_REMOVE
+
+    def smoke_restarted(self):
+        try:
+            assert self.client.ready, self.client.error
+            assert self.client.sent == 5, 'Recovery replayed a command'
+            assert not self.retry.get_visible()
+            print('PASS: native retry, disabled offline commands, fresh snapshot and no replay', flush=True)
+        except Exception as error:
+            self.exit_code = 1
+            print('Native recovery smoke failed:', repr(error), file=sys.stderr)
         self.quit()
         return GLib.SOURCE_REMOVE
 
