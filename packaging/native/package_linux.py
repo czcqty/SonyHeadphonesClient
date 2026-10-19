@@ -69,7 +69,7 @@ def main():
             # libraries stay package dependencies; no GTK/KDE search path changes.
             library = executable.parent / 'lib'
             for line in run('ldd', executable).splitlines():
-                match = re.match(r'\s*(\S+) => (\S+)', line)
+                match = re.match(r'\s*(\S+) => (.+) \([^)]*\)$', line)
                 if match and Path(match[2]).is_relative_to(qt_root):
                     source = Path(match[2])
                     if source.name.startswith('libQt6') and not source.name.startswith('libQt6Core.'):
