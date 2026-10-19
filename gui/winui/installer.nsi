@@ -2,7 +2,7 @@ Unicode true
 !include "MUI2.nsh"
 !include "LogicLib.nsh"
 Name "Sound Connect (WinUI)"
-OutFile "${OUTDIR}/SoundConnect-WinUI-${VERSION}-windows-x64-setup.exe"
+OutFile "${OUTDIR}\SoundConnect-WinUI-${VERSION}-windows-x64-setup.exe"
 InstallDir "$LOCALAPPDATA\Programs\SoundConnectWinUI"
 InstallDirRegKey HKCU "Software\SoundConnectWinUI" "InstallDir"
 RequestExecutionLevel user
@@ -27,7 +27,7 @@ Section "Sound Connect" SEC_MAIN
   ${EndIf}
 upgrade_done:
   SetOutPath "$INSTDIR"
-  File /r "${APPDIR}/*"
+  File /r "${APPDIR}\*"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
   CreateDirectory "$SMPROGRAMS\Sound Connect (WinUI)"
   CreateShortcut "$SMPROGRAMS\Sound Connect (WinUI)\Sound Connect.lnk" "$INSTDIR\SoundConnect.WinUI.exe" "--live"
@@ -49,7 +49,7 @@ Section "Uninstall"
   Delete "$SMPROGRAMS\Sound Connect (WinUI)\Sound Connect.lnk"
   Delete "$SMPROGRAMS\Sound Connect (WinUI)\Uninstall.lnk"
   RMDir "$SMPROGRAMS\Sound Connect (WinUI)"
-  !include "${OUTDIR}/uninstall-files.nsh"
+  !include "${OUTDIR}\uninstall-files.nsh"
   Delete "$INSTDIR\Uninstall.exe"
   RMDir "$INSTDIR"
   DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\SoundConnectWinUI"
