@@ -21,6 +21,8 @@ jobs:
       - name: Bootstrap checkout tools
         run: apt-get update && apt-get install -y git ca-certificates
       - uses: actions/checkout@v6
+      - name: Check selected adapter exists on this branch
+        run: test -d 'gui/${{ inputs.desktop }}'
       - name: Install build and desktop dependencies
         run: bash packaging/native/linux_dependencies.sh
       - name: Build, test and package
