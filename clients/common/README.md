@@ -10,6 +10,15 @@ supplied by each presentation. Other languages use their native process APIs
 against the same [protocol](../../backend/README.md). No frontend builds a
 private copy of the backend host.
 
+The Python client uses `ProcessClient` for asynchronous ordered writes, a bounded
+command queue, ten-second startup timeout and explicit `restart()`. `ready` is
+false until a valid initial snapshot arrives. Failure clears state; `error` is a
+bilingual catalog key and `diagnostic` preserves bounded OS details. Restart
+discards old-generation callbacks and queued writes and waits for the previous
+child's cleanup. Run `test_process_client.py` for deterministic failure/recovery
+tests without a GUI or Bluetooth. Installed Linux clients default to
+`/usr/libexec/soundconnect/SoundConnectBackend`; `--backend` remains an override.
+
 `test_catalog.py` compares bindings against the running host's full command
 contract and exercises available controls on representative device profiles.
 This proves binding coverage, not visual or desktop integration parity.
