@@ -1,4 +1,5 @@
 """UI-independent private child transport. Call public methods on the UI thread."""
+import codecs
 import json
 import queue
 import subprocess
@@ -65,9 +66,10 @@ class ProcessClient:
             self._fail(session, 'backend-start-timeout')
 
     def _diagnostics(self, session):
+        decoder = codecs.getincrementaldecoder('utf-8')('replace')
         try:
             while data := session['process'].stderr.read(1024):
-                session['diagnostic'] = (session['diagnostic'] + data.decode('utf-8', errors='replace'))[-self.DIAGNOSTIC_LIMIT:]
+                session['diagnostic'] = (session['diagnostic'] + decoder.decode(data))[-self.DIAGNOSTIC_LIMIT:]
                 if not session['diagnostic_pending']:
                     session['diagnostic_pending'] = True
                     self._post(session, lambda: self._update_diagnostic(session))
