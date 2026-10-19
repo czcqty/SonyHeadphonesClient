@@ -229,6 +229,7 @@ Windows route/state/locale/theme preview matrix.
 | --- | --- | --- |
 | `BUILD_TESTING` | `ON` | Build backend/contract tests and, when enabled, frontend tests |
 | `MDR_BUILD_QT_FRONTEND` | `ON` | Retain the transitional Qt Quick application; `OFF` builds the headless backend |
+| `MDR_DEPLOY_BACKEND_RUNTIME` | `ON` | Deploy standalone backend runtime dependencies; native distro recipes may stage their own runtime |
 | `MDR_BUILD_WITH_ASAN` | `OFF` | Enable AddressSanitizer on supported compilers |
 | `MDR_DEBUG` | `OFF` | Enable additional `libmdr` diagnostics |
 | `MDR_ENABLE_CODEGEN` | `ON` | Enable LLVM/libclang protocol regeneration |
