@@ -93,7 +93,7 @@ def main():
         if args.desktop == 'kde':
             target = frontend / 'usr/bin' / command
             copy(build / 'kde/SoundConnectKDE', target, True)
-            native_deps = dependencies(target, frontend)
+            native_deps = dependencies(target, frontend) + (', kde-style-breeze-data' if args.distro == 'debian13' else ', breeze')
         else:
             copy(ROOT / 'gui' / args.desktop / 'main.py', frontend / 'usr/share/soundconnect/gui' / args.desktop / 'main.py')
             target = frontend / 'usr/bin' / command
