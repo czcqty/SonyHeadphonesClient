@@ -18,7 +18,7 @@ printf '[appearance]\nlocale=zh_CN\nthemeMode=dark\n' > "$XDG_CONFIG_HOME/czcqty
 cp "$XDG_CONFIG_HOME/czcqty/SonyHeadphonesClient.conf" "$testroot/preferences-before"
 apt-get install -y --reinstall "$packages"/*.deb
 cd "$testroot"
-export PATH=/usr/bin:/bin GSK_RENDERER=cairo G_DEBUG=fatal-criticals
+export PATH=/usr/bin:/bin GSK_RENDERER=cairo G_DEBUG=fatal-criticals GDK_BACKEND=x11 QT_QPA_PLATFORM=xcb
 unset QT_PLUGIN_PATH QT_QPA_PLATFORM_PLUGIN_PATH QML2_IMPORT_PATH LD_LIBRARY_PATH
 for locale in en zh_CN; do
   xvfb-run -a dbus-run-session -- "soundconnect-$desktop" --locale "$locale" --smoke-test \
