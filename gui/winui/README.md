@@ -17,28 +17,40 @@ network port. Protocol and device command mapping are unchanged.
 ## Build and run
 
 Requires Windows 10 1809+ (Windows 11 recommended), .NET 8 SDK, and the repository's
-existing configured Qt 6.5+ / C++20 build. Run from a Visual Studio developer
+Qt 6.5+ Core/Test SDK and a C++20 compiler. Run from a Visual Studio developer
 PowerShell with `cmake` and `dotnet` on PATH:
 
 ```powershell
-./gui/winui/Build.ps1 -QtBuildDirectory cmake-build-debug-visual-studio
-./cmake-build-winui/app/SoundConnect.WinUI.exe
+./gui/winui/Build.ps1
+./build/native-winui/app/SoundConnect.WinUI.exe
 ```
 
-`-Dotnet` and `-CMake` accept absolute paths. The build script restores the locked
-NuGet dependency graph and copies the backend host/runtime into `app/backend`.
-No system runtime installation or MSIX signing is needed for this preview.
-The Debug C++ host still requires a development machine; use a Release Qt build
-and the appropriate VC runtime before distributing outside development.
+`-Dotnet` and `-CMake` accept absolute paths. `-CMakeConfigureArguments` passes
+Qt/toolchain options to a dedicated backend build. Release is the default;
+the script rejects a Qt Quick cache or one belonging to another checkout.
+It publishes .NET/Windows App SDK, including the generated application PRI,
+and stages the shared backend/runtime through CMake install into `app/backend`.
+
+```powershell
+./gui/winui/Package.ps1 -AppDirectory build/native-winui/app
+./gui/winui/Verify.ps1 -Installer /absolute/native-setup.exe -TestDirectory /absolute/fresh-test-directory
+```
+
+Packaging requires NSIS. The per-user installer adds a live-mode Start-menu
+entry, optional desktop shortcut and uninstall entry. Uninstall preserves
+preferences and unrelated files. `Verify.ps1` exercises installation, reinstall,
+English/Chinese smoke tests with a restricted PATH, and removal; it refuses to
+replace an existing native installation. Real clean-machine/Windows 10 checks
+remain separate. See [the shared package guide](../../packaging/native/README.md).
 
 The default is an isolated WH-1000XM6 simulation. It neither connects Bluetooth
 nor saves appearance preferences. `--live` explicitly enables the existing real
 device backend; use the Connection page to select a paired device.
 
 ```powershell
-./cmake-build-winui/app/SoundConnect.WinUI.exe --panel --theme dark
-./cmake-build-winui/app/SoundConnect.WinUI.exe --locale en --route equalizer
-./cmake-build-winui/app/SoundConnect.WinUI.exe --live
+./build/native-winui/app/SoundConnect.WinUI.exe --panel --theme dark
+./build/native-winui/app/SoundConnect.WinUI.exe --locale en --route equalizer
+./build/native-winui/app/SoundConnect.WinUI.exe --live
 ```
 
 Options: `--profile <existing-profile-id>`, `--backend <host-executable>`,
@@ -95,3 +107,13 @@ check zero synchronization writes, then exercise one toggle and slider commit.
 - Native dialogs confirm power-off and unpair; cancellation sends no command.
   Separate quick/full layouts, native menu styling and Qt Quick removal gates
   remain unchanged.
+
+## Backend recovery
+
+A valid initial snapshot enables device and preference commands. Missing/failed
+children, incompatible responses, EOF and the ten-second startup timeout clear
+stale state and expose Retry startup. Pipes are asynchronous, diagnostics are
+bounded, and retry obtains fresh state without replaying commands or reconnecting.
+Quit gives the owned child two seconds for EOF shutdown. Logs use the user's
+SoundConnect data directory. Run `dotnet run --project gui/winui/tests/TransportTests.csproj -c Release`
+for transport failure tests. The native smoke also exercises child restart.

@@ -109,7 +109,12 @@ internal sealed partial class MainWindow : Window
                 if (e.SelectedItem is NavigationViewItem item) { route = (string)item.Tag; BuildPage(); }
             };
             root.Children.Add(navigation);
-            navigation.SelectedItem = navigation.MenuItems.Cast<NavigationViewItem>().FirstOrDefault(x => (string)x.Tag == route) ?? navigation.MenuItems[0];
+            var view = navigation;
+            view.Loaded += (_, _) => {
+                if (navigation == view && view.SelectedItem is null)
+                    view.SelectedItem = view.MenuItems.Cast<NavigationViewItem>().FirstOrDefault(x => (string)x.Tag == route) ?? view.MenuItems[0];
+            };
+            BuildPage();
         }
         Content = root;
         ApplyTheme();
@@ -125,12 +130,19 @@ internal sealed partial class MainWindow : Window
         else navigation!.Content = scroll;
         var status = new InfoBar { IsClosable = false, Severity = InfoBarSeverity.Informational };
         page.Children.Add(status);
+        var retry = ActionButton(Dynamic("backend-retry"), backend.Restart);
+        page.Children.Add(retry);
+        bindings.Add(() => {
+            retry.Visibility = backend.Ready ? Visibility.Collapsed : Visibility.Visible;
+            retry.IsEnabled = backend.Error != "backend-starting";
+        });
         bindings.Add(() => {
             status.IsOpen = !app.Live || backend.Error.Length > 0 || ConnectionError().Length > 0 || app.ShortcutError.Length > 0 || !backend.Connected;
             status.Severity = backend.Error.Length > 0 ? InfoBarSeverity.Error : InfoBarSeverity.Informational;
             status.Title = backend.Error.Length > 0 ? T("连接错误", "Connection error") : app.Live ? T("设备连接", "Device connection") : T("预览模式", "Preview mode");
             status.Message = backend.Error.Length > 0 ? Dynamic("Backend error: %1").Replace("%1", Dynamic(backend.Error)) : ConnectionError().Length > 0 ? ConnectionError() : app.ShortcutError.Length > 0 ? T("快捷键注册失败（可能已被占用）：", "Shortcut registration failed (possibly already in use): ") + app.ShortcutError : app.Live ? T("请在设备页连接耳机。", "Connect headphones on the Devices page.") : T("使用模拟设备，操作不会发送至真实耳机。", "Simulated device. Changes are not sent to real headphones.");
         });
+        bindings.Add(() => { if (!backend.Ready && backend.Diagnostic.Length > 0) status.Message += "\n" + backend.Diagnostic; });
         if (compact) Overview();
         else {
             CatalogPage(route);

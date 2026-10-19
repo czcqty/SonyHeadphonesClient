@@ -17,10 +17,17 @@
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Remove="tests/**/*.cs" />
     <Content Include="../../clients/common/catalog.json" Link="catalog.json" CopyToOutputDirectory="PreserveNewest" />
     <FrameworkReference Include="Microsoft.WindowsDesktop.App.WindowsForms" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260921001" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.4654" />
   </ItemGroup>
+  <!-- Unpackaged WinUI publishing can omit the generated application PRI.
+       It also contains the merged framework resource map used by stock controls. -->
+  <Target Name="PublishApplicationPri" AfterTargets="Publish">
+    <Error Condition="!Exists('$(TargetDir)$(AssemblyName).pri')" Text="The generated WinUI application PRI is missing." />
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).pri" DestinationFolder="$(PublishDir)" />
+  </Target>
 </Project>
 

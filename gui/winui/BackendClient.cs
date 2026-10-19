@@ -1,108 +1,211 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Threading;
+using System.Threading.Channels;
 using System.Threading.Tasks;
-using Microsoft.UI.Dispatching;
 
 namespace SoundConnect.WinUI;
 
-// Private redirected pipes keep the existing Qt event loop in its own process.
-// Device state and command validation remain in the shared C++ ViewModels.
+// Transport only. Device behavior and validation belong to SoundConnectBackend.
 internal sealed class BackendClient : IDisposable
 {
-    private readonly DispatcherQueue dispatcher;
-    private Process? process;
+    private sealed class Session
+    {
+        internal Process? Process;
+        internal readonly CancellationTokenSource Stop = new();
+        internal readonly Channel<string> Outgoing = Channel.CreateBounded<string>(64);
+        internal string Diagnostic = "";
+        internal int DiagnosticPending;
+        internal Task? Cleanup;
+    }
+    private readonly Action<Action> dispatch;
+    private Session? session;
+    private string executable = "";
+    private string[] arguments = Array.Empty<string>();
     private bool disposed;
     public JsonObject State { get; private set; } = new();
     public string Error { get; private set; } = "";
+    public string Diagnostic { get; private set; } = "";
+    public bool Ready { get; private set; }
     public int SentCommandCount { get; private set; }
+    public TimeSpan StartupTimeout { get; set; } = TimeSpan.FromSeconds(10);
     public event Action? Changed;
-    public bool Connected => Text("connection", "state") == "connected";
+    public bool Connected => Ready && Text("connection", "state") == "connected";
     public bool Flag(string group, string key) => State[group]?[key]?.GetValue<bool>() ?? false;
     public int Number(string group, string key) => State[group]?[key]?.GetValue<int>() ?? 0;
     public string Text(string group, string key) => State[group]?[key]?.GetValue<string>() ?? "";
 
-    public BackendClient(DispatcherQueue dispatcher) { this.dispatcher = dispatcher; }
+    public BackendClient(Action<Action> dispatch) { this.dispatch = dispatch; }
 
     public void Start(string path, bool live, string profile, string locale, string theme)
     {
-        try
-        {
-            if (!File.Exists(path)) throw new FileNotFoundException("Backend executable not found", path);
-            var info = new ProcessStartInfo(path) {
-                UseShellExecute = false, CreateNoWindow = true,
-                RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
-                WorkingDirectory = Path.GetDirectoryName(Path.GetFullPath(path))!
-            };
-            if (live) info.ArgumentList.Add("--live");
-            else { info.ArgumentList.Add("--profile"); info.ArgumentList.Add(profile); }
-            if (locale.Length > 0) { info.ArgumentList.Add("--locale"); info.ArgumentList.Add(locale); }
-            if (theme.Length > 0) { info.ArgumentList.Add("--theme"); info.ArgumentList.Add(theme); }
-            process = new Process { StartInfo = info };
-            process.Start();
-            _ = ReadOutputAsync(process);
-            // Drain diagnostics so a verbose backend cannot block on stderr.
-            _ = process.StandardError.ReadToEndAsync();
-        }
-        catch (Exception e) { Error = e.Message; Changed?.Invoke(); }
+        var args = new System.Collections.Generic.List<string>();
+        if (live) args.Add("--live"); else { args.Add("--profile"); args.Add(profile); }
+        if (locale.Length > 0) { args.Add("--locale"); args.Add(locale); }
+        if (theme.Length > 0) { args.Add("--theme"); args.Add(theme); }
+        Start(path, args.ToArray());
     }
-
-    private async Task ReadOutputAsync(Process source)
+    internal void Start(string path, string[] args)
     {
-        try
-        {
-            while (await source.StandardOutput.ReadLineAsync() is string line)
-            {
-                JsonObject? data;
-                try { data = JsonNode.Parse(line) as JsonObject; }
-                catch (JsonException) { continue; }
-                if (data is null) continue;
-                dispatcher.TryEnqueue(() => {
-                    if (disposed) return;
-                    if (data["type"]?.GetValue<string>() == "state") {
-                        if (data["version"]?.GetValue<int>() == 1) State = data;
-                        else { Error = "unsupported-version"; State = new(); }
-                    }
-                    else if (data["type"]?.GetValue<string>() == "result")
-                        Error = data["ok"]?.GetValue<bool>() == true ? "" : data["errorCode"]?.GetValue<string>() ?? "Command rejected";
-                    Changed?.Invoke();
-                });
+        executable = path; arguments = args; Restart();
+    }
+    private void Post(Session source, Action action)
+    {
+        dispatch(() => {
+            if (disposed || session != source || source.Stop.IsCancellationRequested) return;
+            try { action(); }
+            catch (Exception error) when (error is InvalidOperationException or JsonException or FormatException)
+            { Fail(source, "backend-protocol-error", error.Message); }
+        });
+    }
+    public void Restart()
+    {
+        if (disposed) return;
+        var old = session;
+        var source = session = new Session();
+        State = new(); Ready = false; Error = "backend-starting"; Diagnostic = "";
+        Changed?.Invoke();
+        _ = CheckTimeoutAsync(source);
+        _ = Task.Run(async () => {
+            if (old is not null) await RetireAsync(old, true);
+            if (disposed || session != source || source.Stop.IsCancellationRequested) return;
+            try {
+                if (!File.Exists(executable)) throw new FileNotFoundException("Backend executable not found", executable);
+                var info = new ProcessStartInfo(executable) {
+                    UseShellExecute = false, CreateNoWindow = true,
+                    RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
+                    WorkingDirectory = Path.GetDirectoryName(Path.GetFullPath(executable))!
+                };
+                foreach (var argument in arguments) info.ArgumentList.Add(argument);
+                var process = new Process { StartInfo = info };
+                lock (source) {
+                    if (source.Stop.IsCancellationRequested) { process.Dispose(); return; }
+                    process.Start(); source.Process = process;
+                }
+                _ = WriteAsync(source);
+                var diagnostics = DiagnosticsAsync(source);
+                await ReadAsync(source);
+                await Task.WhenAny(diagnostics, Task.Delay(100));
+                Post(source, () => Fail(source, "backend-stopped", source.Diagnostic));
+            } catch (Exception error) when (error is IOException or InvalidOperationException or System.ComponentModel.Win32Exception) {
+                Post(source, () => Fail(source, "backend-start-failed", error.Message));
             }
-            dispatcher.TryEnqueue(() => {
-                if (!disposed) { Error = "Backend stopped"; State = new(); Changed?.Invoke(); }
-            });
-        }
-        catch (Exception e) when (e is IOException or ObjectDisposedException or InvalidOperationException)
-        {
-            dispatcher.TryEnqueue(() => { if (!disposed) { Error = e.Message; Changed?.Invoke(); } });
+        });
+    }
+    private async Task CheckTimeoutAsync(Session source)
+    {
+        try {
+            await Task.Delay(StartupTimeout, source.Stop.Token);
+            Post(source, () => { if (!Ready) Fail(source, "backend-start-timeout"); });
+        } catch (OperationCanceledException) { }
+    }
+    private async Task DiagnosticsAsync(Session source)
+    {
+        var buffer = new char[1024];
+        try {
+            int count;
+            while ((count = await source.Process!.StandardError.ReadAsync(buffer.AsMemory(), source.Stop.Token)) > 0) {
+                var text = source.Diagnostic + new string(buffer, 0, count);
+                source.Diagnostic = text.Length <= 4096 ? text : text[^4096..];
+                if (Interlocked.Exchange(ref source.DiagnosticPending, 1) == 0)
+                    Post(source, () => { Interlocked.Exchange(ref source.DiagnosticPending, 0); Diagnostic = source.Diagnostic; });
+            }
+        } catch (Exception error) when (error is IOException or OperationCanceledException or ObjectDisposedException) { }
+    }
+    private async Task ReadAsync(Session source)
+    {
+        try {
+            // A bounded line reader avoids unbounded memory from a faulty child.
+            var pending = new System.Text.StringBuilder();
+            var buffer = new char[4096];
+            int count;
+            while ((count = await source.Process!.StandardOutput.ReadAsync(buffer.AsMemory(), source.Stop.Token)) > 0) {
+                for (int i = 0; i < count; i++) {
+                    if (buffer[i] != '\n') {
+                        pending.Append(buffer[i]);
+                        if (pending.Length > 1048576) throw new JsonException("Oversized backend response");
+                        continue;
+                    }
+                    var data = JsonNode.Parse(pending.ToString()) as JsonObject ?? throw new JsonException("Expected a backend object");
+                    pending.Clear();
+                    Post(source, () => Receive(source, data));
+                }
+            }
+        } catch (Exception error) when (error is IOException or JsonException or OperationCanceledException or ObjectDisposedException) {
+            Post(source, () => Fail(source, "backend-protocol-error", error.Message));
         }
     }
-
+    private void Receive(Session source, JsonObject data)
+    {
+        if (data["type"]?.GetValue<string>() == "state") {
+            if (data["version"]?.GetValue<int>() != 1) { Fail(source, "unsupported-version"); return; }
+            if (new[] { "app", "connection", "playback", "noiseControl", "equalizer", "settings", "deviceManager" }.Any(key => data[key] is not JsonObject)) {
+                Fail(source, "backend-protocol-error"); return;
+            }
+            if (!Ready) Error = "";
+            State = data; Ready = true;
+        } else if (data["type"]?.GetValue<string>() == "result") {
+            Error = data["ok"]?.GetValue<bool>() == true ? "" : data["errorCode"]?.GetValue<string>() ?? "Command rejected";
+        }
+        Changed?.Invoke();
+    }
+    private void Fail(Session source, string code, string detail = "")
+    {
+        State = new(); Ready = false; Error = code;
+        Diagnostic = detail.Length > 0 ? detail : source.Diagnostic;
+        if (Diagnostic.Length > 4096) Diagnostic = Diagnostic[^4096..];
+        _ = RetireAsync(source, true);
+        Changed?.Invoke();
+    }
     public void Send(string target, string method, params object[] args)
     {
-        if (disposed || process is null) return;
-        try
-        {
-            SentCommandCount++;
-            process.StandardInput.WriteLine(JsonSerializer.Serialize(new { version = 1, id = SentCommandCount.ToString(), target, method, args }));
-            process.StandardInput.Flush();
-        }
-        catch (Exception e) when (e is IOException or InvalidOperationException)
-        { Error = e.Message; Changed?.Invoke(); }
+        if (disposed || !Ready || session is null) return;
+        var frame = JsonSerializer.Serialize(new { version = 1, id = (SentCommandCount + 1).ToString(), target, method, args });
+        if (session.Outgoing.Writer.TryWrite(frame)) SentCommandCount++;
+        else Fail(session, "backend-write-failed");
     }
-
-    public void Dispose()
+    private async Task WriteAsync(Session source)
     {
-        disposed = true;
-        if (process is null) return;
-        try
-        {
-            process.StandardInput.Close(); // EOF requests orderly Qt/backend shutdown.
-            if (!process.WaitForExit(2000)) process.Kill(entireProcessTree: true);
+        try {
+            await foreach (var frame in source.Outgoing.Reader.ReadAllAsync(source.Stop.Token)) {
+                source.Stop.Token.ThrowIfCancellationRequested();
+                await source.Process!.StandardInput.WriteLineAsync(frame.AsMemory(), source.Stop.Token);
+                await source.Process.StandardInput.FlushAsync(source.Stop.Token);
+            }
+        } catch (Exception error) when (error is IOException or InvalidOperationException or OperationCanceledException) {
+            Post(source, () => Fail(source, "backend-write-failed", error.Message));
         }
-        catch (InvalidOperationException) { }
-        process.Dispose();
     }
+    private static Task RetireAsync(Session source, bool abort)
+    {
+        lock (source) {
+            if (source.Cleanup is not null) return source.Cleanup;
+            source.Stop.Cancel(); source.Outgoing.Writer.TryComplete();
+            return source.Cleanup = Task.Run(async () => {
+                var process = source.Process;
+                if (process is null) return;
+                try {
+                    if (abort && !process.HasExited) process.Kill(entireProcessTree: true);
+                    else process.StandardInput.Close();
+                    using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                    try { await process.WaitForExitAsync(timeout.Token); }
+                    catch (OperationCanceledException) {
+                        if (!process.HasExited) process.Kill(entireProcessTree: true);
+                        await process.WaitForExitAsync();
+                    }
+                } catch (Exception error) when (error is IOException or InvalidOperationException or System.ComponentModel.Win32Exception) { }
+                finally { process.Dispose(); }
+            });
+        }
+    }
+    public Task CloseAsync()
+    {
+        disposed = true; Ready = false; State = new();
+        return session is null ? Task.CompletedTask : RetireAsync(session, false);
+    }
+    public void Dispose() => CloseAsync().GetAwaiter().GetResult();
 }

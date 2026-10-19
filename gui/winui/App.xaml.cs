@@ -27,7 +27,9 @@ public partial class App : Application
     {
         InitializeComponent();
         UnhandledException += (_, e) => {
-            File.WriteAllText(Path.Combine(AppContext.BaseDirectory, "winui-error.log"), e.Exception.ToString());
+            var directory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "SoundConnect", "logs");
+            Directory.CreateDirectory(directory);
+            File.WriteAllText(Path.Combine(directory, "winui-error.log"), e.Exception.ToString());
         };
     }
 
@@ -41,21 +43,14 @@ public partial class App : Application
         Live = arguments.Contains("--live");
         Chinese = Option("--locale", "en") != "en";
         Theme = Option("--theme", "system") switch { "light" => ElementTheme.Light, "dark" => ElementTheme.Dark, _ => ElementTheme.Default };
-        Backend = new BackendClient(Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread());
+        var dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+        Backend = new BackendClient(callback => dispatcher.TryEnqueue(() => callback()));
         Backend.Changed += ApplyPreferences;
         main = new MainWindow(false, Option("--route", "home"));
         main.Activate();
-        if (Hotkeys.TrayAvailable) {
-            tray = new Forms.NotifyIcon {
-                Text = "Sound Connect",
-                Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? System.Drawing.SystemIcons.Application,
-                Visible = true
-            };
-            tray.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) TogglePanel(); };
-            RebuildTrayMenu();
-        }
+        UpdateTray();
         if (Live) hotkeys = new Hotkeys(InvokeShortcut);
-        trayMonitor.Tick += (_, _) => { if (!HasTray && main?.AppWindow.IsVisible == false) ShowMain(); };
+        trayMonitor.Tick += (_, _) => UpdateTray();
         trayMonitor.Start();
         Backend.Start(Option("--backend", Path.Combine(AppContext.BaseDirectory, "backend", "SoundConnectBackend.exe")),
             Live, Option("--profile", "WH-1000XM6"), Option("--locale", ""), Option("--theme", ""));
@@ -98,6 +93,24 @@ public partial class App : Application
         }
     }
 
+    private void UpdateTray()
+    {
+        if (!Hotkeys.TrayAvailable) {
+            tray?.ContextMenuStrip?.Dispose(); tray?.Dispose(); tray = null;
+            if (main?.AppWindow.IsVisible == false) ShowMain();
+            return;
+        }
+        if (tray is not null) return;
+        {
+            tray = new Forms.NotifyIcon {
+                Text = "Sound Connect",
+                Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? System.Drawing.SystemIcons.Application,
+                Visible = true
+            };
+            tray.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) TogglePanel(); };
+            RebuildTrayMenu();
+        }
+    }
     internal void ShowMain() { main?.Activate(); }
     internal void TogglePanel()
     {
@@ -113,12 +126,13 @@ public partial class App : Application
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add(T("打开 Sound Connect", "Open Sound Connect"), null, (_, _) => ShowMain());
         menu.Items.Add(T("快捷控制", "Quick controls"), null, (_, _) => TogglePanel());
-        menu.Items.Add(T("播放 / 暂停", "Play / Pause"), null, (_, _) => InvokeShortcut(1));
-        menu.Items.Add(T("下一曲", "Next track"), null, (_, _) => InvokeShortcut(2));
-        menu.Items.Add(T("断开连接", "Disconnect"), null, (_, _) => Backend.Send("app", "disconnectDevice"));
+        menu.Items.Add(T("播放 / 暂停", "Play / Pause"), null, (_, _) => InvokeShortcut(1)).Name = "device";
+        menu.Items.Add(T("下一曲", "Next track"), null, (_, _) => InvokeShortcut(2)).Name = "device";
+        menu.Items.Add(T("断开连接", "Disconnect"), null, (_, _) => Backend.Send("app", "disconnectDevice")).Name = "device";
         menu.Items.Add(new Forms.ToolStripSeparator());
         menu.Items.Add(T("退出", "Quit"), null, (_, _) => Quit());
         tray.ContextMenuStrip = menu; old?.Dispose();
+        foreach (Forms.ToolStripItem item in menu.Items) if (item.Name == "device") item.Enabled = Backend.Ready;
     }
     internal void InvokeShortcut(int id)
     {
@@ -127,6 +141,8 @@ public partial class App : Application
     }
     private void ApplyPreferences()
     {
+        if (tray?.ContextMenuStrip is not null)
+            foreach (Forms.ToolStripItem item in tray.ContextMenuStrip.Items) if (item.Name == "device") item.Enabled = Backend.Ready;
         var prefs = Backend.State["preferences"];
         if (prefs is null) return;
         bool chinese = prefs["locale"]?.ToString() == "zh_CN";
@@ -142,11 +158,14 @@ public partial class App : Application
     {
         Backend.Send("preferences", "setThemeMode", theme == ElementTheme.Light ? "light" : theme == ElementTheme.Dark ? "dark" : "system");
     }
-    internal void Quit()
+    private bool quitting;
+    internal async void Quit()
     {
+        if (quitting) return;
+        quitting = true;
         trayMonitor.Stop(); hotkeys?.Dispose();
         tray?.ContextMenuStrip?.Dispose(); tray?.Dispose(); tray = null;
-        Backend.Dispose();
+        await Backend.CloseAsync();
         panel?.ExitWindow(); main?.ExitWindow();
         Exit();
     }

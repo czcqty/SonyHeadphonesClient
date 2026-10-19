@@ -106,7 +106,12 @@ internal sealed partial class MainWindow
         if (root.RequestedTheme != ElementTheme.Dark) throw new InvalidOperationException("Native theme not applied");
         if (Dynamic("rock") != (app.Chinese ? "摇滚" : "Rock")) throw new InvalidOperationException("Preset translation failed");
         Refresh();
-
+        int beforeRestart = backend.SentCommandCount;
+        backend.Restart();
+        if (backend.Ready || backend.State.Count != 0) throw new InvalidOperationException("Restart retained old state");
+        for (int i = 0; i < 100 && !backend.Ready; i++) await System.Threading.Tasks.Task.Delay(100);
+        if (!backend.Ready || backend.SentCommandCount != beforeRestart)
+            throw new InvalidOperationException("Recovery failed or replayed commands: " + backend.Error);
     }
 
     private ContentDialog? confirmation;
@@ -140,7 +145,7 @@ internal sealed partial class MainWindow
                 }
                 return value;
             }
-            bool Enabled() => kind == "label" || group == "app" || group == "preferences" ||
+            bool Enabled() => kind == "label" || (backend.Ready && (group == "app" || group == "preferences")) ||
                 (backend.Connected && (cap.Length == 0 || backend.Flag(group, cap)) &&
                  (field["index"] is null || Current() is not null));
             void Send(object? value = null) {
@@ -191,7 +196,7 @@ internal sealed partial class MainWindow
                     if (signature != nextSignature) { signature = nextSignature; combo.ItemsSource = names; values = next; }
                     combo.SelectedIndex = kind == "devices" || key.Length == 0 ? -1
                         : values.FindIndex(v => JsonNode.DeepEquals(v, Current()));
-                    combo.IsEnabled = kind == "devices" ? values.Count > 0 && !backend.Connected && backend.Text("connection", "state") != "connecting"
+                    combo.IsEnabled = kind == "devices" ? backend.Ready && values.Count > 0 && !backend.Connected && backend.Text("connection", "state") != "connecting"
                         : Enabled() && values.Count > 0;
                 });
                 combo.SelectionChanged += (_, _) => {
