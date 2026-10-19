@@ -7,7 +7,7 @@ import gi
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gdk', '3.0')
 gi.require_version('Libxfce4ui', '2.0')
-from gi.repository import Gdk, GLib, Gtk, Libxfce4ui
+from gi.repository import Gdk, GdkX11, GLib, Gtk, Libxfce4ui
 from client import CATALOG, Client, choices, command, enabled, options, title, value, dynamic, display, connection_error
 
 
@@ -51,9 +51,10 @@ class App:
         settings.connect('clicked', self.show_settings); quick_box.pack_start(settings, False, False, 0)
         # GTK's native XEmbed status icon is supported by Xfce's X11 notification
         # area. If no host embeds it, closing settings terminates normally.
-        self.tray = Gtk.StatusIcon.new_from_icon_name('audio-headphones')
-        self.tray.set_tooltip_text('Sound Connect'); self.tray.set_visible(True)
-        self.tray.connect('activate', lambda *_: self.close_quick() if self.quick.get_visible() else self.show_quick())
+        self.tray = Gtk.StatusIcon.new_from_icon_name('audio-headphones') if isinstance(Gdk.Display.get_default(), GdkX11.X11Display) else None
+        if self.tray:
+            self.tray.set_tooltip_text('Sound Connect'); self.tray.set_visible(True)
+            self.tray.connect('activate', lambda *_: self.close_quick() if self.quick.get_visible() else self.show_quick())
         self.menu = Gtk.Menu()
         self.menu_labels = []
         for en, zh, callback in [('All settings', '全部设置', self.show_settings),
@@ -65,10 +66,11 @@ class App:
             item = Gtk.MenuItem(label=self.tr(en, zh)); item.connect('activate', callback); self.menu.append(item)
             self.menu_labels.append((item, en, zh))
         self.menu.show_all()
-        self.tray.connect('popup-menu', lambda _, button, time: self.menu.popup(None, None, Gtk.StatusIcon.position_menu, self.tray, button, time))
+        if self.tray:
+            self.tray.connect('popup-menu', lambda _, button, time: self.menu.popup(None, None, Gtk.StatusIcon.position_menu, self.tray, button, time))
         self.focus_timer = 0
         self.quick.connect('focus-out-event', self.schedule_dismiss)
-        self.tray.connect('notify::embedded', self.tray_changed)
+        if self.tray: self.tray.connect('notify::embedded', self.tray_changed)
         for window in (self.window, self.quick):
             window.connect('key-press-event', self.key_pressed)
         self.client = Client(args, self.dispatch, self.refresh)
@@ -95,15 +97,18 @@ class App:
     def show_quick(self, *_):
         self.quick.show_all(); self.position_quick(); self.quick.present()
 
+    def has_tray(self):
+        return self.tray is not None and self.tray.is_embedded()
+
     def close_main(self, *_):
-        if self.tray.is_embedded():
+        if self.has_tray():
             self.window.hide()
         else:
             self.quit()
         return True
 
     def close_quick(self, *_):
-        if self.window.get_visible() or self.tray.is_embedded():
+        if self.window.get_visible() or self.has_tray():
             self.quick.hide()
         else:
             self.quit()
@@ -111,7 +116,7 @@ class App:
 
     def quit(self, *_):
         if self.focus_timer: GLib.source_remove(self.focus_timer); self.focus_timer = 0
-        self.tray.set_visible(False)
+        if self.tray: self.tray.set_visible(False)
         self.client.close()
         Gtk.main_quit()
 
@@ -255,7 +260,7 @@ class App:
         return False
 
     def tray_changed(self, *_):
-        if not self.tray.is_embedded() and not self.window.get_visible(): self.show_settings()
+        if not self.has_tray() and not self.window.get_visible(): self.show_settings()
 
     def schedule_dismiss(self, *_):
         if not self.focus_timer: self.focus_timer = GLib.timeout_add(150, self.dismiss_if_unfocused)
@@ -263,7 +268,7 @@ class App:
 
     def dismiss_if_unfocused(self):
         # Only tray panels dismiss on focus loss. No tray => reachable normal window.
-        if self.quick.is_active() or not self.quick.get_visible() or not self.tray.is_embedded():
+        if self.quick.is_active() or not self.quick.get_visible() or not self.has_tray():
             self.focus_timer = 0; return GLib.SOURCE_REMOVE
         popup = self.menu.get_mapped() or Gtk.grab_get_current() is not None or any(
             isinstance(b['widget'], Gtk.ComboBox) and b['widget'].get_property('popup-shown') for b in self.bindings)
@@ -274,7 +279,7 @@ class App:
     def position_quick(self):
         # Xfce's XEmbed tray supplies a real anchor on X11. Wayland leaves window
         # placement to the compositor and uses an ordinary window without a tray.
-        if not self.tray.is_embedded(): return
+        if not self.has_tray(): return
         ok, screen, area, orientation = self.tray.get_geometry()
         if not ok: return
         display = self.quick.get_display()
@@ -355,7 +360,7 @@ class App:
             assert self.key_pressed(self.window, event)
             assert self.client.sent == 5
             self.show_settings(); self.show_quick()
-            if not self.tray.is_embedded():
+            if not self.has_tray():
                 self.dismiss_if_unfocused()
                 assert self.quick.get_visible(), 'No-tray window was stranded'
             self.close_quick()
