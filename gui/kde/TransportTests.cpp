@@ -30,6 +30,8 @@ int main(int argc, char** argv) {
         start(mode);
         if (!wait([&] { return client.error != "backend-starting"; }) || client.ready || !client.state.isEmpty()) return 1;
     }
+    start("unicode");
+    if (!wait([&] { return client.ready && client.diagnostic == QString::fromUtf8("设备诊断"); })) return 1;
     start("noisy");
     if (!wait([&] { return client.ready && client.diagnostic.endsWith("TAIL"); }) || client.diagnostic.size() > 4096) return 1;
     for (int i = 0; i < 20; ++i) client.send("app", "test", {i});

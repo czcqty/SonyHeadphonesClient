@@ -25,7 +25,7 @@ public:
     }
     void restart() {
         retire();
-        ready = false; state = {}; diagnostic.clear(); error = "backend-starting";
+        ready = false; state = {}; diagnostic.clear(); diagnosticBytes.clear(); error = "backend-starting";
         notify();
         const auto revision = ++generation;
         if (retiring && retiring->state() != QProcess::NotRunning) {
@@ -43,7 +43,7 @@ private:
             if (process == source && !ready) fail("backend-start-timeout");
         });
         connect(source, &QProcess::readyReadStandardError, this, [this, source] {
-            if (process == source) diagnostic = (diagnostic + QString::fromUtf8(source->readAllStandardError())).right(4096);
+            if (process == source) drainDiagnostics(source);
         });
         connect(source, &QProcess::readyReadStandardOutput, this, [this, source, pending, timer] {
             if (process != source) return;
@@ -70,11 +70,11 @@ private:
             if (pending->size() > 1048576) fail("backend-protocol-error");
         });
         connect(source, &QProcess::errorOccurred, this, [this, source](QProcess::ProcessError code) {
-            if (process == source) { diagnostic = source->errorString(); fail(code == QProcess::FailedToStart ? "backend-start-failed" : "backend-stopped"); }
+            if (process == source) { drainDiagnostics(source); if (diagnostic.isEmpty()) diagnostic = source->errorString(); fail(code == QProcess::FailedToStart ? "backend-start-failed" : "backend-stopped"); }
         });
         connect(source, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), this, [this, source](int, QProcess::ExitStatus) {
             if (process == source) {
-                diagnostic = (diagnostic + QString::fromUtf8(source->readAllStandardError())).right(4096);
+                drainDiagnostics(source);
                 fail("backend-stopped");
             }
         });
@@ -103,6 +103,11 @@ private:
     QProcess* process = nullptr;
     QPointer<QProcess> retiring;
     quint64 generation = 0;
+    QByteArray diagnosticBytes;
+    void drainDiagnostics(QProcess* source) {
+        diagnosticBytes = (diagnosticBytes + source->readAllStandardError()).right(16384);
+        diagnostic = QString::fromUtf8(diagnosticBytes).right(4096);
+    }
     QString executable;
     QStringList args;
     void notify() { if (changed) changed(); }
