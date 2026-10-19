@@ -1,0 +1,47 @@
+name: Package native WinUI adapter
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v6
+      - name: Check WinUI adapter exists on this branch
+        run: |
+          if (!(Test-Path gui/winui/Build.ps1)) { throw 'Select the codex/winui branch to build this adapter.' }
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+      - uses: jurplel/install-qt-action@v4
+        with:
+          version: '6.8.3'
+          arch: win64_msvc2022_64
+          cache: true
+      - name: Install NSIS
+        run: choco install nsis --yes --no-progress
+      - name: Build self-contained native application
+        run: ./gui/winui/Build.ps1
+      - name: Test backend and native transport
+        run: |
+          ctest --test-dir build/native-winui/backend -C Release --output-on-failure --output-junit "$PWD/build/native-winui/backend/backend-tests.xml"
+          if ($LASTEXITCODE) { throw 'Backend tests failed' }
+          dotnet run --project gui/winui/tests/TransportTests.csproj -c Release 2>&1 | Tee-Object build/native-winui/transport-tests.log
+          if ($LASTEXITCODE) { throw 'Native transport tests failed' }
+      - name: Build installer
+        run: ./gui/winui/Package.ps1 -AppDirectory build/native-winui/app -MakeNSIS 'C:/Program Files (x86)/NSIS/makensis.exe'
+      - name: Verify installed application
+        run: |
+          $installer = Get-ChildItem build/native-winui/packages/*-setup.exe | Select-Object -First 1
+          ./gui/winui/Verify.ps1 -Installer $installer.FullName -TestDirectory "$PWD/build/native-winui/install-check"
+      - name: Upload installer and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SoundConnect-WinUI-windows-x64
+          path: |
+            build/native-winui/packages/
+            build/native-winui/install-check/reports/
+            build/native-winui/backend/backend-tests.xml
+            build/native-winui/transport-tests.log
