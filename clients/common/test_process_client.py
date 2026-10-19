@@ -25,6 +25,11 @@ def fixture(mode):
     if mode == 'busy':
         print('Another live backend owns the device session', file=sys.stderr, flush=True)
         return 3
+    if mode == 'unicode':
+        for byte in '设备诊断'.encode('utf-8'):
+            sys.stderr.buffer.write(bytes([byte]))
+            sys.stderr.buffer.flush()
+            time.sleep(.01)
     if mode == 'noisy':
         sys.stderr.write('x' * 200000 + 'TAIL')
         sys.stderr.flush()
@@ -101,6 +106,10 @@ class LifecycleTests(unittest.TestCase):
         client = self.make('busy')
         self.pump(lambda: client.error == 'backend-stopped')
         self.assertIn('owns the device session', client.diagnostic)
+
+    def test_unicode_diagnostics_across_pipe_reads(self):
+        client = self.make('unicode')
+        self.pump(lambda: client.ready and client.diagnostic == '设备诊断')
 
     def test_bounded_diagnostics(self):
         client = self.make('noisy')
