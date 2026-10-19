@@ -39,6 +39,10 @@ establish BlueZ or real desktop integration. macOS needs its own SDK/runtime.
 - `MDR_BUILD_QT_FRONTEND=OFF` builds the standalone Qt Core backend and tests.
 - Native presentation parity and real-device desktop checks are still release
   gates. Do not delete the transitional frontend or claim parity from IPC tests.
+- User testing reports WinUI functionality missing relative to Qt Quick and
+  controls that cannot be adjusted or remain disabled. These reports are open
+  acceptance blockers; a catalog entry or a successful preview smoke test is
+  insufficient evidence to close them.
 
 Branch ownership and build entries are listed in the [branch guide](branches.md).
 
@@ -215,8 +219,8 @@ default; no frontend or hardware support was removed.
   Wayland uses ordinary windows and no status-notifier indicator is claimed.
 - Manual native CI workflows build, test, package, install/reinstall/uninstall and
   retain artifacts/reports. Wrong-branch Linux adapter selections fail before SDK
-  provisioning. These workflow definitions have not been dispatched on hosted
-  Actions by this local check. See [build and package instructions](../packaging/native/README.md).
+  provisioning. Hosted runs are recorded below separately from the earlier local
+  checks. See [build and package instructions](../packaging/native/README.md).
 
 ### Recorded automated evidence
 
@@ -247,3 +251,45 @@ Real headphones/BlueZ, real desktop focus and tray behavior, accessibility,
 multiple monitors/DPI, Windows 10, clean-machine OS checks and signing remain
 release gates. Xvfb/WSLg and a restricted development-machine PATH do not replace
 those checks. macOS remains outside this follow-up.
+
+## Hosted CI follow-up (2026-10-19)
+
+The five branches have been pushed. The following hosted runs exercise the
+shared code and native package paths; they do not establish functional parity.
+
+| Branch | Run | Result and scope |
+| --- | --- | --- |
+| main | [39248061259](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39248061259) | Passed all six Windows/Linux/macOS jobs, Qt Quick ON and OFF; JUnit and test logs retained |
+| codex/winui | [39248167461](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39248167461) | Passed backend 9/9, C# transport, NSIS build, install/reinstall, English/Chinese native smoke and uninstall; installer and evidence retained |
+| codex/kde | [39247776913](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39247776913) | Passed Ubuntu 24.04/KF5 and Debian 13/KF6, backend tests, native transport, DEB install/reinstall/control smoke/uninstall |
+| codex/gnome | [39247782161](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39247782161) | Passed Ubuntu 24.04 and Debian 13 backend tests and DEB install/reinstall/control smoke/uninstall |
+| codex/xfce | [39247786506](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39247786506) | Passed Ubuntu 24.04 and Debian 13 backend tests and DEB install/reinstall/control smoke/uninstall |
+
+Initial failures and fixes:
+
+- WinUI dispatch returned 404 because its workflow existed only on the adapter
+  branch. The shared workflow now also exists on main, with a wrong-branch
+  preflight. Backend-test failures cannot be masked by the following .NET command.
+- All six initial Linux jobs passed backend tests, then failed source provenance
+  lookup because the container shell did not inherit checkout's Git ownership
+  exception. The workflow trusts its exact checkout path and records the Actions
+  source SHA explicitly. All six corrected jobs passed.
+- macOS Qt Quick crashed before entering a test under the offscreen platform.
+  Its native Controls test now uses Cocoa without overriding the default style;
+  the corrected hosted main run passed all 17 Qt Quick CTest suites.
+- Windows NSIS rejected the mixed-separator recursive input pattern. The WinUI
+  installer now uses Windows path separators for its input and output patterns;
+  the corrected hosted installer/installation job passed.
+
+Tested source revisions: main `f461d4b`, WinUI `50f405a`, KDE `8b2802b`, GNOME
+`bd3da02`, Xfce `5e65ce1`. Subsequent native merges only add the main Cocoa test
+configuration and report retention; this evidence update changes documentation
+only. Linux packages and dependency/source manifests are retained in both distro
+artifacts for each adapter. The WinUI artifact includes its installer, file
+manifest, backend JUnit, native transport log and installed smoke reports.
+
+The WinUI user report remains unresolved. A local preview check could operate
+sound toggles, but this does not reproduce or resolve missing functionality or
+disabled controls on the user's setup. Real headphone model, connection state
+and the affected controls still need reproduction. Qt Quick remains available
+and enabled by default. Migration acceptance is still open.
