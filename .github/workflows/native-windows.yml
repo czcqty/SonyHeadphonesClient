@@ -8,6 +8,9 @@ jobs:
     runs-on: windows-2022
     steps:
       - uses: actions/checkout@v6
+      - name: Check WinUI adapter exists on this branch
+        run: |
+          if (!(Test-Path gui/winui/Build.ps1)) { throw 'Select the codex/winui branch to build this adapter.' }
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
@@ -22,8 +25,10 @@ jobs:
         run: ./gui/winui/Build.ps1
       - name: Test backend and native transport
         run: |
-          ctest --test-dir build/native-winui/backend -C Release --output-on-failure --output-junit backend-tests.xml
-          dotnet run --project gui/winui/tests/TransportTests.csproj -c Release
+          ctest --test-dir build/native-winui/backend -C Release --output-on-failure --output-junit "$PWD/build/native-winui/backend/backend-tests.xml"
+          if ($LASTEXITCODE) { throw 'Backend tests failed' }
+          dotnet run --project gui/winui/tests/TransportTests.csproj -c Release 2>&1 | Tee-Object build/native-winui/transport-tests.log
+          if ($LASTEXITCODE) { throw 'Native transport tests failed' }
       - name: Build installer
         run: ./gui/winui/Package.ps1 -AppDirectory build/native-winui/app -MakeNSIS 'C:/Program Files (x86)/NSIS/makensis.exe'
       - name: Verify installed application
@@ -39,3 +44,4 @@ jobs:
             build/native-winui/packages/
             build/native-winui/install-check/reports/
             build/native-winui/backend/backend-tests.xml
+            build/native-winui/transport-tests.log
