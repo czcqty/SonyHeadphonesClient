@@ -98,7 +98,7 @@ def main():
             copy(ROOT / 'gui' / args.desktop / 'main.py', frontend / 'usr/share/soundconnect/gui' / args.desktop / 'main.py')
             target = frontend / 'usr/bin' / command
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text('#!/bin/sh\nexec /usr/bin/python3 /usr/share/soundconnect/gui/' + args.desktop + '/main.py "$@"\n')
+            target.write_text('#!/bin/sh\nexec /usr/bin/python3 -B /usr/share/soundconnect/gui/' + args.desktop + '/main.py "$@"\n')
             target.chmod(0o755)
             native_deps = ('python3, python3-gi, gir1.2-gtk-4.0 (>= 4.10), gir1.2-adw-1 (>= 1.4)'
                            if args.desktop == 'gnome' else 'python3, python3-gi, gir1.2-gtk-3.0 (>= 3.24), gir1.2-libxfce4ui-2.0 (>= 4.18)')
