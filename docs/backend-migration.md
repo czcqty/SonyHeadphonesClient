@@ -184,6 +184,11 @@ support, protocol mapping or backend Qt dependency was removed in this follow-up
 
 ## Native installer and recovery follow-up (2026-10-19)
 
+**Migration is not complete.** The checks below cover automated installation,
+transport and simulated controls only. User testing has not accepted the native
+migration; observed failures must be reproduced and fixed before acceptance.
+Hosted CI success, when available, does not close the real desktop/device gates.
+
 Shared changes live on main and are merged into WinUI, KDE, GNOME and Xfce.
 The backend still uses Qt Core and protocol v1. Qt Quick remains enabled by
 default; no frontend or hardware support was removed.
