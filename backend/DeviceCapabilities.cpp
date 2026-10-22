@@ -41,11 +41,27 @@ void DeviceCapabilities::probeFromDevice(const mdr::MDRHeadphones& device)
         Table1::CONNECTION_MODE_SOUND_QUALITY_CONNECTION_QUALITY);
     hasSpeakToChat = supports(Table1::SMART_TALKING_MODE_TYPE2);
     hasAdaptiveVolume = supports(Table1::AUTO_VOLUME);
-    hasCaptureVoice = supports(Table1::GENERAL_SETTING_1);
+    // General-setting slot numbers are device-specific. WH-1000XM5 reports
+    // TOUCH_PANEL_SETTING in slot 1, not the call-voice function.
+    captureVoiceSlot = touchPanelSlot = multipointSlot = -1;
+    const Table1 functions[] = {Table1::GENERAL_SETTING_1, Table1::GENERAL_SETTING_2,
+                               Table1::GENERAL_SETTING_3, Table1::GENERAL_SETTING_4};
+    const mdr::MDRHeadphones::GsCapability* general[] = {
+        &device.mGsCapability1, &device.mGsCapability2,
+        &device.mGsCapability3, &device.mGsCapability4};
+    for (int i = 0; i < 4; ++i) {
+        if (!supports(functions[i]) || general[i]->type != mdr::v2::t1::GsSettingType::BOOLEAN_TYPE)
+            continue;
+        const auto& subject = general[i]->value.subject.value;
+        if (subject == "TOUCH_PANEL_SETTING") touchPanelSlot = i;
+        if (subject == "MULTIPOINT_SETTING") multipointSlot = i;
+        if (subject.starts_with("CAPTURE_VOICE")) captureVoiceSlot = i;
+    }
+    hasCaptureVoice = captureVoiceSlot >= 0;
     hasDeviceManagement = supports(Table2::PAIRING_DEVICE_MANAGEMENT_CLASSIC_BT)
                        || supports(Table2::PAIRING_DEVICE_MANAGEMENT_WITH_BLUETOOTH_CLASS_OF_DEVICE_CLASSIC_BT)
                        || supports(Table2::PAIRING_DEVICE_MANAGEMENT_WITH_BLUETOOTH_CLASS_OF_DEVICE_CLASSIC_LE);
-    hasMultipoint = hasDeviceManagement;
+    hasMultipoint = multipointSlot >= 0;
     hasSourceSwitch = supports(Table2::SOURCE_SWITCH_CONTROL);
     hasAutoPowerOff = supports(Table1::AUTO_POWER_OFF)
                    || supports(Table1::AUTO_POWER_OFF_WITH_WEARING_DETECTION);

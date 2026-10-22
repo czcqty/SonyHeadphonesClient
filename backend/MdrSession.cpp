@@ -250,8 +250,11 @@ void MdrSession::poll()
                 QString::fromUtf8(m_stateData->device.GetLastError()));
             return;
         default:
-            if (event != MDR_HEADPHONES_TASK_COMMIT_OK)
+            if (event != MDR_HEADPHONES_TASK_COMMIT_OK && event != MDR_HEADPHONES_INPROGRESS) {
+                if (m_initDone)
+                    m_stateData->capabilities.probeFromDevice(m_stateData->device);
                 emit deviceUpdated();
+            }
             break;
         }
 

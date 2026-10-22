@@ -85,15 +85,21 @@ struct LegacyFakeTransport
     {
         auto& transport = self(user);
         const auto* begin = reinterpret_cast<const mdr::UInt8*>(src);
+        // The sender may batch a notification ACK with the next command.
+        // Consume one complete frame and leave the remainder for the next send.
+        const auto* end = std::find(begin, begin + size, mdr::kEndMarker);
+        if (end == begin + size)
+            return MDR_RESULT_ERROR_GENERAL;
+        const auto frameSize = static_cast<size_t>(end - begin + 1);
         mdr::MDRBuffer payload;
         mdr::MDRDataType type{};
         mdr::MDRCommandSeqNumber seq{};
         const auto result = mdr::MDRUnpackCommand(
-            {begin, static_cast<size_t>(size)}, payload, type, seq);
+            {begin, frameSize}, payload, type, seq);
         if (result != mdr::MDRUnpackResult::OK)
             return MDR_RESULT_ERROR_GENERAL;
 
-        *sent = size;
+        *sent = static_cast<int>(frameSize);
         if (type != mdr::MDRDataType::DATA_MDR)
             return MDR_RESULT_OK;
 
@@ -148,6 +154,7 @@ private slots:
     void taskMoveAssignmentReleasesPreviousFrame();
     void legacyProtocolInitializesFromCommunityPacket();
     void legacyProtocolSerializesAmbientSetting();
+    void multipointConfirmationRequiresMatchingRecentWrite();
 };
 
 void BackendTests::taskMoveAssignmentReleasesPreviousFrame()
@@ -208,6 +215,48 @@ void BackendTests::legacyProtocolSerializesAmbientSetting()
     };
     QCOMPARE(transport.lastDataCommand, expected);
     QVERIFY(!device.IsDirtyV1());
+}
+
+void BackendTests::multipointConfirmationRequiresMatchingRecentWrite()
+{
+    using namespace mdr::v2;
+    using namespace mdr::v2::t1;
+    LegacyFakeTransport transport;
+    mdr::MDRHeadphones device(&transport.connection);
+    device.mProtocol.version = 2;
+    device.mSupport.table1Functions[int(MessageMdrV2FunctionType_Table1::FIXED_MESSAGE)] = true;
+    device.mSupport.table1Functions[int(MessageMdrV2FunctionType_Table1::GENERAL_SETTING_2)] = true;
+    device.mGsCapability2.value.subject.value = "MULTIPOINT_SETTING";
+    auto alert = [&](AlertMessageType message) {
+        const mdr::MDRBuffer payload{mdr::UInt8(Command::ALERT_NTFY_PARAM),
+            mdr::UInt8(AlertInquiredType::FIXED_MESSAGE), mdr::UInt8(message),
+            mdr::UInt8(AlertActionType::POSITIVE_NEGATIVE)};
+        transport.receiveQueue.push_back(mdr::MDRPackCommand(mdr::MDRDataType::DATA_MDR, 0, payload));
+        QCOMPARE(pollUntil(device, MDR_HEADPHONES_EVT_ALERT), MDR_HEADPHONES_EVT_ALERT);
+    };
+    const auto multipoint = AlertMessageType::DISCONNECT_CAUSED_BY_CHANGING_MULTIPOINT;
+    alert(multipoint);
+    QVERIFY(!device.mMultipointConfirmationPending); // Unsolicited alert.
+    device.mGsParamBool2.desired = true;
+    QCOMPARE(device.Invoke(device.RequestCommitV2()), MDR_RESULT_OK);
+    QCOMPARE(pollUntil(device, MDR_HEADPHONES_TASK_COMMIT_OK), MDR_HEADPHONES_TASK_COMMIT_OK);
+    const mdr::MDRBuffer setting{mdr::UInt8(Command::GENERAL_SETTING_SET_PARAM), 0xD2, 0, 0};
+    QCOMPARE(transport.lastDataCommand, setting);
+    alert(AlertMessageType::NEED_DISCONNECTION_FOR_UPDATING_FIRMWARE);
+    QVERIFY(!device.mMultipointConfirmationPending); // Never confirm unrelated actions.
+    alert(multipoint);
+    QVERIFY(device.mMultipointConfirmationPending);
+    QVERIFY(device.IsDirty());
+    QCOMPARE(device.Invoke(device.RequestCommitV2()), MDR_RESULT_OK);
+    QCOMPARE(pollUntil(device, MDR_HEADPHONES_TASK_COMMIT_OK), MDR_HEADPHONES_TASK_COMMIT_OK);
+    const mdr::MDRBuffer reply{mdr::UInt8(Command::ALERT_SET_PARAM), 0, 7, 1};
+    QCOMPARE(transport.lastDataCommand, reply);
+    QVERIFY(!device.mMultipointConfirmationPending);
+    alert(multipoint);
+    QVERIFY(!device.mMultipointConfirmationPending); // One response per request.
+    device.mMultipointChangeUntil = std::chrono::steady_clock::now() - std::chrono::seconds(1);
+    alert(multipoint);
+    QVERIFY(!device.mMultipointConfirmationPending);
 }
 
 QTEST_APPLESS_MAIN(BackendTests)

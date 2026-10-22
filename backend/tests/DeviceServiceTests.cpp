@@ -11,6 +11,49 @@ class DeviceServiceTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void generalSettingsFollowReportedIdentityRatherThanSlot()
+    {
+        using F = mdr::v2::MessageMdrV2FunctionType_Table1;
+        using Type = mdr::v2::t1::GsSettingType;
+        DeviceState state;
+        SettingsViewModel settings(&state);
+        // Captured WH-1000XM5 capability identities: touch in D1, multipoint in D2.
+        state.device.mSupport.table1Functions[int(F::GENERAL_SETTING_1)] = true;
+        state.device.mSupport.table1Functions[int(F::GENERAL_SETTING_2)] = true;
+        state.device.mGsCapability1.value.subject.value = "TOUCH_PANEL_SETTING";
+        state.device.mGsCapability2.value.subject.value = "MULTIPOINT_SETTING";
+        state.capabilities.probeFromDevice(state.device);
+        QVERIFY(settings.touchPanelSupported());
+        QVERIFY(settings.multipointSupported());
+        QVERIFY(!settings.captureVoiceSupported());
+        QVERIFY(!settings.touchSupported()); // Earbud assignment is a different feature.
+        QVERIFY(!settings.setCaptureVoiceEnabled(true));
+        QVERIFY(settings.setTouchPanelEnabled(true));
+        QVERIFY(state.device.mGsParamBool1.desired);
+        QVERIFY(!state.device.mGsParamBool2.desired);
+        QVERIFY(settings.setMultipointEnabled(true));
+        QVERIFY(state.device.mGsParamBool2.desired);
+        QVERIFY(!state.device.mGsParamBool3.desired);
+
+        // Another device may place exactly the same features in opposite slots.
+        std::swap(state.device.mGsCapability1, state.device.mGsCapability2);
+        state.capabilities.probeFromDevice(state.device);
+        QVERIFY(settings.setTouchPanelEnabled(false));
+        QVERIFY(!state.device.mGsParamBool2.desired);
+        QVERIFY(state.device.mGsParamBool1.desired);
+        QVERIFY(settings.setMultipointEnabled(false));
+        QVERIFY(!state.device.mGsParamBool1.desired);
+
+        state.device.mGsCapability2.type = Type::LIST_TYPE;
+        state.capabilities.probeFromDevice(state.device);
+        QVERIFY(!settings.touchPanelSupported());
+        QVERIFY(!settings.setTouchPanelEnabled(true));
+        state.device.mSupport.table1Functions[int(F::GENERAL_SETTING_1)] = false;
+        state.capabilities.probeFromDevice(state.device);
+        QVERIFY(!settings.multipointSupported());
+        QVERIFY(!settings.setMultipointEnabled(true));
+    }
+
     void repositoryContainsDocumentedProfiles()
     {
         DeviceProfileRepository repository;
