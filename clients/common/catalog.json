@@ -822,6 +822,17 @@
       },
       "fields": [
         {
+          "kind": "toggle",
+          "label": {
+            "en": "Touch sensor control panel",
+            "zh_CN": "触摸传感器控制面板"
+          },
+          "group": "settings",
+          "key": "touchPanelEnabled",
+          "method": "setTouchPanelEnabled",
+          "capability": "touchPanelSupported"
+        },
+        {
           "kind": "choice",
           "label": {
             "en": "Left",
@@ -930,6 +941,17 @@
         "zh_CN": "设备管理"
       },
       "fields": [
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Connect to two devices simultaneously",
+            "zh_CN": "同时连接两台设备"
+          },
+          "group": "settings",
+          "key": "multipointEnabled",
+          "method": "setMultipointEnabled",
+          "capability": "multipointSupported"
+        },
         {
           "kind": "toggle",
           "label": {

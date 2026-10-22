@@ -176,6 +176,10 @@ class SettingsViewModel final : public QObject
     Q_PROPERTY(bool safeListeningEnabled READ safeListeningEnabled NOTIFY changed)
     Q_PROPERTY(bool captureVoiceSupported READ captureVoiceSupported NOTIFY changed)
     Q_PROPERTY(bool captureVoiceEnabled READ captureVoiceEnabled NOTIFY changed)
+    Q_PROPERTY(bool touchPanelSupported READ touchPanelSupported NOTIFY changed)
+    Q_PROPERTY(bool touchPanelEnabled READ touchPanelEnabled NOTIFY changed)
+    Q_PROPERTY(bool multipointSupported READ multipointSupported NOTIFY changed)
+    Q_PROPERTY(bool multipointEnabled READ multipointEnabled NOTIFY changed)
     Q_PROPERTY(int speakToChatSensitivity READ speakToChatSensitivity NOTIFY changed)
     Q_PROPERTY(int speakToChatModeOut READ speakToChatModeOut NOTIFY changed)
     Q_PROPERTY(int autoPowerOffValue READ autoPowerOffValue NOTIFY changed)
@@ -215,6 +219,10 @@ public:
     bool safeListeningEnabled() const;
     bool captureVoiceSupported() const;
     bool captureVoiceEnabled() const;
+    bool touchPanelSupported() const;
+    bool touchPanelEnabled() const;
+    bool multipointSupported() const;
+    bool multipointEnabled() const;
     int speakToChatSensitivity() const;
     int speakToChatModeOut() const;
     int autoPowerOffValue() const;
@@ -238,6 +246,8 @@ public:
     Q_INVOKABLE bool setAdaptiveVolumeEnabled(bool enabled);
     Q_INVOKABLE bool setSafeListeningEnabled(bool enabled);
     Q_INVOKABLE bool setCaptureVoiceEnabled(bool enabled);
+    Q_INVOKABLE bool setTouchPanelEnabled(bool enabled);
+    Q_INVOKABLE bool setMultipointEnabled(bool enabled);
     Q_INVOKABLE bool setSpeakToChatSensitivity(int value);
     Q_INVOKABLE bool setSpeakToChatModeOut(int value);
     Q_INVOKABLE bool setAutoPowerOffValue(int value);

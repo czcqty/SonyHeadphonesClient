@@ -9,6 +9,17 @@ using namespace mdr::v2::t1;
 
 namespace {
 
+mdr::MDRProperty<bool>* generalBoolean(mdr::MDRHeadphones& device, int slot)
+{
+    switch (slot) {
+    case 0: return &device.mGsParamBool1;
+    case 1: return &device.mGsParamBool2;
+    case 2: return &device.mGsParamBool3;
+    case 3: return &device.mGsParamBool4;
+    default: return nullptr;
+    }
+}
+
 QString touchPresetName(Preset value)
 {
     switch (value) {
@@ -385,7 +396,23 @@ bool SettingsViewModel::adaptiveVolumeEnabled() const { return m_state->device.m
 bool SettingsViewModel::safeListeningSupported() const { return m_state->capabilities.hasSafeListening; }
 bool SettingsViewModel::safeListeningEnabled() const { return m_state->device.mSafeListeningPreviewMode.desired; }
 bool SettingsViewModel::captureVoiceSupported() const { return m_state->capabilities.hasCaptureVoice; }
-bool SettingsViewModel::captureVoiceEnabled() const { return m_state->device.mGsParamBool1.desired; }
+bool SettingsViewModel::captureVoiceEnabled() const
+{
+    const auto* property = generalBoolean(m_state->device, m_state->capabilities.captureVoiceSlot);
+    return property && property->desired;
+}
+bool SettingsViewModel::touchPanelSupported() const { return m_state->capabilities.touchPanelSlot >= 0; }
+bool SettingsViewModel::touchPanelEnabled() const
+{
+    const auto* property = generalBoolean(m_state->device, m_state->capabilities.touchPanelSlot);
+    return property && property->desired;
+}
+bool SettingsViewModel::multipointSupported() const { return m_state->capabilities.multipointSlot >= 0; }
+bool SettingsViewModel::multipointEnabled() const
+{
+    const auto* property = generalBoolean(m_state->device, m_state->capabilities.multipointSlot);
+    return property && property->desired;
+}
 int SettingsViewModel::speakToChatSensitivity() const
 {
     return static_cast<int>(m_state->device.mSpeakToChatDetectSensitivity.desired);
@@ -597,8 +624,27 @@ bool SettingsViewModel::setSafeListeningEnabled(bool enabled)
 
 bool SettingsViewModel::setCaptureVoiceEnabled(bool enabled)
 {
-    if (!captureVoiceSupported()) { ++m_state->rejectedWrites; return false; }
-    m_state->device.mGsParamBool1.desired = enabled;
+    auto* property = generalBoolean(m_state->device, m_state->capabilities.captureVoiceSlot);
+    if (!captureVoiceSupported() || !property) { ++m_state->rejectedWrites; return false; }
+    property->desired = enabled;
+    emit changed();
+    return true;
+}
+
+bool SettingsViewModel::setTouchPanelEnabled(bool enabled)
+{
+    auto* property = generalBoolean(m_state->device, m_state->capabilities.touchPanelSlot);
+    if (!property) { ++m_state->rejectedWrites; return false; }
+    property->desired = enabled;
+    emit changed();
+    return true;
+}
+
+bool SettingsViewModel::setMultipointEnabled(bool enabled)
+{
+    auto* property = generalBoolean(m_state->device, m_state->capabilities.multipointSlot);
+    if (!property) { ++m_state->rejectedWrites; return false; }
+    property->desired = enabled;
     emit changed();
     return true;
 }

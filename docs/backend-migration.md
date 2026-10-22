@@ -288,8 +288,44 @@ only. Linux packages and dependency/source manifests are retained in both distro
 artifacts for each adapter. The WinUI artifact includes its installer, file
 manifest, backend JUnit, native transport log and installed smoke reports.
 
-The WinUI user report remains unresolved. A local preview check could operate
-sound toggles, but this does not reproduce or resolve missing functionality or
-disabled controls on the user's setup. Real headphone model, connection state
-and the affected controls still need reproduction. Qt Quick remains available
-and enabled by default. Migration acceptance is still open.
+## WH-1000XM5 mapping and write follow-up (2026-10-22)
+
+The user's WH-1000XM5 (firmware 2.3.1) reports `TOUCH_PANEL_SETTING` in
+general-setting slot 1 and `MULTIPOINT_SETTING` in slot 2. The former was
+incorrectly treated as capture voice; touch controls exposed only earbud
+left/right assignments, and multipoint availability was conflated with paired
+device management. These are shared backend/catalog gaps affecting every
+adapter and the transitional Qt Quick frontend.
+
+The backend now resolves boolean settings by the reported identity and type,
+independent of slot order, and exposes separate touch-panel and multipoint
+toggles. Qt Quick navigation includes these capabilities; native adapters use
+the shared catalog. WinUI hides earbud assignment controls on panel-only
+headphones and omits the unsupported adaptive-noise switch, matching Qt Quick.
+The existing noise mode control remains available.
+
+Hardware testing also reproduced a multipoint command that was acknowledged
+but not applied. The headset requested fixed-message confirmation 0x07. The
+backend now replies only to a matching multipoint alert within ten seconds of
+an explicit multipoint write, once per request. It does not acknowledge unrelated
+alerts, including firmware updates. Protocol regression tests cover unsolicited,
+unrelated, duplicate and expired alerts, as well as the emitted setting/reply
+bytes. Capability tests cover slot swaps, unsupported types and absent support.
+
+`backend/tests/verify_live_settings.py` is an explicit opt-in hardware test
+(`--allow-writes`). It saves originals before writing, stops the backend,
+reconnects with a fresh process to read actual device state, and restores the
+originals. Its bounded reconnect retries never replay device commands. Reports
+exclude Bluetooth addresses and media metadata. Preview state and a locally
+updated value are not accepted as hardware evidence.
+
+Recorded hardware checks: noise off/ambient/NC and touch-panel disable/enable
+passed fresh-process readback and restoration. Multipoint enable passed fresh
+readback; its first restoration read timed out during the intentional disconnect,
+and a subsequent fresh read confirmed the original disabled state. The final
+combined report and package validation are recorded separately after completion.
+
+This does not establish complete migration acceptance. Actual two-host audio
+switching, the remaining device features/models, Linux Bluetooth and desktop
+behavior, macOS, Windows 10, multi-monitor DPI and accessibility remain open.
+Qt Quick remains available and enabled by default.
