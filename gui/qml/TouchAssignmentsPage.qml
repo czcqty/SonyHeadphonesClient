@@ -45,13 +45,23 @@ Page {
                 width: parent.width - 32
                 spacing: 24
 
+                SettingRow {
+                    visible: appController.settings.touchPanelSupported
+                    title: I18n.text("touch.panel")
+                    switchVisible: true
+                    checked: appController.settings.touchPanelEnabled
+                    onToggled: checked => appController.settings.setTouchPanelEnabled(checked)
+                }
+
                 Text { font.family: Tokens.fontFamily;
+                    visible: appController.settings.touchSupported
                     text: I18n.text("left")
                     color: Tokens.textPrimary
                     font.pixelSize: Tokens.fontS
                     font.bold: true
                 }
                 AppComboBox {
+                    visible: appController.settings.touchSupported
                     width: parent.width
                     model: assignmentOptions
                     textRole: "name"
@@ -60,12 +70,14 @@ Page {
                 }
 
                 Text { font.family: Tokens.fontFamily;
+                    visible: appController.settings.touchSupported
                     text: I18n.text("right")
                     color: Tokens.textPrimary
                     font.pixelSize: Tokens.fontS
                     font.bold: true
                 }
                 AppComboBox {
+                    visible: appController.settings.touchSupported
                     width: parent.width
                     model: assignmentOptions
                     textRole: "name"

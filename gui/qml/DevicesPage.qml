@@ -24,6 +24,13 @@ Page {
 
             Column {
                 width: parent.width
+                SettingRow {
+                    visible: appController.settings.multipointSupported
+                    title: I18n.text("multipoint.enabled")
+                    switchVisible: true
+                    checked: appController.settings.multipointEnabled
+                    onToggled: checked => appController.settings.setMultipointEnabled(checked)
+                }
                 Repeater {
                     model: appController.deviceManager.devices
                     delegate: Rectangle {

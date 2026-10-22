@@ -769,8 +769,17 @@ namespace mdr
                 switch (res.actionType)
                 {
                 case POSITIVE_NEGATIVE:
+                case POSITIVE_CONFIRMATION_WITH_REPLY:
                 {
                     self->mLastAlertMessage = res.messageType;
+                    using Message = AlertMessageType;
+                    if (std::chrono::steady_clock::now() < self->mMultipointChangeUntil
+                        && (res.messageType == Message::DISCONNECT_CAUSED_BY_CHANGING_MULTIPOINT
+                            || res.messageType == Message::DISCONNECT_CAUSED_BY_CHANGING_MULTIPOINT_LDAC_DISABLE)) {
+                        self->mMultipointConfirmationMessage = res.messageType;
+                        self->mMultipointConfirmationPending = true;
+                        self->mMultipointChangeUntil = {};
+                    }
                     return MDR_HEADPHONES_EVT_ALERT;
                 }
                 default:

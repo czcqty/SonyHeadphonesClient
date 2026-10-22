@@ -22,6 +22,9 @@ struct DeviceCapabilities
     bool hasSpeakToChat = false;
     bool hasAdaptiveVolume = false;
     bool hasCaptureVoice = false;
+    int captureVoiceSlot = -1;
+    int touchPanelSlot = -1;
+    int multipointSlot = -1;
     bool hasAutoPowerOffWearingDetection = false;
     bool hasLimitedTouchFunction = false;
     bool hasMultipoint = false;

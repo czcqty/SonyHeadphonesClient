@@ -111,6 +111,8 @@ QtObject {
         case "minutes.180": return qsTr("180 minutes")
         case "when.removed": return qsTr("When removed")
         case "capture.voice": return qsTr("Capture voice during calls")
+        case "touch.panel": return qsTr("Touch sensor control panel")
+        case "multipoint.enabled": return qsTr("Connect to two devices simultaneously")
         default: return key
         }
     }
