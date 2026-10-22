@@ -376,8 +376,16 @@ if(BUILD_TESTING)
     add_test(NAME gui-qml-quicktest
         COMMAND ${GUI_QML_TEST_TARGET}
                 -input "${CMAKE_SOURCE_DIR}/tests/qml")
+    # The macOS Controls style needs Cocoa's native window integration. The
+    # offscreen plugin can crash while constructing native controls before
+    # QuickTest even enters a test case. Keep the platform's default style.
+    if(APPLE)
+        set(_GUI_QML_TEST_PLATFORM cocoa)
+    else()
+        set(_GUI_QML_TEST_PLATFORM offscreen)
+    endif()
     set_tests_properties(gui-qml-quicktest PROPERTIES ENVIRONMENT
-        "QT_QPA_PLATFORM=offscreen;QT_PLUGIN_PATH=${_GUI_QT_PLUGIN_ROOT};${_GUI_TEST_FONT_ENV}")
+        "QT_QPA_PLATFORM=${_GUI_QML_TEST_PLATFORM};QT_PLUGIN_PATH=${_GUI_QT_PLUGIN_ROOT};${_GUI_TEST_FONT_ENV}")
     if(WIN32)
         set_property(TEST gui-qml-quicktest APPEND PROPERTY
             ENVIRONMENT_MODIFICATION

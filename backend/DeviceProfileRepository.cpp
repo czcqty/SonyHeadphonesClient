@@ -29,6 +29,9 @@ DeviceCapabilities capabilities(
     value.hasSpeakToChat = speakToChat;
     value.hasAdaptiveVolume = true;
     value.hasCaptureVoice = true;
+    value.captureVoiceSlot = 0;
+    value.touchPanelSlot = tws ? -1 : 2;
+    value.multipointSlot = 1;
     value.hasMultipoint = true;
     value.hasSourceSwitch = true;
     value.hasAutoPowerOff = true;

@@ -822,6 +822,17 @@
       },
       "fields": [
         {
+          "kind": "toggle",
+          "label": {
+            "en": "Touch sensor control panel",
+            "zh_CN": "触摸传感器控制面板"
+          },
+          "group": "settings",
+          "key": "touchPanelEnabled",
+          "method": "setTouchPanelEnabled",
+          "capability": "touchPanelSupported"
+        },
+        {
           "kind": "choice",
           "label": {
             "en": "Left",
@@ -930,6 +941,17 @@
         "zh_CN": "设备管理"
       },
       "fields": [
+        {
+          "kind": "toggle",
+          "label": {
+            "en": "Connect to two devices simultaneously",
+            "zh_CN": "同时连接两台设备"
+          },
+          "group": "settings",
+          "key": "multipointEnabled",
+          "method": "setMultipointEnabled",
+          "capability": "multipointSupported"
+        },
         {
           "kind": "toggle",
           "label": {
@@ -1937,6 +1959,34 @@
     "unexpected-error": {
       "en": "Unexpected error",
       "zh_CN": "意外错误"
+    },
+    "backend-starting": {
+      "en": "Starting backend…",
+      "zh_CN": "正在启动后端…"
+    },
+    "backend-start-failed": {
+      "en": "Could not start the backend",
+      "zh_CN": "无法启动后端"
+    },
+    "backend-start-timeout": {
+      "en": "The backend did not respond within 10 seconds",
+      "zh_CN": "后端在 10 秒内未响应"
+    },
+    "backend-stopped": {
+      "en": "The backend stopped",
+      "zh_CN": "后端已停止"
+    },
+    "backend-protocol-error": {
+      "en": "The backend sent an invalid response",
+      "zh_CN": "后端返回了无效响应"
+    },
+    "backend-write-failed": {
+      "en": "Could not send the command to the backend",
+      "zh_CN": "无法向后端发送命令"
+    },
+    "backend-retry": {
+      "en": "Retry startup",
+      "zh_CN": "重试启动"
     }
   },
   "quick": {

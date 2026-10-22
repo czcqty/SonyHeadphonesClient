@@ -26,7 +26,8 @@ if(APPLE)
 endif()
 
 include(GNUInstallDirs)
-if(WIN32 AND NOT MDR_BUILD_QT_FRONTEND)
+option(MDR_DEPLOY_BACKEND_RUNTIME "Deploy private backend runtime dependencies" ON)
+if(WIN32 AND NOT MDR_BUILD_QT_FRONTEND AND MDR_DEPLOY_BACKEND_RUNTIME)
     # A console Qt Core host needs no plugins. vcpkg can supply Qt without
     # windeployqt, so use CMake's PE dependency scanner for its runtime closure.
     install(CODE "if(POLICY CMP0207)\n    cmake_policy(SET CMP0207 NEW)\nendif()")
@@ -45,7 +46,7 @@ endif()
 install(FILES README.md DESTINATION ${CMAKE_INSTALL_DATADIR}/SoundConnectBackend)
 if(NOT MDR_BUILD_QT_FRONTEND)
     install(FILES "${CMAKE_SOURCE_DIR}/LICENSE" DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/SonyHeadphonesClient)
-    if(NOT WIN32)
+    if(NOT WIN32 AND MDR_DEPLOY_BACKEND_RUNTIME)
         qt_generate_deploy_app_script(TARGET SoundConnectBackend OUTPUT_SCRIPT backend_deploy
             NO_TRANSLATIONS NO_UNSUPPORTED_PLATFORM_ERROR)
         install(SCRIPT ${backend_deploy})
@@ -75,5 +76,7 @@ if(BUILD_TESTING)
         "${CMAKE_SOURCE_DIR}/clients/common/test_catalog.py" "$<TARGET_FILE:SoundConnectBackend>")
     add_test(NAME backend-native-localization COMMAND ${Python3_EXECUTABLE}
         "${CMAKE_SOURCE_DIR}/clients/common/test_localization.py")
+    add_test(NAME backend-client-lifecycle COMMAND ${Python3_EXECUTABLE}
+        "${CMAKE_SOURCE_DIR}/clients/common/test_process_client.py")
     set_tests_properties(backend-process-contract PROPERTIES TIMEOUT 90)
 endif()

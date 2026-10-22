@@ -111,6 +111,8 @@
     <message><source>180 minutes</source><translation>180 分钟</translation></message>
     <message><source>When removed</source><translation>取下耳机时</translation></message>
     <message><source>Capture voice during calls</source><translation>通话时采集语音</translation></message>
+    <message><source>Touch sensor control panel</source><translation>触摸传感器控制面板</translation></message>
+    <message><source>Connect to two devices simultaneously</source><translation>同时连接两台设备</translation></message>
     <message><source>Rock</source><translation>摇滚</translation></message>
     <message><source>Pop</source><translation>流行</translation></message>
     <message><source>Jazz</source><translation>爵士</translation></message>

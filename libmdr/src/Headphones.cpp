@@ -46,6 +46,7 @@ namespace mdr
 
     bool MDRHeadphones::IsDirty() const
     {
+        if (mMultipointConfirmationPending) return true;
         bool dirty = mShutdown.dirty() || mNcAsmEnabled.dirty() || mNcAsmFocusOnVoice.dirty() || mNcAsmAmbientLevel.
             dirty();
         dirty |= mNcAsmButtonFunction.dirty() || mNcAsmMode.dirty() || mNcAsmAutoAsmEnabled.dirty();

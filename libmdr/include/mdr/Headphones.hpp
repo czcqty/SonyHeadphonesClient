@@ -271,6 +271,11 @@ namespace mdr
         v2::t1::AudioCodec mAudioCodec{};
 
         v2::t1::AlertMessageType mLastAlertMessage{};
+        // Only a recent explicit MULTIPOINT_SETTING write authorizes its
+        // matching disconnect confirmation. Never accept arbitrary alerts.
+        std::chrono::steady_clock::time_point mMultipointChangeUntil{};
+        bool mMultipointConfirmationPending = false;
+        v2::t1::AlertMessageType mMultipointConfirmationMessage{};
         String mLastInteractionMessage;
         String mLastDeviceJSONMessage;
 

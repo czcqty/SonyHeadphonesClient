@@ -59,6 +59,10 @@ is already included in `main`. It is retired; continue shared development on
   package the transitional Qt Quick frontend. Backend-only CPack builds produce
   ZIP on Windows and TGZ elsewhere; native application packaging must include
   the shared backend/runtime explicitly.
+- Native Windows and Linux installer recipes now have manual workflows on their
+  adapter branches: WinUI NSIS, Ubuntu 24.04 DEB, and Debian 13 DEB. Select the
+  matching Linux adapter branch/input. They stage the shared backend and upload
+  packages and validation reports; see [native packaging](../packaging/native/README.md).
 - The AppKit branch additionally provides its native macOS build workflow.
   A configured workflow is not evidence that its run has passed.
 
