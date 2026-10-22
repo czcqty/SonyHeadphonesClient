@@ -63,6 +63,8 @@ internal sealed partial class MainWindow
     {
         string key = field["key"]!.ToString();
         return key switch {
+            "touchLeft" or "touchRight" => !backend.Flag("settings", "touchPanelSupported") || backend.Flag("settings", "touchSupported"),
+            "adaptiveEnabled" => backend.Flag("noiseControl", "adaptiveSupported"),
             "ambientLevel" or "focusOnVoice" => backend.Number("noiseControl", "mode") == 2,
             "adaptiveSensitivity" => backend.Flag("noiseControl", "adaptiveEnabled"),
             "listeningRoomSize" => backend.Flag("settings", "listeningModeEnabled"),
@@ -85,7 +87,10 @@ internal sealed partial class MainWindow
         Refresh();
         try {
             if (method is "powerOff" or "unpairDevice") await ConfirmCommand(group, method, args.ToArray());
-            else await backend.RequestAsync(group, method, args.ToArray());
+            else {
+                actionMessage = "";
+                await backend.RequestAsync(group, method, args.ToArray());
+            }
         } catch (OperationCanceledException) { }
         catch (TimeoutException) { }
         finally { binding.Pending = false; Refresh(); }

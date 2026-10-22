@@ -27,7 +27,7 @@ internal sealed partial class MainWindow
                 if (method == "unpairDevice") await ConfirmCommand(group, method, args);
                 else {
                     var reply = await backend.RequestAsync(group, method, args);
-                    if (reply["ok"]?.GetValue<bool>() == true)
+                    if (reply["ok"]?.GetValue<bool>() == true && method != "connectDevice")
                         actionMessage = T("请求已提交，正在等待设备状态更新。", "Request submitted. Waiting for the device to report its state.");
                 }
             } catch (OperationCanceledException) { }

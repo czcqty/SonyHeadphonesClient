@@ -37,7 +37,7 @@ try {
             $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
             if (!$result.ok) { throw "Native controls failed: $locale" }
             if (@($result.parity | Where-Object { $_.profile -and $_.ok }).Count -ne 12 -or
-                !($result.parity | Where-Object { $_.commands -eq 43 -and $_.quickControls -and $_.failureUiAndRetry })) {
+                !($result.parity | Where-Object { $_.commands -eq 45 -and $_.quickControls -and $_.failureUiAndRetry })) {
                 throw "Native verification did not cover all profiles and operations: $locale"
             }
         }

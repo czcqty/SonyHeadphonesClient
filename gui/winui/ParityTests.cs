@@ -156,6 +156,12 @@ internal sealed partial class MainWindow
                 }
             }
             Navigate("devices"); Refresh(); page.UpdateLayout(); await Task.Delay(20);
+            var multipoint = fields.Single(b => b.Field["method"]!.ToString() == "setMultipointEnabled");
+            if (multipoint.Control.IsEnabled) {
+                bool previous = FieldValue(multipoint.Field)!.GetValue<bool>();
+                await SetFieldAsync(multipoint, !previous);
+                await SetFieldAsync(multipoint, previous); edits += 2;
+            }
             var pairing = fields.Single(b => b.Field["method"]!.ToString() == "setPairingMode");
             if (pairing.Control.IsEnabled) {
                 bool original = FieldValue(pairing.Field)!.GetValue<bool>();
