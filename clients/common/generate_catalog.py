@@ -77,13 +77,15 @@ pages = [
         toggle('Auto power off', '自动关机', 'autoPowerOffEnabled', 'autoPowerOffSupported'),
         toggle('Head gestures', '头部手势', 'headGestureEnabled', 'headGestureSupported'),
         toggle('Capture voice', '捕捉语音', 'captureVoiceEnabled', 'captureVoiceSupported')]),
-    page('touch', 'Touch controls', '触控', [
+    page('touch', 'Touch controls', '触控', [toggle('Touch sensor control panel', '触摸传感器控制面板',
+        'touchPanelEnabled', 'touchPanelSupported')] + [
         field('choice', en, zh, 'settings', key, method, 'touchSupported', source='touchOptions', valueKey='value')
         for en, zh, key, method in [('Left', '左侧', 'touchLeft', 'setTouchLeft'), ('Right', '右侧', 'touchRight', 'setTouchRight')]]),
     page('voice', 'Voice guidance', '语音提示', [
         toggle('Voice guidance', '语音提示', 'voiceGuidanceEnabled', 'voiceGuidanceSupported'),
         slider('Voice guidance volume', '语音提示音量', 'settings', 'voiceGuidanceVolume', 'setVoiceGuidanceVolume', 'voiceGuidanceVolumeSupported', -2, 2)]),
     page('devices', 'Device management', '设备管理', [
+        toggle('Connect to two devices simultaneously', '同时连接两台设备', 'multipointEnabled', 'multipointSupported'),
         toggle('Pairing mode', '配对模式', 'pairingMode', 'supported', 'deviceManager'),
         field('label', 'Connected devices', '连接设备', 'deviceManager', 'devices')])]
 # Complete the existing business surface; widgets remain toolkit-owned.

@@ -784,9 +784,11 @@ namespace mdr::v2::t1
 
     enum class GsInquiredType : UInt8
     {
-        GENERAL_SETTING1 = 0xD1, ///< Capture Voice During a Phone Call
-        GENERAL_SETTING2 = 0xD2, ///< Multipoint
-        GENERAL_SETTING3 = 0xD3, ///< Touch sensor control panel
+        // Resolve each slot's meaning from GsRetCapability.settingInfo.subject.
+        // The same slot can represent different functions on different models.
+        GENERAL_SETTING1 = 0xD1,
+        GENERAL_SETTING2 = 0xD2,
+        GENERAL_SETTING3 = 0xD3,
         GENERAL_SETTING4 = 0xD4,
     };
 

@@ -1,5 +1,30 @@
 #include "DeviceService.hpp"
 #include "MdrSession.hpp"
+#include <QJsonArray>
+
+QJsonObject DeviceService::deviceDiagnostics() const
+{
+    const auto& device = m_state.device;
+    QJsonArray table1, table2, general;
+    for (int i = 0; i < 256; ++i) {
+        if (device.mSupport.table1Functions[i]) table1.append(i);
+        if (device.mSupport.table2Functions[i]) table2.append(i);
+    }
+    const mdr::MDRHeadphones::GsCapability* capabilities[] = {
+        &device.mGsCapability1, &device.mGsCapability2,
+        &device.mGsCapability3, &device.mGsCapability4};
+    const bool current[] = {device.mGsParamBool1.current, device.mGsParamBool2.current,
+                            device.mGsParamBool3.current, device.mGsParamBool4.current};
+    for (int i = 0; i < 4; ++i) {
+        const auto& cap = *capabilities[i];
+        general.append(QJsonObject{{"slot", i + 1}, {"type", int(cap.type)},
+            {"subject", QString::fromStdString(cap.value.subject.value)},
+            {"summary", QString::fromStdString(cap.value.summary.value)}, {"current", current[i]}});
+    }
+    // No addresses, unique IDs, paired-device names or media metadata.
+    return {{"protocolVersion", int(device.mProtocol.version)}, {"lastAlertCode", int(device.mLastAlertMessage)},
+        {"table1", table1}, {"table2", table2}, {"generalSettings", general}};
+}
 
 DeviceService::DeviceService(bool previewMode, QObject* parent)
     : QObject(parent), m_playback(&m_state, this), m_noiseControl(&m_state, this),

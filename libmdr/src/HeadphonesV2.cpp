@@ -353,6 +353,12 @@ namespace mdr
 
     MDRTask MDRHeadphones::RequestCommitV2()
     {
+        if (mMultipointConfirmationPending) {
+            const auto message = mMultipointConfirmationMessage;
+            mMultipointConfirmationPending = false;
+            SendCommandACK(t1::AlertSetParamFixedMessage, {
+                .messageType = message, .actionType = t1::AlertAction::POSITIVE});
+        }
         /* Shutdown */
         if (mShutdown.dirty())
         {
@@ -874,6 +880,8 @@ namespace mdr
             {
                 if (mGsParamBool1.dirty())
                 {
+                    if (mGsCapability1.value.subject.value == "MULTIPOINT_SETTING")
+                        mMultipointChangeUntil = std::chrono::steady_clock::now() + std::chrono::seconds(10);
                     GsParamBoolean res;
                     res.base.command = Command::GENERAL_SETTING_SET_PARAM;
                     res.base.type = GsInquiredType::GENERAL_SETTING1;
@@ -886,6 +894,8 @@ namespace mdr
             {
                 if (mGsParamBool2.dirty())
                 {
+                    if (mGsCapability2.value.subject.value == "MULTIPOINT_SETTING")
+                        mMultipointChangeUntil = std::chrono::steady_clock::now() + std::chrono::seconds(10);
                     GsParamBoolean res;
                     res.base.command = Command::GENERAL_SETTING_SET_PARAM;
                     res.base.type = GsInquiredType::GENERAL_SETTING2;
@@ -898,6 +908,8 @@ namespace mdr
             {
                 if (mGsParamBool3.dirty())
                 {
+                    if (mGsCapability3.value.subject.value == "MULTIPOINT_SETTING")
+                        mMultipointChangeUntil = std::chrono::steady_clock::now() + std::chrono::seconds(10);
                     GsParamBoolean res;
                     res.base.command = Command::GENERAL_SETTING_SET_PARAM;
                     res.base.type = GsInquiredType::GENERAL_SETTING3;
@@ -910,6 +922,8 @@ namespace mdr
             {
                 if (mGsParamBool4.dirty())
                 {
+                    if (mGsCapability4.value.subject.value == "MULTIPOINT_SETTING")
+                        mMultipointChangeUntil = std::chrono::steady_clock::now() + std::chrono::seconds(10);
                     GsParamBoolean res;
                     res.base.command = Command::GENERAL_SETTING_SET_PARAM;
                     res.base.type = GsInquiredType::GENERAL_SETTING4;
