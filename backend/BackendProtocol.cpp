@@ -25,6 +25,7 @@ const QSet<QByteArray> commands{
     "settings.setSoundQualityPrior", "settings.setAutoPowerOffEnabled", "settings.setHeadGestureEnabled",
     "settings.setListeningModeEnabled", "settings.setAdaptiveVolumeEnabled",
     "settings.setSafeListeningEnabled", "settings.setCaptureVoiceEnabled",
+    "settings.setTouchPanelEnabled", "settings.setMultipointEnabled",
     "settings.setSpeakToChatSensitivity", "settings.setSpeakToChatModeOut",
     "settings.setAutoPowerOffValue", "settings.setCinemaModeEnabled", "settings.setListeningRoomSize",
     "deviceManager.setPairingMode", "deviceManager.switchDevice", "deviceManager.connectDevice",
@@ -116,7 +117,8 @@ QJsonObject BackendProtocol::execute(const QJsonObject& request)
     }
     if (group == "app") {
         if (name == "describe" && args.isEmpty()) {
-            auto reply = result({}); reply.insert("contract", describe()); return reply;
+            auto reply = result({}); reply.insert("contract", describe());
+            reply.insert("deviceDiagnostics", m_service.deviceDiagnostics()); return reply;
         }
         if (name == "refreshDevices" && args.isEmpty()) { m_service.refreshDevices(); return result({}); }
         if (name == "disconnectDevice" && args.isEmpty()) { m_service.disconnectDevice(); return result({}); }

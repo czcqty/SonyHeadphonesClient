@@ -197,7 +197,7 @@ Page {
                     onToggled: checked => appController.settings.setCaptureVoiceEnabled(checked)
                 }
                 SettingRow {
-                    visible: !soundOptions && appController.settings.touchSupported
+                    visible: !soundOptions && (appController.settings.touchSupported || appController.settings.touchPanelSupported || appController.settings.ncButtonSupported)
                     title: I18n.text("touch")
                     onActivated: appController.currentRoute = "touch"
                 }
@@ -209,7 +209,7 @@ Page {
                     onActivated: appController.currentRoute = "voice"
                 }
                 SettingRow {
-                    visible: !soundOptions && appController.deviceManager.supported
+                    visible: !soundOptions && (appController.deviceManager.supported || appController.settings.multipointSupported)
                     title: I18n.text("devices")
                     onActivated: appController.currentRoute = "devices"
                 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <QObject>
+#include <QJsonObject>
 #include <memory>
 #include "DeviceProfileRepository.hpp"
 #include "ViewModels.hpp"
@@ -44,6 +45,7 @@ public:
     SettingsViewModel* settings() { return &m_settings; }
     DeviceManagerViewModel* deviceManager() { return &m_deviceManager; }
     ConnectionViewModel* connection() { return &m_connection; }
+    QJsonObject deviceDiagnostics() const;
 
     Q_INVOKABLE QStringList availableProfiles() const;
     Q_INVOKABLE bool applyProfile(const QString& profileId);
