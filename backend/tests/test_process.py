@@ -4,6 +4,9 @@ import queue
 import subprocess
 import sys
 import threading
+import os
+import tempfile
+import time
 
 
 def start(*options):
@@ -71,3 +74,54 @@ try:
 finally:
     if process.poll() is None: process.kill(); process.wait()
 print('PASS: session overrides and preview preference roundtrip')
+
+# Exercise simultaneous fragmented input and backpressured output. Every byte
+# must belong to one complete JSON frame, including large describe responses.
+process = subprocess.Popen([sys.argv[1]], stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                           stderr=subprocess.PIPE, bufsize=0)
+writer_errors = []
+def fragmented_writer():
+    try:
+        for i in range(80):
+            data = (json.dumps(dict(id=str(i), target='app', method='describe', args=[])) + '\n').encode()
+            for offset in range(0, len(data), 7):
+                process.stdin.write(data[offset:offset + 7])
+                time.sleep(.0004)
+        process.stdin.close()
+    except Exception as error:
+        writer_errors.append(error)
+writer = threading.Thread(target=fragmented_writer, daemon=True)
+writer.start()
+try:
+    pending = b''
+    frames = []
+    while chunk := process.stdout.read(250):
+        time.sleep(.001)
+        pending += chunk
+        while b'\n' in pending:
+            line, pending = pending.split(b'\n', 1)
+            frames.append(json.loads(line))
+    assert not pending
+    assert process.wait(timeout=10) == 0
+    writer.join(timeout=5)
+    assert not writer.is_alive() and not writer_errors
+    assert len(frames) == 161
+    for i in range(80):
+        assert frames[1 + 2*i]['id'] == str(i) and frames[1 + 2*i]['ok']
+        assert frames[2 + 2*i]['type'] == 'state'
+finally:
+    if process.poll() is None: process.kill(); process.wait()
+print('PASS: fragmented bidirectional frames under output backpressure')
+
+if sys.platform.startswith('linux'):
+    # No actual system bus or user preferences are accessible in this case.
+    with tempfile.TemporaryDirectory() as directory:
+        environment = dict(os.environ, XDG_DATA_HOME=directory, XDG_CONFIG_HOME=directory,
+                           DBUS_SYSTEM_BUS_ADDRESS='unix:path=' + directory + '/missing-bus')
+        result = subprocess.run([sys.argv[1], '--live'], input=b'', capture_output=True,
+                                env=environment, timeout=10)
+        assert result.returncode == 0, result.stderr
+        frames = [json.loads(line) for line in result.stdout.splitlines()]
+        assert frames and frames[0]['type'] == 'state'
+        assert b'Could not get system bus' in result.stderr
+    print('PASS: Linux DBus failure diagnostics do not contaminate protocol stdout')
