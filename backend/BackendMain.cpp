@@ -9,17 +9,23 @@
 #include <QStandardPaths>
 #include <QTimer>
 #include <iostream>
+#include <cstdio>
 #include <thread>
 
 namespace {
 void publish(const QJsonObject& object)
 {
-    std::cout << QJsonDocument(object).toJson(QJsonDocument::Compact).constData() << std::endl;
+    const auto frame = QJsonDocument(object).toJson(QJsonDocument::Compact) + '\n';
+    // Only this main-thread writer owns the protocol stream. Do not expose its
+    // buffer to the stdin reader's implicit std::cin -> std::cout flushes.
+    std::fwrite(frame.constData(), 1, static_cast<size_t>(frame.size()), stdout);
+    std::fflush(stdout);
 }
 }
 
 int main(int argc, char** argv)
 {
+    std::cin.tie(nullptr);
     QCoreApplication app(argc, argv);
     app.setApplicationName("SonyHeadphonesClient");
     app.setOrganizationName("czcqty");

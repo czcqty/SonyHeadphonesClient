@@ -23,8 +23,8 @@ class Probe:
             for line in self.process.stdout:
                 try:
                     self.events.put(json.loads(line))
-                except ValueError:
-                    pass
+                except ValueError as error:
+                    self.events.put(RuntimeError('Invalid backend JSON: ' + str(error)))
         threading.Thread(target=read, daemon=True).start()
         def drain_errors():
             for _ in self.process.stderr:
@@ -54,6 +54,8 @@ class Probe:
                 if self.process.poll() is not None:
                     raise RuntimeError('Backend stopped before completing hardware verification')
                 continue
+            if isinstance(event, Exception):
+                raise event
             if event.get('type') == 'state':
                 self.state = event
             if predicate(event):
