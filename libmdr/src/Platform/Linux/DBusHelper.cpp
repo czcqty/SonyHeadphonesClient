@@ -1,5 +1,6 @@
 #include "DBusHelper.hpp"
 #include <cstring>
+#include <cstdio>
 #include <stdexcept>
 #include <bluetooth/sdp.h>
 #include <bluetooth/sdp_lib.h>
@@ -16,7 +17,7 @@ DBusConnection* dbus_open_system_bus(void)
 
     if (dbus_error_is_set(&error))
     {
-        printf("Could not get system bus\nError: %s\n", error.message);
+        fprintf(stderr, "Could not get system bus\nError: %s\n", error.message);
         dbus_error_free(&error);
         return NULL;
     }
@@ -64,7 +65,7 @@ dbus_bool_t read_next_object_path_entry(DBusMessageIter* const iter_object_paths
 
     if (dbus_message_iter_get_arg_type(&iter_dict_entry) != DBUS_TYPE_OBJECT_PATH)
     {
-        printf("Error: Unexpected arg type for object path\n");
+        fprintf(stderr, "Error: Unexpected arg type for object path\n");
         goto error;
     }
 
@@ -103,7 +104,7 @@ dbus_bool_t read_next_interface_entry(DBusMessageIter* const interface_dict, cha
 
     if (dbus_message_iter_get_arg_type(&iter_dict_entry) != DBUS_TYPE_STRING)
     {
-        printf("Error: Unexpected arg type for interface\n");
+        fprintf(stderr, "Error: Unexpected arg type for interface\n");
         goto error;
     }
 
@@ -140,7 +141,7 @@ std::vector<std::string> dbus_list_adapters(DBusConnection* const connection)
                                        "GetManagedObjects");
     if (NULL == msg)
     {
-        printf("Error: Could not obtain method call\n");
+        fprintf(stderr, "Error: Could not obtain method call\n");
         goto clean_up;
     }
 
@@ -153,26 +154,26 @@ std::vector<std::string> dbus_list_adapters(DBusConnection* const connection)
                                                     &error);
     if (dbus_error_is_set(&error))
     {
-        printf("Could not send dbus message\nError: %s\n", error.message);
+        fprintf(stderr, "Could not send dbus message\nError: %s\n", error.message);
         dbus_error_free(&error);
         goto clean_up;
     }
 
     if (NULL == rsp)
     {
-        printf("Error: Response was NULL\n");
+        fprintf(stderr, "Error: Response was NULL\n");
         goto clean_up;
     }
 
     if (!dbus_message_iter_init(rsp, &args))
     {
-        printf("Error: RCould not start message iterator on response\n");
+        fprintf(stderr, "Error: RCould not start message iterator on response\n");
         goto clean_up;
     }
 
     if (!open_dict_read(&args, &subargs))
     {
-        printf("Error: Could not start dict read\n");
+        fprintf(stderr, "Error: Could not start dict read\n");
         goto clean_up;
     }
 
@@ -222,7 +223,7 @@ std::string dbus_get_property(DBusConnection* const connection, const char* devi
                                        "Get");
     if (NULL == msg)
     {
-        printf("Error: Could not obtain method call\n");
+        fprintf(stderr, "Error: Could not obtain method call\n");
         goto clean_up;
     }
 
@@ -242,20 +243,20 @@ std::string dbus_get_property(DBusConnection* const connection, const char* devi
                                                     &error);
     if (dbus_error_is_set(&error))
     {
-        printf("Could not send dbus message\nError: %s\n", error.message);
+        fprintf(stderr, "Could not send dbus message\nError: %s\n", error.message);
         dbus_error_free(&error);
         goto clean_up;
     }
 
     if (NULL == rsp)
     {
-        printf("Error: Response was NULL\n");
+        fprintf(stderr, "Error: Response was NULL\n");
         goto clean_up;
     }
 
     if (!dbus_message_iter_init(rsp, &args))
     {
-        printf("Error: Could not start message iterator on response\n");
+        fprintf(stderr, "Error: Could not start message iterator on response\n");
         goto clean_up;
     }
 
