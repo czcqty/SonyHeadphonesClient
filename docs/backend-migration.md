@@ -319,11 +319,22 @@ originals. Its bounded reconnect retries never replay device commands. Reports
 exclude Bluetooth addresses and media metadata. Preview state and a locally
 updated value are not accepted as hardware evidence.
 
-Recorded hardware checks: noise off/ambient/NC and touch-panel disable/enable
-passed fresh-process readback and restoration. Multipoint enable passed fresh
-readback; its first restoration read timed out during the intentional disconnect,
-and a subsequent fresh read confirmed the original disabled state. The final
-combined report and package validation are recorded separately after completion.
+Recorded hardware checks: noise off/ambient/NC, touch-panel disable/enable,
+DSEE disable/enable and multipoint enable/disable all passed fresh-process readback
+and restoration in the combined hardware report. Independently, real WinUI
+clicks disabled touch and enabled multipoint; a separate backend then read both
+values from the headset and restored touch=true, multipoint=false.
+
+Those WinUI clicks also exposed a malformed JSON response during multipoint
+switching, despite all hosted checks passing. Preview stress did not reproduce
+the intermittent failure. The host now isolates output from the stdin thread's
+implicit cout flushes, writes whole JSON lines through stdio, and routes Linux
+DBus errors exclusively to stderr. WinUI explicitly uses UTF-8 for all pipes.
+Regression checks cover fragmented input with output backpressure, fragmented
+UTF-8/quoted content, and an unavailable Linux DBus. Hardware verification now
+fails on malformed JSON instead of silently skipping the offending line.
+The exact cause of the observed intermittent frame remains unproven; a further
+live UI retest is required before treating this hardening as sufficient.
 
 This does not establish complete migration acceptance. Actual two-host audio
 switching, the remaining device features/models, Linux Bluetooth and desktop
