@@ -17,6 +17,18 @@ if (args.Length > 0 && args[0] == "--fixture") {
     if (mode == "invalid") { Console.WriteLine("[]"); await Task.Delay(30000); return; }
     if (mode == "noisy") { Console.Error.Write(new string('x', 200000) + "TAIL"); Console.Error.Flush(); }
     var state = Snapshot();
+    if (mode == "utf8-fragments") {
+        state["app"]!["text"] = string.Concat(Enumerable.Repeat("触控 🎧 \"quoted\"\n", 600));
+        var bytes = System.Text.Encoding.UTF8.GetBytes(state.ToJsonString(new() {
+            Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping
+        }) + "\n");
+        using var output = Console.OpenStandardOutput();
+        for (int offset = 0; offset < bytes.Length; offset += 7) {
+            await output.WriteAsync(bytes.AsMemory(offset, Math.Min(7, bytes.Length - offset)));
+            await output.FlushAsync();
+        }
+        await Task.Delay(30000); return;
+    }
     if (mode == "version") state["version"] = 99;
     void Publish() { Console.WriteLine(state.ToJsonString()); Console.Out.Flush(); }
     Publish();
@@ -64,6 +76,11 @@ foreach (var pair in new[] { ("timeout", "backend-start-timeout"), ("version", "
 using (var client = new BackendClient(events.Enqueue)) {
     client.Start(Path.Combine(Path.GetTempPath(), "soundconnect-missing", "backend.exe"), Array.Empty<string>());
     await Pump(() => client.Error == "backend-start-failed");
+}
+using (var client = Make("utf8-fragments")) {
+    await Pump(() => client.Ready);
+    Check(client.Text("app", "text") == string.Concat(Enumerable.Repeat("触控 🎧 \"quoted\"\n", 600)),
+        "Fragmented UTF-8 or escaped content was corrupted across pipe buffers");
 }
 using (var client = Make("noisy")) {
     await Pump(() => client.Ready && client.Diagnostic.EndsWith("TAIL"));

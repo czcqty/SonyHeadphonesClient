@@ -85,6 +85,9 @@ internal sealed class BackendClient : IDisposable
                 var info = new ProcessStartInfo(executable) {
                     UseShellExecute = false, CreateNoWindow = true,
                     RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
+                    StandardInputEncoding = new System.Text.UTF8Encoding(false),
+                    StandardOutputEncoding = new System.Text.UTF8Encoding(false, true),
+                    StandardErrorEncoding = new System.Text.UTF8Encoding(false),
                     WorkingDirectory = Path.GetDirectoryName(Path.GetFullPath(executable))!
                 };
                 foreach (var argument in arguments) info.ArgumentList.Add(argument);
@@ -142,7 +145,7 @@ internal sealed class BackendClient : IDisposable
                     Post(source, () => Receive(source, data));
                 }
             }
-        } catch (Exception error) when (error is IOException or JsonException or OperationCanceledException or ObjectDisposedException) {
+        } catch (Exception error) when (error is IOException or JsonException or System.Text.DecoderFallbackException or OperationCanceledException or ObjectDisposedException) {
             Post(source, () => Fail(source, "backend-protocol-error", error.Message));
         }
     }
