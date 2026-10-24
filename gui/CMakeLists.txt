@@ -164,6 +164,8 @@ if(WIN32)
             "QtQml/Models|modelsplugin"
             "QtQml/WorkerScript|workerscriptplugin"
             "QtQuick|qtquick2plugin"
+            "QtQuick/Window|quickwindowplugin"
+            "QtQuick/Effects|effectsplugin"
             "QtQuick/Controls|qtquickcontrols2plugin"
             "QtQuick/Controls/Windows|qtquickcontrols2windowsstyleplugin"
             "QtQuick/Controls/Windows/impl|qtquickcontrols2windowsstyleimplplugin"
@@ -186,6 +188,7 @@ if(WIN32)
             Qt6QuickControls2BasicStyleImpl
             Qt6QuickControls2Impl
             Qt6QuickLayouts
+            Qt6QuickEffects
             Qt6QuickShapes
             Qt6QuickTemplates2
         )

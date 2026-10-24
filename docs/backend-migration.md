@@ -357,3 +357,32 @@ This does not establish complete migration acceptance. Actual two-host audio
 switching, the remaining device features/models, Linux Bluetooth and desktop
 behavior, macOS, Windows 10, multi-monitor DPI and accessibility remain open.
 Qt Quick remains available and enabled by default.
+
+### Follow-up acceptance (2026-10-24)
+
+An independent backend readback confirmed the post-hardening WinUI controls
+had written touch=false, multipoint=true and noise=ambient to the WH-1000XM5.
+The originals were then restored and read back: touch=true, multipoint=false,
+noise=NC. No headset settings remain intentionally changed by this test.
+
+The stale-error follow-up passed the six main Qt Quick ON/OFF jobs in
+[40069780230](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/40069780230)
+and both distro jobs for KDE
+[40069774519](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/40069774519),
+GNOME [40069776581](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/40069776581)
+and Xfce [40069778461](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/40069778461).
+
+Local installed WinUI verification exposed a separate failure: switching locale
+replaced the attached XAML root, so opening a popup before the next layout pass
+failed with `XamlRoot must be explicitly set for unparented popup`. WinUI now
+retains the root while rebuilding translated content; its smoke test checks
+root identity immediately after the locale update and then opens a real popup
+and confirmation dialog. The first corrected English run passed all twelve
+profiles and 45 commands. This was an installation-test failure, not a headset
+capability failure.
+
+The local vcpkg Qt 6.11 development deployment also omitted QtQuick.Window and
+QtQuick.Effects, preventing the official Windows style from loading without
+development search paths. These modules and the Effects runtime are now included.
+This deployment check is separate from hardware write acceptance: direct Qt Quick
+hardware UI clicks and Linux hardware UI clicks have not been executed.
