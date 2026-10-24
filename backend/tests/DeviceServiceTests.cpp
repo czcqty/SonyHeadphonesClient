@@ -11,6 +11,18 @@ class DeviceServiceTests final : public QObject
     Q_OBJECT
 
 private slots:
+    void successfulReconnectClearsTransientFailure()
+    {
+        ConnectionViewModel connection;
+        connection.setState(QStringLiteral("reconnecting"));
+        connection.setError(QStringLiteral("connection-failed"), QStringLiteral("temporary"));
+        connection.setState(QStringLiteral("initializing"));
+        QCOMPARE(connection.errorCode(), QStringLiteral("connection-failed"));
+        connection.setState(QStringLiteral("connected"));
+        QVERIFY(connection.errorCode().isEmpty());
+        QVERIFY(connection.errorDetail().isEmpty());
+    }
+
     void generalSettingsFollowReportedIdentityRatherThanSlot()
     {
         using F = mdr::v2::MessageMdrV2FunctionType_Table1;
