@@ -33,9 +33,9 @@ try {
             $report = Join-Path $reports "$locale.json"
             $process = Start-Process -FilePath (Join-Path $install 'SoundConnect.WinUI.exe') -WorkingDirectory $TestDirectory -ArgumentList @('--locale', $locale, '--parity-test', '--smoke-report', ('"' + $report + '"')) -PassThru -WindowStyle Hidden
             if (!$process.WaitForExit(180000)) { $process.Kill($true); throw 'Native parity checks timed out' }
-            if ($process.ExitCode -or !(Test-Path -LiteralPath $report)) { throw "Native smoke failed: $locale" }
+            if (!(Test-Path -LiteralPath $report)) { throw "Native smoke produced no report: $locale (exit $($process.ExitCode))" }
             $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
-            if (!$result.ok) { throw "Native controls failed: $locale" }
+            if ($process.ExitCode -or !$result.ok) { throw "Native controls failed: $locale (exit $($process.ExitCode)): $($result.error)" }
             if (@($result.parity | Where-Object { $_.profile -and $_.ok }).Count -ne 12 -or
                 !($result.parity | Where-Object { $_.commands -eq 45 -and $_.quickControls -and $_.failureUiAndRetry })) {
                 throw "Native verification did not cover all profiles and operations: $locale"

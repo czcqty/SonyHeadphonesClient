@@ -158,10 +158,13 @@ internal sealed partial class MainWindow
         await sliderBinding.LastWrite;
         if (backend.SentCommandCount != before + 2) throw new InvalidOperationException("Slider emitted duplicate commands");
         bool chinese = app.Chinese;
+        var attachedRoot = root.XamlRoot;
         route = "application"; BuildPage();
         var languageBinding = fields.Single(b => b.Field["method"]!.ToString() == "setLocale");
         ((ComboBox)languageBinding.Control).SelectedIndex = chinese ? 0 : 1;
         await languageBinding.LastWrite;
+        if (attachedRoot is null || root.XamlRoot != attachedRoot)
+            throw new InvalidOperationException("Locale change detached the window's XAML root");
         var themeBinding = fields.Single(b => b.Field["method"]!.ToString() == "setThemeMode");
         ((ComboBox)themeBinding.Control).SelectedIndex = 2;
         await themeBinding.LastWrite;

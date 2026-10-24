@@ -79,12 +79,20 @@ internal sealed partial class MainWindow : Window
     internal void Rebuild()
     {
         bindings.Clear();
-        root = new Grid { RequestedTheme = app.Theme };
-        root.KeyDown += (_, e) => {
-            if (compact && e.Key == VirtualKey.Escape && !popupEscape && !GetOpenPopups().Any()) {
-                AppWindow.Hide(); if (!app.HasTray) app.ShowMain(); e.Handled = true;
-            }
-        };
+        // Keep the window's attached root across locale changes. Replacing it
+        // detaches XamlRoot until the next layout pass, breaking popups/dialogs.
+        if (root is null) {
+            root = new Grid { RequestedTheme = app.Theme };
+            root.KeyDown += (_, e) => {
+                if (compact && e.Key == VirtualKey.Escape && !popupEscape && !GetOpenPopups().Any()) {
+                    AppWindow.Hide(); if (!app.HasTray) app.ShowMain(); e.Handled = true;
+                }
+            };
+            Content = root;
+        }
+        root.Children.Clear();
+        root.RowDefinitions.Clear();
+        root.KeyboardAccelerators.Clear();
         for (int i = 1; i <= 3; ++i) {
             int id = i;
             var accelerator = new KeyboardAccelerator { Key = i == 1 ? VirtualKey.P : i == 2 ? VirtualKey.N : VirtualKey.M,
@@ -117,7 +125,6 @@ internal sealed partial class MainWindow : Window
             };
             BuildPage();
         }
-        Content = root;
         ApplyTheme();
         Refresh();
     }
