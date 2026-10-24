@@ -333,8 +333,25 @@ DBus errors exclusively to stderr. WinUI explicitly uses UTF-8 for all pipes.
 Regression checks cover fragmented input with output backpressure, fragmented
 UTF-8/quoted content, and an unavailable Linux DBus. Hardware verification now
 fails on malformed JSON instead of silently skipping the offending line.
-The exact cause of the observed intermittent frame remains unproven; a further
-live UI retest is required before treating this hardening as sufficient.
+The exact cause of the observed intermittent frame remains unproven. A live
+WinUI retest after hardening completed touch disable, multipoint enable and a
+subsequent ambient-mode write without another malformed response. Reconnection
+also revealed stale failure text after successful initialization; the shared
+connection model now clears that text only when a connected state is reached.
+
+Hosted validation of the mapping and stream hardening passed: main
+[39952153991](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39952153991),
+WinUI [39952135138](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39952135138),
+KDE [39952140163](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39952140163),
+GNOME [39952144817](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39952144817),
+Xfce [39952149592](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39952149592)
+and the macOS prototype
+[39952130963](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39952130963).
+WinUI covers 45 commands across all 12 profiles in both languages, including
+installation, upgrade and uninstall. Linux uses Linux-built backends on Ubuntu
+24.04 and Debian 13. A local Ubuntu 24.04/Qt 6.8.3 build also passed all nine
+backend suites, including the missing-system-bus case. These run numbers precede
+the small stale-error follow-up; its checks must be recorded separately.
 
 This does not establish complete migration acceptance. Actual two-host audio
 switching, the remaining device features/models, Linux Bluetooth and desktop
