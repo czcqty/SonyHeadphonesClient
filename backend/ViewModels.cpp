@@ -796,9 +796,15 @@ QVariantList ConnectionViewModel::devices() const
 
 void ConnectionViewModel::setState(const QString& state)
 {
-    if (m_state == state)
+    const bool clearFailure = state == QStringLiteral("connected")
+        && (!m_errorCode.isEmpty() || !m_errorDetail.isEmpty());
+    if (m_state == state && !clearFailure)
         return;
     m_state = state;
+    if (clearFailure) {
+        m_errorCode.clear();
+        m_errorDetail.clear();
+    }
     emit changed();
 }
 
