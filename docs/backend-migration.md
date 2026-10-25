@@ -386,3 +386,34 @@ QtQuick.Effects, preventing the official Windows style from loading without
 development search paths. These modules and the Effects runtime are now included.
 This deployment check is separate from hardware write acceptance: direct Qt Quick
 hardware UI clicks and Linux hardware UI clicks have not been executed.
+
+### Final package verification (checked 2026-10-25)
+
+The corrected WinUI installer built from `2d075f8` passed local installation,
+reinstallation/upgrade, default backend discovery without development PATH,
+English and Chinese controls on all twelve profiles, all 45 contract commands,
+confirmation accept/cancel, recovery, and uninstall. The unrelated-file sentinel
+survived uninstall and no test application/backend process remained. Both native
+reports contain `ok: true`. The local Qt Quick deployment opened touch, devices
+and noise pages with the official Windows style from a non-source working
+directory without development search paths; all 17 main CTest suites passed.
+
+The earlier WinUI run `40069772604` failed with the same XamlRoot exception as
+the local installer test. It is superseded by the successful corrected run below;
+the original failure evidence is retained.
+
+| Tested branch/source | Final CI run | Result |
+| --- | --- | --- |
+| main `4b3aa7f` | [40070598691](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/40070598691) | All six Windows/Linux/macOS Qt Quick ON/OFF jobs passed |
+| WinUI `2d075f8` | [40070588495](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/40070588495) | Self-contained installer, backend/transport tests and installed native verification passed |
+| KDE `9a20b6d` | [40070591225](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/40070591225) | Ubuntu 24.04 and Debian 13 build, package and installed verification passed |
+| GNOME `6e2453e` | [40070593872](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/40070593872) | Both distro jobs passed |
+| Xfce `e4e520f` | [40070596096](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/40070596096) | Both distro jobs passed |
+
+Local delivery: `SoundConnect-WinUI-2.0.4-windows-x64-setup.exe`, source
+`2d075f8b98ea9ce44f7cadbcbe1f8319983c5829`, SHA-256
+`08ae25a6e01a932a3df80de5f0c4b9fdcac07c614b6235617a336216d3d85855`.
+This hash identifies the local vcpkg-built installer, not the separately built
+CI artifact. Subsequent documentation-only merges do not change this tested code.
+The remaining real-device/platform gates above remain open; this is not a claim
+that the migration is complete.
