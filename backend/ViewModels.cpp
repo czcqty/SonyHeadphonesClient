@@ -394,7 +394,8 @@ bool SettingsViewModel::listeningModeEnabled() const { return m_state->device.mB
 bool SettingsViewModel::adaptiveVolumeSupported() const { return m_state->capabilities.hasAdaptiveVolume; }
 bool SettingsViewModel::adaptiveVolumeEnabled() const { return m_state->device.mAutoVolumeEnabled.desired; }
 bool SettingsViewModel::safeListeningSupported() const { return m_state->capabilities.hasSafeListening; }
-bool SettingsViewModel::safeListeningEnabled() const { return m_state->device.mSafeListeningPreviewMode.desired; }
+bool SettingsViewModel::safeListeningEnabled() const { return m_state->device.mSafeListeningEnabled.desired; }
+bool SettingsViewModel::safeListeningStateKnown() const { return m_state->device.mSafeListeningNotificationCount > 0; }
 bool SettingsViewModel::captureVoiceSupported() const { return m_state->capabilities.hasCaptureVoice; }
 bool SettingsViewModel::captureVoiceEnabled() const
 {
@@ -617,7 +618,8 @@ bool SettingsViewModel::setSafeListeningEnabled(bool enabled)
         ++m_state->rejectedWrites;
         return false;
     }
-    m_state->device.mSafeListeningPreviewMode.desired = enabled;
+    m_state->device.mSafeListeningEnabled.desired = enabled;
+    m_state->device.mSafeListeningWritePending = true;
     emit changed();
     return true;
 }

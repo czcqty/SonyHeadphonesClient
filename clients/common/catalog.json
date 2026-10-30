@@ -382,7 +382,7 @@
           "capability": "adaptiveVolumeSupported"
         },
         {
-          "kind": "toggle",
+          "kind": "choice",
           "label": {
             "en": "Safe listening",
             "zh_CN": "安全聆听"
@@ -390,7 +390,24 @@
           "group": "settings",
           "key": "safeListeningEnabled",
           "method": "setSafeListeningEnabled",
-          "capability": "safeListeningSupported"
+          "capability": "safeListeningSupported",
+          "knownKey": "safeListeningStateKnown",
+          "options": [
+            {
+              "value": false,
+              "label": {
+                "en": "Off",
+                "zh_CN": "关"
+              }
+            },
+            {
+              "value": true,
+              "label": {
+                "en": "On",
+                "zh_CN": "开"
+              }
+            }
+          ]
         }
       ]
     },
