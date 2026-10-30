@@ -31,6 +31,8 @@ internal sealed partial class MainWindow
 
     private JsonNode? FieldValue(JsonObject field)
     {
+        if (field["knownKey"] is JsonNode known && !backend.Flag(field["group"]!.ToString(), known.ToString()))
+            return null;
         var value = backend.State[field["group"]!.ToString()]?[field["key"]!.ToString()];
         if (field["index"] is JsonNode index) {
             int i = index.GetValue<int>();
@@ -202,6 +204,44 @@ internal sealed partial class MainWindow
         for (int i = 0; i < 100 && !backend.Ready; i++) await System.Threading.Tasks.Task.Delay(100);
         if (!backend.Ready || backend.SentCommandCount != beforeRestart)
             throw new InvalidOperationException("Recovery failed or replayed commands: " + backend.Error);
+        Navigate("sound"); Refresh();
+        var safe = fields.Single(b => b.Field["key"]!.ToString() == "safeListeningEnabled");
+        backend.State["settings"]!["safeListeningStateKnown"] = false; Refresh();
+        var safeChoice = (ComboBox)safe.Control;
+        if (safeChoice.SelectedIndex != -1 || !safeChoice.IsEnabled)
+            throw new InvalidOperationException("Unknown safe-listening mode must allow an explicit choice without showing Off");
+        safeChoice.SelectedIndex = safe.Values.FindIndex(v => v!.GetValue<bool>() == false);
+        await safe.LastWrite;
+        if (backend.Flag("settings", "safeListeningEnabled"))
+            throw new InvalidOperationException("Explicit safe-listening Off did not reach the backend");
+        await CheckNarrowLayoutAsync();
+    }
+
+    private async Task CheckNarrowLayoutAsync()
+    {
+        var size = AppWindow.Size;
+        string previousRoute = route;
+        int before = backend.SentCommandCount;
+        double scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
+        try {
+            AppWindow.Resize(new Windows.Graphics.SizeInt32((int)(480 * scale), (int)(400 * scale)));
+            await Task.Delay(150);
+            foreach (var spec in Catalog["pages"]!.AsArray()) {
+                Navigate(spec!["id"]!.ToString());
+                await Task.Delay(30); root.UpdateLayout();
+                if (navigation!.DisplayMode == NavigationViewDisplayMode.Expanded)
+                    throw new InvalidOperationException("Narrow window retained expanded navigation");
+                foreach (var b in fields.Where(b => b.Row.Visibility == Visibility.Visible)) {
+                    var position = b.Control.TransformToVisual(root).TransformPoint(new Windows.Foundation.Point());
+                    if (b.Control.ActualWidth < 40 || position.X < 0 || position.X + b.Control.ActualWidth > root.ActualWidth + 1)
+                        throw new InvalidOperationException("Narrow window clips control: " + b.Field["method"]);
+                }
+            }
+            if (backend.SentCommandCount != before)
+                throw new InvalidOperationException("Window resizing/navigation wrote device settings");
+        } finally {
+            AppWindow.Resize(size); Navigate(previousRoute);
+        }
     }
 
     private ContentDialog? confirmation;
@@ -251,7 +291,8 @@ internal sealed partial class MainWindow
             else if (kind == "slider") control = new Slider { Header = label, Minimum = field["min"]!.GetValue<int>(),
                 Maximum = field["max"]!.GetValue<int>(), StepFrequency = 1, HorizontalAlignment = HorizontalAlignment.Stretch };
             else if (kind == "button") control = new Button { Content = label };
-            else control = new ComboBox { Header = label, MinWidth = 200, HorizontalAlignment = HorizontalAlignment.Stretch };
+            else control = new ComboBox { Header = label, MinWidth = 200, HorizontalAlignment = HorizontalAlignment.Stretch,
+                PlaceholderText = field["knownKey"] is null ? "" : T("状态尚未确认，请选择开或关", "State not reported; choose Off or On") };
             row = control;
             var b = new FieldBinding { Field = field, Control = control, Row = row, Reason = reason };
             fields.Add(b);

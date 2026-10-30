@@ -32,6 +32,7 @@ internal sealed partial class MainWindow : Window
     private bool exiting;
     private string actionMessage = "";
     private bool popupEscape;
+    private readonly WindowSizing? sizing;
     private readonly DispatcherTimer dismissTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
     private string T(string zh, string en) => app.T(zh, en);
 
@@ -42,6 +43,7 @@ internal sealed partial class MainWindow : Window
         Title = compact ? "Sound Connect" : "Sound Connect · WinUI";
         SystemBackdrop = compact ? new DesktopAcrylicBackdrop() : new MicaBackdrop();
         var presenter = (OverlappedPresenter)AppWindow.Presenter;
+        if (!compact) sizing = new WindowSizing(WinRT.Interop.WindowNative.GetWindowHandle(this));
         if (compact)
         {
             presenter.SetBorderAndTitleBar(true, false);
@@ -51,11 +53,13 @@ internal sealed partial class MainWindow : Window
             AppWindow.IsShownInSwitchers = false;
         }
         double scale = GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) / 96.0;
-        AppWindow.Resize(new SizeInt32((int)((compact ? 440 : 1080) * scale), (int)((compact ? 560 : 800) * scale)));
+        var workArea = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest).WorkArea;
+        AppWindow.Resize(new SizeInt32(Math.Min(workArea.Width, (int)((compact ? 440 : 1080) * scale)),
+            Math.Min(workArea.Height, (int)((compact ? 560 : 800) * scale))));
         AppWindow.Closing += (_, e) => {
             if (!exiting) { e.Cancel = true; if (app.HasTray) AppWindow.Hide(); else app.Quit(); }
         };
-        Closed += (_, _) => { dismissTimer.Stop(); backend.Changed -= Refresh; };
+        Closed += (_, _) => { dismissTimer.Stop(); backend.Changed -= Refresh; sizing?.Dispose(); };
         Activated += (_, e) => {
             if (compact && app.HasTray && e.WindowActivationState == WindowActivationState.Deactivated) dismissTimer.Start();
             else dismissTimer.Stop();
@@ -104,7 +108,7 @@ internal sealed partial class MainWindow : Window
         else
         {
             navigation = new NavigationView {
-                PaneDisplayMode = NavigationViewPaneDisplayMode.Left,
+                PaneDisplayMode = NavigationViewPaneDisplayMode.Auto,
                 IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed,
                 IsSettingsVisible = false, OpenPaneLength = 220,
                 PaneTitle = "Sound Connect", IsPaneOpen = true
@@ -157,7 +161,7 @@ internal sealed partial class MainWindow : Window
             status.IsOpen = !app.Live || backend.Error.Length > 0 || ConnectionError().Length > 0 || app.ShortcutError.Length > 0 || !backend.Connected || actionMessage.Length > 0;
             status.Severity = backend.Error.Length > 0 ? InfoBarSeverity.Error : InfoBarSeverity.Informational;
             status.Title = backend.Error.Length > 0 ? T("操作未完成", "Operation failed") : app.Live ? T("设备连接", "Device connection") : T("预览模式", "Preview mode");
-            status.Message = backend.Error.Length > 0 ? Dynamic("Backend error: %1").Replace("%1", Dynamic(backend.Error)) : ConnectionError().Length > 0 ? ConnectionError() : app.ShortcutError.Length > 0 ? T("快捷键注册失败（可能已被占用）：", "Shortcut registration failed (possibly already in use): ") + app.ShortcutError : app.Live ? T("请在设备页连接耳机。", "Connect headphones on the Devices page.") : T("使用模拟设备，操作不会发送至真实耳机。", "Simulated device. Changes are not sent to real headphones.");
+            status.Message = backend.Error.Length > 0 ? Dynamic("Backend error: %1").Replace("%1", Dynamic(backend.Error)) : ConnectionError().Length > 0 ? ConnectionError() : app.ShortcutError.Length > 0 ? T("快捷键注册失败（可能已被占用）：", "Shortcut registration failed (possibly already in use): ") + app.ShortcutError : app.Live ? T("请在连接页连接耳机。", "Connect headphones on the Connection page.") : T("使用模拟设备，操作不会发送至真实耳机。", "Simulated device. Changes are not sent to real headphones.");
         });
         bindings.Add(() => { if (backend.Error.Length == 0 && ConnectionError().Length == 0 && actionMessage.Length > 0) status.Message = actionMessage; });
         bindings.Add(() => { if (!backend.Ready && backend.Diagnostic.Length > 0) status.Message += "\n" + backend.Diagnostic; });
