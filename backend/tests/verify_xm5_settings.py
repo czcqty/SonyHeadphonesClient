@@ -43,6 +43,14 @@ def main():
             probe = None
         probe = start()
 
+    def settle(name):
+        # Multipoint's confirmation can arrive after the setting ACK. Keep the
+        # control channel alive for that exchange before testing a new session.
+        if name == 'multipoint':
+            probe.wait(lambda event: False, timeout=8, required=False)
+        else:
+            probe.settle()
+
     def value(group, field, index=None):
         v = probe.state[group][field]
         return copy.deepcopy(v if index is None else v[index])
@@ -62,7 +70,8 @@ def main():
         ('nc-button', 'settings', 'ncButtonFunction', 'setNcButtonFunction', 'ncButtonSupported', [1, 2, 3, 4]),
         ('voice', 'settings', 'voiceGuidanceEnabled', 'setVoiceGuidanceEnabled', 'voiceGuidanceSupported', None),
         ('quality', 'settings', 'soundQualityPrior', 'setSoundQualityPrior', 'connectionQualitySupported', None),
-        ('safe-listening', 'settings', 'safeListeningEnabled', 'setSafeListeningEnabled', 'safeListeningSupported', None),
+        # Safe-listening GET reports availability, not the current mode. Its
+        # on/off notifications require a separate same-session acceptance check.
         ('volume', 'playback', 'volume', 'setVolume', 'volumeSupported', 'lower'),
         ('equalizer', 'equalizer', 'bands', 'setBand', 'supported', [1]),
         ('bass', 'equalizer', 'clearBass', 'setClearBass', 'supported', [1]),
@@ -102,7 +111,7 @@ def main():
                     for target in targets:
                         request = [index, target] if index is not None else [target]
                         probe.request(group, method, request)
-                        probe.settle()
+                        settle(name)
                         restart()
                         actual = value(group, field, index)
                         row['readbacks'].append({'index': index, 'requested': target, 'actual': actual})
@@ -125,7 +134,7 @@ def main():
                     probe.request(group, 'selectPreset', [eq['presetId']])
                 else:
                     probe.request(group, method, [original])
-                probe.settle()
+                settle(name)
                 if noise:
                     probe.request('noiseControl', 'setMode', [noise['mode']])
                     probe.settle()

@@ -103,7 +103,7 @@ struct LegacyFakeTransport
             return MDR_RESULT_ERROR_GENERAL;
 
         *sent = static_cast<int>(frameSize);
-        if (type != mdr::MDRDataType::DATA_MDR)
+        if (type != mdr::MDRDataType::DATA_MDR && type != mdr::MDRDataType::DATA_MDR_NO2)
             return MDR_RESULT_OK;
 
         transport.lastDataCommand = payload;
@@ -177,6 +177,7 @@ private slots:
     void multipointConfirmationRequiresMatchingRecentWrite();
     void equalizerEditsSurvivePresetNotifications();
     void equalizerOffDoesNotSendCustomBands();
+    void safeListeningUsesModeRatherThanPreview();
 };
 
 void BackendTests::taskMoveAssignmentReleasesPreviousFrame()
@@ -338,6 +339,48 @@ void BackendTests::equalizerOffDoesNotSendCustomBands()
         mdr::UInt8(EqEbbInquiredType::PRESET_EQ), mdr::UInt8(EqPresetId::OFF), 0};
     QCOMPARE(writes[0], expected);
     QVERIFY(!device.IsDirty());
+}
+
+void BackendTests::safeListeningUsesModeRatherThanPreview()
+{
+    using namespace mdr::v2;
+    using namespace mdr::v2::t2;
+    LegacyFakeTransport transport;
+    mdr::MDRHeadphones device(&transport.connection);
+    device.mProtocol.version = 2;
+    device.mSupport.table2Functions[int(MessageMdrV2FunctionType_Table2::SAFE_LISTENING_HBS_1)] = true;
+    auto receive = [&](mdr::MDRBuffer payload) {
+        transport.receiveQueue.push_back(mdr::MDRPackCommand(mdr::MDRDataType::DATA_MDR_NO2, 0, payload));
+        QCOMPARE(pollUntil(device, MDR_HEADPHONES_EVT_SAFE_LISTENING_PARAM), MDR_HEADPHONES_EVT_SAFE_LISTENING_PARAM);
+    };
+    // Mode enabled, preview disabled; then the opposite. They are independent.
+    receive({mdr::UInt8(Command::SAFE_LISTENING_NTFY_PARAM), 0, 0, 1});
+    QVERIFY(device.mSafeListeningEnabled.current);
+    receive({mdr::UInt8(Command::SAFE_LISTENING_NTFY_PARAM), 0, 1, 0});
+    QVERIFY(!device.mSafeListeningEnabled.current);
+    receive({mdr::UInt8(Command::SAFE_LISTENING_RET_PARAM), 0, 0});
+    QVERIFY(device.mSafeListeningAvailable);
+    QVERIFY(!device.mSafeListeningEnabled.current); // Availability is not the mode.
+    receive({mdr::UInt8(Command::SAFE_LISTENING_RET_PARAM), 0, 1});
+    QVERIFY(!device.mSafeListeningAvailable);
+    QCOMPARE(device.mSafeListeningNotificationCount, 2u);
+    device.mSafeListeningEnabled.desired = true;
+    QCOMPARE(device.Invoke(device.RequestCommitV2()), MDR_RESULT_OK);
+    QCOMPARE(pollUntil(device, MDR_HEADPHONES_TASK_COMMIT_OK), MDR_HEADPHONES_TASK_COMMIT_OK);
+    const mdr::MDRBuffer expected{mdr::UInt8(Command::SAFE_LISTENING_SET_PARAM), 0, 0, 1};
+    QCOMPARE(transport.lastDataCommand, expected);
+    device.mSafeListeningEnabled.overwrite(false);
+    device.mSafeListeningNotificationCount = 0;
+    device.mSafeListeningWritePending = true; // Explicit Off with unknown state.
+    QCOMPARE(device.Invoke(device.RequestCommitV2()), MDR_RESULT_OK);
+    QCOMPARE(pollUntil(device, MDR_HEADPHONES_TASK_COMMIT_OK), MDR_HEADPHONES_TASK_COMMIT_OK);
+    const mdr::MDRBuffer off{mdr::UInt8(Command::SAFE_LISTENING_SET_PARAM), 0, 1, 1};
+    QCOMPARE(transport.lastDataCommand, off);
+    QVERIFY(!device.mSafeListeningWritePending);
+    QCOMPARE(device.Invoke(device.RequestSyncV2()), MDR_RESULT_OK);
+    QCOMPARE(pollUntil(device, MDR_HEADPHONES_TASK_SYNC_OK), MDR_HEADPHONES_TASK_SYNC_OK);
+    const mdr::MDRBuffer query{mdr::UInt8(Command::SAFE_LISTENING_GET_PARAM), 0};
+    QVERIFY(std::ranges::find(transport.dataCommands, query) != transport.dataCommands.end());
 }
 
 QTEST_APPLESS_MAIN(BackendTests)
