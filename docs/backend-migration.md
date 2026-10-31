@@ -39,10 +39,11 @@ establish BlueZ or real desktop integration. macOS needs its own SDK/runtime.
 - `MDR_BUILD_QT_FRONTEND=OFF` builds the standalone Qt Core backend and tests.
 - Native presentation parity and real-device desktop checks are still release
   gates. Do not delete the transitional frontend or claim parity from IPC tests.
-- User testing reports WinUI functionality missing relative to Qt Quick and
-  controls that cannot be adjusted or remain disabled. These reports are open
-  acceptance blockers; a catalog entry or a successful preview smoke test is
-  insufficient evidence to close them.
+- WinUI's reproduced XM5 capability, equalizer write and safe-listening state
+  issues have been corrected and checked on hardware. See the
+  [Windows acceptance record](windows-acceptance-2026-10-31.md) for tested
+  controls, restoration, package evidence and the remaining release gates.
+  Catalog entries or preview smoke tests alone do not establish hardware parity.
 
 Branch ownership and build entries are listed in the [branch guide](branches.md).
 
@@ -417,3 +418,20 @@ This hash identifies the local vcpkg-built installer, not the separately built
 CI artifact. Subsequent documentation-only merges do not change this tested code.
 The remaining real-device/platform gates above remain open; this is not a claim
 that the migration is complete.
+
+### Windows/XM5 follow-up (2026-10-29 through 2026-10-31)
+
+Shared backend fixes now preserve edited equalizer bands when selecting Custom,
+send built-in presets without an unwanted band payload, and distinguish
+safe-listening mode notifications from preview mode and availability responses.
+WinUI displays an explicit unknown safe-listening state until the headset reports
+the mode, and adapts navigation at narrow window sizes using native controls.
+
+The [acceptance record](windows-acceptance-2026-10-31.md) documents 18 reversible
+XM5 setting cases, separate safe-listening notification checks, actual WinUI
+editing followed by independent device readback, minimum-window inspection,
+17/17 main tests, 9/9 backend-only tests, and installed English/Chinese parity.
+The installer from WinUI `d454bf9` passed installation, upgrade and uninstall.
+These checks close the reproduced issues on this Windows 11/XM5 configuration;
+Windows 10, clean-OS, multi-monitor/DPI, accessibility, Explorer restart,
+two-host audio switching and other hardware gates remain open. Qt Quick stays.
