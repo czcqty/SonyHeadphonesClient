@@ -123,3 +123,17 @@ bounded, and retry obtains fresh state without replaying commands or reconnectin
 Quit gives the owned child two seconds for EOF shutdown. Logs use the user's
 SoundConnect data directory. Run `dotnet run --project gui/winui/tests/TransportTests.csproj -c Release`
 for transport failure tests. The native smoke also exercises child restart.
+
+## XM5 and installer acceptance (2026-10-31)
+
+The candidate from `d454bf9` passed installed English/Chinese parity on all
+12 profiles and 45 commands, upgrade and uninstall without SDK lookup. Real
+XM5 EQ editing passed independent device readback and restoration. Safe listening
+shows an unknown state until a mode notification arrives and allows an explicit
+Off/On choice. The full window uses the native adaptive NavigationView and an
+interactive 480x400 minimum (scaled for DPI and bounded by the work area).
+Minimum-size EQ scrolling and navigation were inspected on Windows 11.
+
+See [the acceptance record](../../docs/windows-acceptance-2026-10-31.md) for
+source/hash, hardware evidence, setting restoration and remaining platform
+gates. These results do not authorize removal of the transitional Qt Quick UI.
