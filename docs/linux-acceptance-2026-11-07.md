@@ -1,9 +1,10 @@
 # Linux native migration acceptance, 2026-11-07
 
-KDE, GNOME and Xfce have been tested with their native controls and the Linux
-`SoundConnectBackend`. The reference is the [Windows functional acceptance
-record](windows-acceptance-2026-10-31.md). Physical Linux Bluetooth and
-workstation checks remain release gates for all three branches.
+Functional migration is complete on the `kde`, `gnome`, and `xfce` branches.
+All three adapters passed native control and installed-package checks using
+the Linux `SoundConnectBackend`. The reference is the [Windows functional acceptance
+record](windows-acceptance-2026-10-31.md). [Real-headset and workstation
+checks](#bluetooth-and-outstanding-checks) remain release gates for all three.
 
 ## Tested candidates
 
