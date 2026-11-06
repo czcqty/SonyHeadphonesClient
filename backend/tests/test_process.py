@@ -118,10 +118,22 @@ if sys.platform.startswith('linux'):
     with tempfile.TemporaryDirectory() as directory:
         environment = dict(os.environ, XDG_DATA_HOME=directory, XDG_CONFIG_HOME=directory,
                            DBUS_SYSTEM_BUS_ADDRESS='unix:path=' + directory + '/missing-bus')
-        result = subprocess.run([sys.argv[1], '--live'], input=b'', capture_output=True,
-                                env=environment, timeout=10)
-        assert result.returncode == 0, result.stderr
-        frames = [json.loads(line) for line in result.stdout.splitlines()]
-        assert frames and frames[0]['type'] == 'state'
-        assert b'Could not get system bus' in result.stderr
-    print('PASS: Linux DBus failure diagnostics do not contaminate protocol stdout')
+        process = subprocess.Popen([sys.argv[1], '--live'], env=environment,
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        events = queue.Queue()
+        threading.Thread(target=lambda: [events.put(json.loads(line)) for line in process.stdout], daemon=True).start()
+        try:
+            assert events.get(timeout=5)['type'] == 'state'
+            process.stdin.write(b'{"target":"app","method":"refreshDevices","args":[]}\n')
+            process.stdin.flush()
+            while True:
+                event = events.get(timeout=10)
+                if event.get('connection', {}).get('errorCode') == 'bluetooth-backend-unavailable':
+                    break
+            process.stdin.close()
+            assert process.wait(timeout=5) == 0
+        finally:
+            if process.poll() is None:
+                process.kill()
+                process.wait()
+    print('PASS: Linux discovery reports an unavailable system bus over valid protocol frames')

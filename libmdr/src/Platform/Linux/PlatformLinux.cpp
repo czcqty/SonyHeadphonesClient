@@ -1,5 +1,6 @@
 #include "DBusHelper.hpp"
 
+#include <algorithm>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/poll.h>
@@ -14,8 +15,7 @@ struct MDRConnectionLinux
 {
     MDRConnection mdrConn;
 
-    char const* lastError;
-    DBusConnection* dbusConn;
+    std::string lastError;
     int fd;
 
     MDRConnectionLinux() noexcept :
@@ -30,10 +30,11 @@ struct MDRConnectionLinux
             .freeDevicesList = FreeDevicesList,
             .getLastError = GetLastError
         }),
-        lastError(""), dbusConn(dbus_open_system_bus()),
-        fd(0)
+        fd(-1)
     {
     }
+
+    ~MDRConnectionLinux() { Disconnect(this); }
 
     sdp_session* sdpSession{nullptr};
     uint8_t uuid[16];
@@ -42,20 +43,22 @@ struct MDRConnectionLinux
     static int Connect(void* user, const char* macAddress, const char* serviceUUID) noexcept
     {
         auto* ptr = static_cast<MDRConnectionLinux*>(user);
+        Disconnect(ptr);
+        if (serviceUUIDtoBytes(serviceUUID, ptr->uuid) != 0)
+            return MDR_RESULT_ERROR_BAD_ADDRESS;
         ptr->fd = socket(AF_BLUETOOTH, SOCK_STREAM | SOCK_NONBLOCK, BTPROTO_RFCOMM);
-        if (!ptr->fd)
+        if (ptr->fd < 0)
         {
             ptr->lastError = "Failed to create RFCOMM socket";
             return MDR_RESULT_ERROR_NET;
         }
         unsigned int linkmode = RFCOMM_LM_AUTH | RFCOMM_LM_ENCRYPT;
         setsockopt(ptr->fd, SOL_RFCOMM, RFCOMM_LM, &linkmode, sizeof(linkmode));
-        if (serviceUUIDtoBytes(serviceUUID, ptr->uuid) != 0)
-            return MDR_RESULT_ERROR_BAD_ADDRESS;
         ptr->macAddress = macAddress;
         ptr->sdpSession = sdp_connect_nb(macAddress);
         if (!ptr->sdpSession)
         {
+            Disconnect(ptr);
             ptr->lastError = "Failed to connect to remote SDP server";
             return MDR_RESULT_ERROR_NET;
         }
@@ -66,8 +69,8 @@ struct MDRConnectionLinux
     static void Disconnect(void* user) noexcept
     {
         auto* ptr = static_cast<MDRConnectionLinux*>(user);
-        if (ptr->fd)
-            close(ptr->fd), ptr->fd = 0;
+        if (ptr->fd >= 0)
+            close(ptr->fd), ptr->fd = -1;
         if (ptr->sdpSession)
             sdp_close(ptr->sdpSession), ptr->sdpSession = nullptr;
     }
@@ -75,7 +78,7 @@ struct MDRConnectionLinux
     static int Recv(void* user, char* dst, int size, int* pReceived) noexcept
     {
         auto* ptr = static_cast<MDRConnectionLinux*>(user);
-        if (!ptr->fd)
+        if (ptr->fd < 0)
             return MDR_RESULT_ERROR_NO_CONNECTION;
         ssize_t received = recv(ptr->fd, dst, size, 0);
         if (received == 0)
@@ -94,7 +97,7 @@ struct MDRConnectionLinux
     static int Send(void* user, const char* src, int size, int* pSent) noexcept
     {
         auto* ptr = static_cast<MDRConnectionLinux*>(user);
-        if (!ptr->fd)
+        if (ptr->fd < 0)
             return MDR_RESULT_ERROR_NO_CONNECTION;
         ssize_t sent = send(ptr->fd, src, size, 0);
         if (sent == 0)
@@ -146,14 +149,14 @@ struct MDRConnectionLinux
             if (res != 0 && errno != EINPROGRESS)
             {
                 close(ptr->fd);
-                ptr->fd = 0;
+                ptr->fd = -1;
                 ptr->lastError = strerror(errno);
                 return MDR_RESULT_ERROR_NET;
             }
             ptr->lastError = "Connecting to remote device";
             return MDR_RESULT_INPROGRESS;
         }
-        if (!ptr->fd)
+        if (ptr->fd < 0)
             return MDR_RESULT_ERROR_NO_CONNECTION;
         pollfd pfd{
             .fd = ptr->fd,
@@ -173,17 +176,15 @@ struct MDRConnectionLinux
     static int GetDevicesList(void* user, MDRDeviceInfo** ppList, int* pCount) noexcept
     {
         auto* ptr = static_cast<MDRConnectionLinux*>(user);
-        auto paths = dbus_list_adapters(ptr->dbusConn);
-        *ppList = new MDRDeviceInfo[paths.size()];
-        *pCount = static_cast<int>(paths.size());
-        for (size_t i = 0; i < paths.size(); ++i)
-        {
-            std::string name = dbus_get_property(ptr->dbusConn, paths[i].c_str(), "Name");
-            std::string address = dbus_get_property(ptr->dbusConn, paths[i].c_str(), "Address");
-            // std::string is always null-terminated
-            strncpy((*ppList)[i].szDeviceName, name.c_str(), name.size() + 1);
-            strncpy((*ppList)[i].szDeviceMacAddress, address.c_str(), address.size() + 1);
-        }
+        *ppList = nullptr;
+        *pCount = 0;
+        std::vector<MDRDeviceInfo> devices;
+        const int result = bluez_list_devices(devices, ptr->lastError);
+        if (result != MDR_RESULT_OK || devices.empty())
+            return result;
+        *ppList = new MDRDeviceInfo[devices.size()];
+        std::copy(devices.begin(), devices.end(), *ppList);
+        *pCount = static_cast<int>(devices.size());
         return MDR_RESULT_OK;
     }
 
@@ -200,7 +201,7 @@ struct MDRConnectionLinux
     static const char* GetLastError(void* user) noexcept
     {
         auto* ptr = static_cast<MDRConnectionLinux*>(user);
-        return ptr->lastError;
+        return ptr->lastError.c_str();
     }
 };
 
