@@ -50,6 +50,10 @@
 #include <memory>
 #include <vector>
 
+// Explicit Quit also ends the persistent quick panel. Letting Qt ask every
+// window to close would allow a tray hide or the panel's close veto to cancel it.
+static void quitApplication() { QCoreApplication::exit(0); }
+
 class SettingsWindow : public QMainWindow {
 public:
     std::function<void(bool)> compactNavigation;
@@ -59,7 +63,7 @@ public:
     }
     void closeEvent(QCloseEvent* event) override {
         if (trayHostAvailable()) { hide(); event->ignore(); }
-        else { qApp->quit(); event->accept(); }
+        else { event->accept(); quitApplication(); }
     }
 };
 
@@ -461,7 +465,7 @@ public:
         toolbar->addWidget(brand);
         auto action = toolbar->addAction(tr("Quick controls", "快捷控制")); connect(action, &QAction::triggered, this, [this] { showQuick(); });
         translations.push_back([this, action] { action->setText(tr("Quick controls", "快捷控制")); });
-        auto quit = toolbar->addAction(tr("Quit", "退出")); connect(quit, &QAction::triggered, qApp, &QApplication::quit);
+        auto quit = toolbar->addAction(tr("Quit", "退出")); connect(quit, &QAction::triggered, qApp, &quitApplication);
         translations.push_back([this, quit] { quit->setText(tr("Quit", "退出")); });
         auto quickLayout = new QVBoxLayout(&quick);
         auto header = new QHBoxLayout;
@@ -499,7 +503,7 @@ public:
         addMenu("Play / Pause", "播放 / 暂停", [this] { send("playback", "togglePlayback"); });
         addMenu("Next track", "下一曲", [this] { send("playback", "nextTrack"); });
         addMenu("Disconnect", "断开连接", [this] { send("app", "disconnectDevice"); });
-        addMenu("Quit", "退出", [] { qApp->quit(); });
+        addMenu("Quit", "退出", &quitApplication);
         tray->setContextMenu(menu);
         for (const auto key : {QString("P"), QString("N"), QString("M")}) {
             auto shortcut = new QAction(this);
