@@ -8,6 +8,7 @@
 #include <QCommandLineParser>
 #include "PanelPlacement.hpp"
 #include "PlasmaPanel.hpp"
+#include "TrayAvailability.hpp"
 #include <QStandardPaths>
 #include <QLineEdit>
 #include <QCursor>
@@ -57,7 +58,7 @@ public:
         if (compactNavigation) compactNavigation(width() < 620);
     }
     void closeEvent(QCloseEvent* event) override {
-        if (QSystemTrayIcon::isSystemTrayAvailable()) { hide(); event->ignore(); }
+        if (trayHostAvailable()) { hide(); event->ignore(); }
         else { qApp->quit(); event->accept(); }
     }
 };
@@ -513,7 +514,7 @@ public:
         }
         auto monitor = new QTimer(this);
         connect(monitor, &QTimer::timeout, this, [this] {
-            if (!QSystemTrayIcon::isSystemTrayAvailable() && !window.isVisible()) showSettings();
+            if (!window.isVisible() && !trayHostAvailable()) showSettings();
         });
         monitor->start(2000);
         connect(tray, &KStatusNotifierItem::activateRequested, this, [this](bool, const QPoint& p) { if (!p.isNull()) rememberTray(p); showQuick(); });
