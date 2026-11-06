@@ -1,10 +1,11 @@
 # Windows acceptance: WH-1000XM5
 
-Checked 2026-10-29 through 2026-10-31 on Windows 11 x64, build 26200,
-with WH-1000XM5 firmware 2.3.1. This accepts the reproduced fixes and the
-local candidate, not every Windows release gate or removal of Qt Quick.
+Hardware and installer checks ran on October 29–31, 2026 on Windows 11 x64
+(build 26200) with WH-1000XM5 firmware 2.3.1. That WinUI candidate underwent
+desktop checks on October 31 and November 5–6. For the newer candidate and
+its installer, see the [November candidate and installer](#november-candidate-and-installer).
 
-## Source and delivery
+## October candidate and installer
 
 - Shared fixes: main `26e951f` (equalizer) and `f9beb2e` (safe listening).
 - Native presentation: `6b70bee`; tested merged WinUI source
@@ -82,8 +83,6 @@ the misleading availability-based check in `safe-listening-fixed.json`.
   lookup and both native parity runs with PATH limited to System32 and no SDK
   lookup. Uninstall removed the app and its registration while preserving the
   unrelated-file sentinel. No test client/backend process remained after cleanup.
-- The live machine reports Ctrl+Alt+M registration conflict (1409). The warning
-  is visible; this does not establish successful global registration for that key.
 - Offline publish emitted NU1900 because vulnerability metadata could not be
   fetched; compilation and runtime verification passed.
 
@@ -94,6 +93,98 @@ Local detailed reports are in
 `installer-verification.txt`. Installed reports are in
 `cmake-build-native/installed-verification-2026-10-31/reports/`.
 These ignored build artifacts are local evidence, not files distributed by Git.
+
+## Windows 11 desktop follow-up
+
+| Check | Observed result |
+| --- | --- |
+| Narrator | With the Chinese Appearance selector focused and its list open, the tester heard Narrator announce the control and option names correctly. |
+| High contrast | With the Windows Aquatic theme active, the noise and EQ pages showed readable labels and controls. Keyboard focus was visible in the noise selector, and Escape canceled the selection. The original Windows contrast setting (None) was restored. |
+| Explorer restart | With the main window hidden, Explorer restarted. The same WinUI and backend processes survived. The tester found the recovered tray icon and opened quick controls with one click. Explorer returned within the two-second tray poll interval. |
+| Prolonged tray loss | On a private Windows desktop with a test `Shell_TrayWnd`, a normal window close message hid the preview app. After the test removed the taskbar window, the candidate released its tray icon. An external observer saw the main window reappear after 1,968 ms. The quick-panel action kept the main window accessible. After another 6.5 seconds without a tray, a second close message exited the app with code 0 and no child left running. |
+| Reduced visual effects | Both animation and transparency were on initially. With both off in Windows Settings, the quick panel showed its controls, Open full settings opened the noise page, and the noise selector opened and dismissed. Both settings were restored and read back. |
+| Panel placement | On the single display at 150% scaling, the panel was 660×840 physical pixels at (343, 0), inside the 2560×1528 work area. Open full settings hid the panel and showed the previously hidden main window. |
+| Page appearance and language | Ten pages and the separate quick panel were captured and inspected in English and Chinese with light, dark and system themes (66 initial viewports). System followed the PC's light app theme. All captures used the XM5 preview profile. Their state reports matched the requested locale and theme, with zero outgoing commands. |
+| Quick controls | The noise menu stayed open for keyboard navigation. The first Escape canceled the highlighted change and kept the panel open. The second Escape dismissed the panel. |
+| Client termination | After the test client was terminated, its private preview backend exited on its own. |
+| Foreground keyboard shortcuts | On November 5, pressing Ctrl+Alt+P and Ctrl+Alt+N in the WinUI window sent one `playback.togglePlayback` and one `playback.nextTrack` request, respectively. Ctrl+Alt+M was already taken. WinUI displayed Windows error 1409. |
+| Background keyboard shortcuts | On November 6, with the main window hidden and Windows About (`winver`) in the foreground, Ctrl+Alt+P sent exactly one `playback.togglePlayback` request. Ctrl+Alt+N sent exactly one `playback.nextTrack` request. |
+
+For both shortcut tests, WinUI used its normal live-mode key registration. A local
+relay forwarded requests to the packaged shared backend running in preview and
+recorded the target and method. Actual XM5 playback requires a separate hardware
+check. Local evidence is under `cmake-build-native/reports/` in
+`windows-desktop-2026-10-31/explorer-{before,after}.json`,
+`windows-desktop-2026-11-05/keyboard-commands.jsonl` and the background key log
+named in `windows-desktop-2026-11-06/session.json`.
+
+The November 6 directory also contains `panel-workarea.jsonl` and
+`catalog-WH-1000XM5/capture-report.json`, with the contact sheets and state
+reports alongside it. Native control-tree captures cover the visible viewport.
+The separate interactive checks cover scrolling, popups and system backdrops
+only in the cases described above.
+
+The same November 6 report directory contains `reduced-effects.json` and
+`tray-wmclose.jsonl` with its launcher log. The isolated tray test exercised
+the candidate's two-second tray monitor with a synthetic taskbar window.
+The Explorer restart row records the separate check with the real Windows shell.
+
+During the November 6 live check the Windows Bluetooth radio was initially off.
+With the radio temporarily on, the packaged backend completed two scans.
+Each returned one device and zero WH-1000XM5 matches. The tester could not
+connect the XM5 for this session. The backend sent no playback or settings
+commands to the headset. An independent Windows radio query confirmed the
+original Off state after cleanup. See `xm5-connection-radio-on.json` and
+`xm5-radio-restored.json` in the same directory.
+
+## November candidate and installer
+
+- Source: WinUI `ef2ed5caba2453c034f14953f219cae39b1a6094`.
+- Installer: `cmake-build-native/packages/windows-acceptance-ef2ed5caba/SoundConnect-WinUI-2.0.4-windows-x64-setup.exe` (98,068,921 bytes).
+- SHA-256: `6b110573860fd094fb33aa0bbe1f1782c86229ee9c969724d176dec354bab226`.
+
+In the earlier candidate, clicking Refresh on the live WinUI Connection page
+with Windows Bluetooth off produced “蓝牙扫描失败: 句柄无效。”
+Windows had reported that no radio was available, but the scanner continued
+with an invalid handle. Main `8444b51` now distinguishes an unavailable adapter
+from a successful scan with no connected devices. The scanner also releases
+each radio handle and continues past a radio with no connected devices.
+WinUI `776c2a3` displays the Windows connection instructions only when the device
+list is empty and there is no active connection, scan or error.
+
+With Bluetooth off, the corrected shared backend returned
+`bluetooth-adapter-unavailable` on two successive scans. With Bluetooth on,
+the same process completed 32 scans. The first and last each returned one
+device, and the process handle count was 187 in both samples. An independent
+radio query confirmed the original Off state after the test. See
+`xm5-after-radio-fix.json` and `adapter-enumeration-fixed.json` in the
+November 6 report directory.
+
+On WinUI `ef2ed5ca`, both English and Chinese live sessions initially showed
+how to connect headphones in Windows. After clicking Refresh with the radio
+off, the status bar explained how to enable Bluetooth or connect an adapter
+and refresh again. The ordinary empty-list hint disappeared. This was checked
+through the native controls in both languages. The hardware results in the
+October section apply to the earlier candidate. The November build still needs
+playback and connection verification with an available XM5.
+
+In the new candidate's Chinese XM5 preview, Windows UI Automation exposed
+names for 54 command controls across all ten pages. The EQ slider and numeric
+editor for each band had distinct names. Paired-device actions named the target,
+and unavailable sound settings supplied an explanation. The detailed UI tree
+extracts are in `candidate-ef2ed5caba/accessibility-names.json`. The spoken
+Narrator result above covers the Appearance selector.
+
+Main passed 17/17 CTest suites and the WinUI backend build passed 9/9.
+Package verification installed the October installer, upgraded it using the
+November installer, then reinstalled the November build. At each step all 801
+payload files matched the corresponding manifest. The installed English and
+Chinese parity runs passed with a restricted PATH and SDK lookup disabled.
+Each covered 12 preview profiles, 45 commands and 1,414 requests. A normal
+silent uninstall removed the application, uninstaller, registry entries and
+shortcuts. Only the unrelated sentinel file remained. Local evidence
+is in `cmake-build-native/reports/windows-desktop-2026-11-06/`, including
+`main-radio-fix.xml` and the `candidate-ef2ed5caba/` subdirectory.
 
 ## Reproduction and remaining gates
 
@@ -107,9 +198,13 @@ the current mode; its acceptance requires actual mode notifications.
 On the WinUI branch, run `gui/winui/Build.ps1`, `Package.ps1` and `Verify.ps1`
 as documented in `gui/winui/README.md`. Use a fresh verification directory.
 
-Still unverified: Windows 10 and a clean Windows OS image; multiple monitors and
-DPI changes; Narrator/high contrast; Explorer/tray restart; actual two-host audio
-switching; remaining playback/device operations and other physical models.
-The development-machine PATH isolation check is not a clean-OS check. Linux
-and macOS acceptance is unchanged. Keep the transitional Qt Quick frontend
-until the full matrix in [backend-migration.md](backend-migration.md) passes.
+The tester has one Windows 11 PC and one XM5. Windows 10, installation on a
+clean OS image, mixed-DPI multi-monitor placement, actual two-host audio
+switching and other headset models still need suitable environments. Open
+desktop checks include Ctrl+Alt+M with the key available and accessibility
+beyond the controls sampled above. Actual playback/pause, previous/next track
+and cancellation during an XM5 connection attempt need a connected headset.
+The tested XM5 reported support for the multipoint enable switch. Device-list
+management and source switching need a model that reports those capabilities.
+Keep Qt Quick until the full removal matrix passes.
+See [backend-migration.md](backend-migration.md).

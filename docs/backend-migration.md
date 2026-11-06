@@ -40,10 +40,17 @@ establish BlueZ or real desktop integration. macOS needs its own SDK/runtime.
 - Native presentation parity and real-device desktop checks are still release
   gates. Do not delete the transitional frontend or claim parity from IPC tests.
 - WinUI's reproduced XM5 capability, equalizer write and safe-listening state
-  issues have been corrected and checked on hardware. See the
-  [Windows acceptance record](windows-acceptance-2026-10-31.md) for tested
-  controls, restoration, package evidence and the remaining release gates.
-  Catalog entries or preview smoke tests alone do not establish hardware parity.
+  issues have been corrected and checked on hardware. Windows 11 desktop checks
+  also cover Explorer restart, quick-panel Escape behavior, selected accessibility
+  controls and playback shortcuts with the app visible or hidden. For the tested
+  configuration, observations and outstanding cases, see the
+  [Windows acceptance record](windows-acceptance-2026-10-31.md).
+- Main `8444b51` fixes discovery when Windows has no available Bluetooth
+  adapter. WinUI `ef2ed5ca` displays the recovery instruction in English and
+  Chinese. Actual refreshes with Bluetooth off and repeated scans with it on
+  passed on the development machine. Upgrading from the previous installer
+  and reinstalling the new build both passed payload verification. The updated
+  candidate passed installed English and Chinese native parity checks.
 
 Branch ownership and build entries are listed in the [branch guide](branches.md).
 
@@ -161,7 +168,7 @@ Implemented on main and consumed by all five native branches:
   services under WSL. The sandbox Release IPO probe reports MSVC PDB access failure
   and uses the project's supported non-IPO fallback; build/tests/package succeed.
 
-### Explicit remaining release gates
+### Release gates recorded on 2026-10-14
 
 1. **macOS**: compile Swift/AppKit and Qt backend on a Mac; native menu-bar/popup,
    theme switching, preference-file migration, keyboard/VoiceOver, permission and
@@ -432,6 +439,30 @@ XM5 setting cases, separate safe-listening notification checks, actual WinUI
 editing followed by independent device readback, minimum-window inspection,
 17/17 main tests, 9/9 backend-only tests, and installed English/Chinese parity.
 The installer from WinUI `d454bf9` passed installation, upgrade and uninstall.
-These checks close the reproduced issues on this Windows 11/XM5 configuration;
-Windows 10, clean-OS, multi-monitor/DPI, accessibility, Explorer restart,
-two-host audio switching and other hardware gates remain open. Qt Quick stays.
+These checks close the reproduced issues on this Windows 11/XM5 configuration.
+
+### Windows desktop follow-up (October 31 and November 5–6, 2026)
+
+After Explorer restarted, the tester opened quick controls from the recovered
+tray icon. WinUI and its backend kept their original process IDs. In quick
+controls Escape canceled a dropdown change, then dismissed the panel on the next
+press. The tester confirmed Narrator spoke the Chinese Appearance selector and
+option names correctly. Noise and EQ controls were readable with the Windows
+Aquatic contrast theme. Ctrl+Alt+P and Ctrl+Alt+N sent one request per keypress
+to the shared preview backend with WinUI in front. They did the same with WinUI
+hidden and the `winver` dialog in front. Windows reported Ctrl+Alt+M in use.
+
+With Windows animation and transparency off, the quick panel opened full
+settings and the noise selector worked. Both system settings were restored.
+On a private desktop with a test taskbar window, a normal close hid WinUI.
+Removing the taskbar brought the main window back after about two seconds.
+With the tray still absent, a second close ended both WinUI and its child.
+The quick panel fit within the single display's work area at 150% scaling.
+Review of 66 native captures covered the initial viewport of every page and
+the quick panel in English and Chinese under light, dark and system themes.
+
+Windows 10, clean-OS installation, mixed-DPI multi-monitor placement and
+two-host audio switching require additional environments. Broader accessibility,
+Ctrl+Alt+M with the key available, and live XM5 playback and connection
+cancellation still need verification. See the
+[acceptance record](windows-acceptance-2026-10-31.md).
