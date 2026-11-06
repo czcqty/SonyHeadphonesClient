@@ -143,6 +143,7 @@
       <translation><numerusform>已连接 %n 台设备</numerusform></translation>
     </message>
     <message><source>No Bluetooth backend available</source><translation>没有可用的蓝牙后端</translation></message>
+    <message><source>No Bluetooth adapter available. Turn on Bluetooth on your computer or connect an adapter, then refresh.</source><translation>没有可用的蓝牙适配器。请打开电脑蓝牙或连接适配器，然后刷新。</translation></message>
     <message><source>Bluetooth scan failed: %1</source><translation>蓝牙扫描失败：%1</translation></message>
     <message><source>Bluetooth scan failed</source><translation>蓝牙扫描失败</translation></message>
     <message><source>Connection timed out</source><translation>连接超时</translation></message>

@@ -241,101 +241,91 @@ static int Poll(void* user, int timeout) noexcept
     return MDR_RESULT_ERROR_NET;
 }
 
+    // Enumeration uses ERROR_NO_MORE_ITEMS for normal exhaustion at both levels.
+    static DWORD EnumerationError() noexcept
+    {
+        const DWORD error = ::GetLastError();
+        return error == ERROR_NO_MORE_ITEMS ? ERROR_SUCCESS : error;
+    }
+
+    static DWORD CollectRadioDevices(HANDLE radio, std::vector<MDRDeviceInfo>& devices)
+    {
+        BLUETOOTH_DEVICE_SEARCH_PARAMS search = {.dwSize = sizeof(BLUETOOTH_DEVICE_SEARCH_PARAMS),
+                                                  .fReturnConnected = TRUE,
+                                                  .cTimeoutMultiplier = 15,
+                                                  .hRadio = radio};
+        BLUETOOTH_DEVICE_INFO info = {sizeof(BLUETOOTH_DEVICE_INFO)};
+        HBLUETOOTH_DEVICE_FIND found = BluetoothFindFirstDevice(&search, &info);
+        if (!found)
+            return EnumerationError();
+
+        do
+        {
+            auto const& bytes = info.Address.rgBytes;
+            std::string name = ToU8String(info.szName);
+            std::string address = fmt::format("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
+                                              bytes[5], bytes[4], bytes[3], bytes[2], bytes[1], bytes[0]);
+            MDRDeviceInfo device{};
+            strncpy(device.szDeviceName, name.c_str(), sizeof(device.szDeviceName) - 1);
+            strncpy(device.szDeviceMacAddress, address.c_str(), sizeof(device.szDeviceMacAddress) - 1);
+            devices.push_back(device);
+        }
+        while (BluetoothFindNextDevice(found, &info));
+
+        const DWORD error = EnumerationError();
+        if (!BluetoothFindDeviceClose(found) && error == ERROR_SUCCESS)
+            return ::GetLastError();
+        return error;
+    }
+
     static int GetDevicesList(void* user, MDRDeviceInfo** ppList, int* pCount) noexcept
     {
         auto* ptr = static_cast<MDRConnectionWindows*>(user);
-        fprintf(stderr, "[BT-DEBUG] GetDevicesList called\n");
-
-        BLUETOOTH_FIND_RADIO_PARAMS radioFindParams = {sizeof(BLUETOOTH_FIND_RADIO_PARAMS)};
-        BLUETOOTH_DEVICE_SEARCH_PARAMS deviceSearchParams = {.dwSize = sizeof(BLUETOOTH_DEVICE_SEARCH_PARAMS),
-                                                             .fReturnAuthenticated = 0,
-                                                             .fReturnRemembered = 0,
-                                                             .fReturnUnknown = 0,
-                                                             .fReturnConnected = 1,
-                                                             .fIssueInquiry = 0,
-                                                             .cTimeoutMultiplier = 15,
-                                                             .hRadio = NULL};
-        HANDLE radio;
-        HBLUETOOTH_RADIO_FIND radioFindHandle = BluetoothFindFirstRadio(&radioFindParams, &radio);
-        if (!radioFindHandle)
+        *ppList = nullptr;
+        *pCount = 0;
+        BLUETOOTH_FIND_RADIO_PARAMS params = {sizeof(BLUETOOTH_FIND_RADIO_PARAMS)};
+        HANDLE radio = nullptr;
+        HBLUETOOTH_RADIO_FIND found = BluetoothFindFirstRadio(&params, &radio);
+        if (!found)
         {
-            DWORD err = ::GetLastError();
-            fprintf(stderr, "[BT-DEBUG] BluetoothFindFirstRadio FAILED, error=%lu\n", err);
-            if (err == ERROR_NO_MORE_ITEMS)
+            const DWORD error = ::GetLastError();
+            if (error == ERROR_NO_MORE_ITEMS)
             {
-                fprintf(stderr, "[BT-DEBUG] No Bluetooth radios found on this system!\n");
-                *ppList = nullptr;
-                *pCount = 0;
+                ptr->lastError = "No Bluetooth adapter available";
+                return MDR_RESULT_ERROR_NOT_FOUND;
             }
-            else
-            {
-                ptr->lastError = FormatErrorString(err);
-                fprintf(stderr, "[BT-DEBUG] Radio error: %s\n", ptr->lastError.c_str());
-                return MDR_RESULT_ERROR_NET;
-            }
-        }
-        else
-        {
-            fprintf(stderr, "[BT-DEBUG] BluetoothFindFirstRadio OK, radio handle=%p\n", radio);
-        }
-        std::vector<MDRDeviceInfo> devices;
-        int radioIndex = 0;
-        do
-        {
-            fprintf(stderr, "[BT-DEBUG] Scanning radio #%d (handle=%p)\n", radioIndex, radio);
-            deviceSearchParams.hRadio = radio;
-            BLUETOOTH_DEVICE_INFO deviceInfo = {sizeof(BLUETOOTH_DEVICE_INFO)};
-            HBLUETOOTH_DEVICE_FIND deviceFindHandle = BluetoothFindFirstDevice(&deviceSearchParams, &deviceInfo);
-            if (!deviceFindHandle)
-            {
-                DWORD err = ::GetLastError();
-                fprintf(stderr, "[BT-DEBUG] BluetoothFindFirstDevice FAILED on radio #%d, error=%lu\n", radioIndex, err);
-                if (err == ERROR_NO_MORE_ITEMS)
-                {
-                    fprintf(stderr, "[BT-DEBUG] No devices found on radio #%d\n", radioIndex);
-                    break;
-                }
-                else
-                {
-                    ptr->lastError = FormatErrorString(err);
-                    fprintf(stderr, "[BT-DEBUG] Device search error: %s\n", ptr->lastError.c_str());
-                    return MDR_RESULT_ERROR_NET;
-                }
-            }
-            do
-            {
-                auto const& pBytes = deviceInfo.Address.rgBytes;
-                std::string szName = ToU8String(deviceInfo.szName);
-                std::string szMacAddress = fmt::format("{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}", pBytes[5], pBytes[4],
-                                                 pBytes[3], pBytes[2], pBytes[1], pBytes[0]);
-                fprintf(stderr, "[BT-DEBUG] Found device: name=\"%s\" mac=%s connected=%d authenticated=%d remembered=%d\n",
-                        szName.c_str(), szMacAddress.c_str(),
-                        (int)deviceInfo.fConnected, (int)deviceInfo.fAuthenticated, (int)deviceInfo.fRemembered);
-                devices.emplace_back();
-                auto& back = devices.back();
-                strncpy(back.szDeviceName, szName.c_str(), sizeof(back.szDeviceName) - 1);
-                back.szDeviceName[sizeof(back.szDeviceName) - 1] = '\0';
-                strncpy(back.szDeviceMacAddress, szMacAddress.c_str(), sizeof(back.szDeviceMacAddress) - 1);
-                back.szDeviceMacAddress[sizeof(back.szDeviceMacAddress) - 1] = '\0';
-            }
-            while (BluetoothFindNextDevice(deviceFindHandle, &deviceInfo));
-            if (!BluetoothFindDeviceClose(deviceFindHandle))
-            {
-                ptr->lastError = FormatErrorString(::GetLastError());
-                return MDR_RESULT_ERROR_NET;
-            }
-            radioIndex++;
-        }
-        while (BluetoothFindNextRadio(radioFindHandle, &radio));
-        if (!BluetoothFindRadioClose(radioFindHandle))
-        {
-            ptr->lastError = FormatErrorString(::GetLastError());
+            ptr->lastError = FormatErrorString(error);
             return MDR_RESULT_ERROR_NET;
         }
-        *ppList = new MDRDeviceInfo[devices.size()];
-        std::memcpy(*ppList, devices.data(), devices.size() * sizeof(MDRDeviceInfo));
-        *pCount = devices.size();
-        fprintf(stderr, "[BT-DEBUG] GetDevicesList returning %d device(s)\n", *pCount);
+
+        std::vector<MDRDeviceInfo> devices;
+        DWORD error;
+        while (true)
+        {
+            error = CollectRadioDevices(radio, devices);
+            if (!CloseHandle(radio) && error == ERROR_SUCCESS)
+                error = ::GetLastError();
+            if (error != ERROR_SUCCESS)
+                break;
+            if (!BluetoothFindNextRadio(found, &radio))
+            {
+                error = EnumerationError();
+                break;
+            }
+        }
+        if (!BluetoothFindRadioClose(found) && error == ERROR_SUCCESS)
+            error = ::GetLastError();
+        if (error != ERROR_SUCCESS)
+        {
+            ptr->lastError = FormatErrorString(error);
+            return MDR_RESULT_ERROR_NET;
+        }
+        if (!devices.empty())
+        {
+            *ppList = new MDRDeviceInfo[devices.size()];
+            std::memcpy(*ppList, devices.data(), devices.size() * sizeof(MDRDeviceInfo));
+            *pCount = static_cast<int>(devices.size());
+        }
         return MDR_RESULT_OK;
     }
 
