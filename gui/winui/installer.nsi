@@ -8,6 +8,8 @@ InstallDirRegKey HKCU "Software\SoundConnectWinUI" "InstallDir"
 RequestExecutionLevel user
 SetCompressor /SOLID lzma
 !define MUI_ABORTWARNING
+!define MUI_ICON "${APPDIR}\app-icon.ico"
+!define MUI_UNICON "${APPDIR}\app-icon.ico"
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_DIRECTORY
 !insertmacro MUI_PAGE_COMPONENTS
@@ -34,6 +36,7 @@ upgrade_done:
   CreateShortcut "$SMPROGRAMS\Sound Connect (WinUI)\Uninstall.lnk" "$INSTDIR\Uninstall.exe"
   WriteRegStr HKCU "Software\SoundConnectWinUI" "InstallDir" "$INSTDIR"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\SoundConnectWinUI" "DisplayName" "Sound Connect (WinUI)"
+  WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\SoundConnectWinUI" "DisplayIcon" "$INSTDIR\SoundConnect.WinUI.exe,0"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\SoundConnectWinUI" "DisplayVersion" "${VERSION}"
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\SoundConnectWinUI" "UninstallString" '"$INSTDIR\Uninstall.exe"'
   WriteRegStr HKCU "Software\Microsoft\Windows\CurrentVersion\Uninstall\SoundConnectWinUI" "QuietUninstallString" '"$INSTDIR\Uninstall.exe" /S'

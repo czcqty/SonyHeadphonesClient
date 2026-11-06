@@ -18,7 +18,7 @@ public partial class App : Application
     private Forms.NotifyIcon? tray;
     private Hotkeys? hotkeys;
     private readonly DispatcherTimer trayMonitor = new() { Interval = TimeSpan.FromSeconds(2) };
-    internal bool HasTray => tray is not null && Hotkeys.TrayAvailable;
+    internal bool HasTray => tray is not null && TrayPlacement.Available;
     internal bool HasGlobalKey(int id) => hotkeys?.Registered(id) == true;
     internal string ShortcutError => hotkeys?.Error ?? "";
     internal string T(string zh, string en) => Chinese ? zh : en;
@@ -54,7 +54,7 @@ public partial class App : Application
         trayMonitor.Start();
         Backend.Start(Option("--backend", Path.Combine(AppContext.BaseDirectory, "backend", "SoundConnectBackend.exe")),
             Live, Option("--profile", "WH-1000XM6"), Option("--locale", ""), Option("--theme", ""));
-        if (arguments.Contains("--panel")) TogglePanel();
+        if (arguments.Contains("--panel")) ShowPanel();
         if (arguments.Contains("--smoke-test") || arguments.Contains("--parity-test"))
         {
             if (Live) throw new InvalidOperationException("Smoke testing cannot use --live");
@@ -96,11 +96,12 @@ public partial class App : Application
 
     private void UpdateTray()
     {
-        if (!Hotkeys.TrayAvailable) {
+        if (!TrayPlacement.Available) {
             tray?.ContextMenuStrip?.Dispose(); tray?.Dispose(); tray = null;
             if (main?.AppWindow.IsVisible == false) ShowMain();
             return;
         }
+        if (panel?.AppWindow.IsVisible == true) panel.PositionAtTray();
         if (tray is not null) return;
         {
             tray = new Forms.NotifyIcon {
@@ -108,18 +109,18 @@ public partial class App : Application
                 Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? System.Drawing.SystemIcons.Application,
                 Visible = true
             };
-            tray.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) TogglePanel(); };
+            tray.MouseClick += (_, e) => { if (e.Button == Forms.MouseButtons.Left) ShowPanel(); };
             RebuildTrayMenu();
         }
     }
     internal void ShowMain() { main?.Activate(); }
     internal MainWindow QuickWindow => panel ??= new MainWindow(true);
-    internal void TogglePanel()
+    internal void ShowPanel()
     {
         if (!HasTray) { ShowMain(); return; }
-        panel = QuickWindow;
-        if (panel.AppWindow.IsVisible) panel.AppWindow.Hide();
-        else { panel.PositionAtTray(); panel.Activate(); }
+        var quick = QuickWindow;
+        quick.PositionAtTray();
+        quick.Activate();
     }
     private void RebuildTrayMenu()
     {
@@ -127,7 +128,7 @@ public partial class App : Application
         var old = tray.ContextMenuStrip;
         var menu = new Forms.ContextMenuStrip();
         menu.Items.Add(T("打开 Sound Connect", "Open Sound Connect"), null, (_, _) => ShowMain());
-        menu.Items.Add(T("快捷控制", "Quick controls"), null, (_, _) => TogglePanel());
+        menu.Items.Add(T("快捷控制", "Quick controls"), null, (_, _) => ShowPanel());
         menu.Items.Add(T("播放 / 暂停", "Play / Pause"), null, (_, _) => InvokeShortcut(1)).Name = "device";
         menu.Items.Add(T("下一曲", "Next track"), null, (_, _) => InvokeShortcut(2)).Name = "device";
         menu.Items.Add(T("断开连接", "Disconnect"), null, (_, _) => Backend.Send("app", "disconnectDevice")).Name = "device";
@@ -138,7 +139,7 @@ public partial class App : Application
     }
     internal void InvokeShortcut(int id)
     {
-        if (id == 3) TogglePanel();
+        if (id == 3) ShowPanel();
         else if (Backend.Connected && Backend.Flag("playback", "playbackSupported")) Backend.Send("playback", id == 1 ? "togglePlayback" : "nextTrack");
     }
     private void ApplyPreferences()

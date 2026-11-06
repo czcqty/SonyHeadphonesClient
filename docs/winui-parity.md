@@ -2,7 +2,7 @@
 
 The baseline is the existing QML pages and the shared ViewModels, not the whole
 libmdr API. Qt Quick remains enabled. This follow-up does not close real-device,
-Windows 10, DPI, accessibility or Explorer lifecycle acceptance.
+Windows 10, DPI or Explorer lifecycle acceptance.
 
 | Qt Quick behavior | WinUI implementation and check |
 | --- | --- |
@@ -23,7 +23,7 @@ Windows 10, DPI, accessibility or Explorer lifecycle acceptance.
   keyboard selection while open or show the old value before its result arrived.
   Open pickers now keep their items/highlight, and edits stay pending until the
   matching result **and following full snapshot**. Closing applies a changed
-  choice once; Escape cancels and closes the picker before the quick panel.
+  choice once. Escape cancels the picker selection and keeps quick controls open.
 - Transport readiness and a connected headset are separate. Device commands,
   tray actions and shortcuts require the latter; preferences remain available
   with a ready backend. Scan cannot interrupt connecting/initializing.

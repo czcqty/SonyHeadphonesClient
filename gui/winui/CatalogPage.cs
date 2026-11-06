@@ -189,7 +189,19 @@ internal sealed partial class MainWindow
         popup.IsOpen = true;
         if (!GetOpenPopups().Any()) throw new InvalidOperationException("Attached popup not detected");
         popup.IsOpen = false;
-        app.TogglePanel(); app.TogglePanel();
+        if (app.HasTray) {
+            app.ShowPanel();
+            var quick = app.QuickWindow;
+            var corner = quick.AppWindow.Position;
+            app.ShowPanel();
+            var reopened = quick.AppWindow.Position;
+            if (!quick.AppWindow.IsVisible || reopened.X != corner.X || reopened.Y != corner.Y)
+                throw new InvalidOperationException("Opening quick controls again must keep them visible at the same corner");
+            app.ShowMain();
+            await Task.Delay(300);
+            if (!quick.AppWindow.IsVisible) throw new InvalidOperationException("Switching to full settings hid quick controls");
+            quick.AppWindow.Hide();
+        }
         int beforeCancel = backend.SentCommandCount;
         var cancel = ConfirmCommand("playback", "powerOff", Array.Empty<object>());
         await System.Threading.Tasks.Task.Delay(100);
@@ -367,13 +379,11 @@ internal sealed partial class MainWindow
                 };
                 combo.PreviewKeyDown += (_, e) => {
                     if (e.Key != Windows.System.VirtualKey.Escape || !combo.IsDropDownOpen) return;
-                    selectionDirty = false; popupEscape = true;
-                    // Escape cancels the picker; it must neither submit a
-                    // highlighted value nor dismiss its parent quick panel.
+                    selectionDirty = false;
+                    // Escape cancels the picker without submitting the highlighted value.
                     bool previous = updating; updating = true;
                     try { combo.SelectedIndex = b.Values.FindIndex(v => JsonNode.DeepEquals(v, FieldValue(field))); }
                     finally { updating = previous; }
-                    DispatcherQueue.TryEnqueue(() => popupEscape = false);
                 };
             }
             bindings.Add(() => {

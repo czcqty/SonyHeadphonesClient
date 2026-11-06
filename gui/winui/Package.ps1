@@ -8,7 +8,7 @@ $AppDirectory = (Resolve-Path -LiteralPath $AppDirectory).Path
 $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
 $root = (Resolve-Path (Join-Path $PSScriptRoot "../..")).Path
 $version = (Select-String -LiteralPath (Join-Path $root 'CMakeLists.txt') -Pattern '^    VERSION (.+)$').Matches.Groups[1].Value
-foreach ($file in 'SoundConnect.WinUI.exe','SoundConnect.WinUI.pri','catalog.json','backend/SoundConnectBackend.exe','backend/Qt6Core.dll') {
+foreach ($file in 'SoundConnect.WinUI.exe','SoundConnect.WinUI.pri','app-icon.ico','catalog.json','backend/SoundConnectBackend.exe','backend/Qt6Core.dll') {
     if (!(Test-Path -LiteralPath (Join-Path $AppDirectory $file))) { throw "Missing package input: $file" }
 }
 if (Get-ChildItem -LiteralPath (Join-Path $AppDirectory 'backend') -Filter 'Qt6*d.dll') { throw 'Debug Qt runtime cannot be distributed' }

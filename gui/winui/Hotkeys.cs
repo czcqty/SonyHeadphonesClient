@@ -12,7 +12,6 @@ internal sealed class Hotkeys : Forms.NativeWindow, IDisposable
     private readonly Action<int> action;
     private readonly HashSet<int> registered = new();
     public string Error { get; private set; } = "";
-    public static bool TrayAvailable => FindWindow("Shell_TrayWnd", null) != IntPtr.Zero;
     public Hotkeys(Action<int> action)
     {
         this.action = action;
@@ -43,5 +42,4 @@ internal sealed class Hotkeys : Forms.NativeWindow, IDisposable
     }
     [DllImport("user32.dll", SetLastError = true)] private static extern bool RegisterHotKey(IntPtr hwnd, int id, uint modifiers, uint key);
     [DllImport("user32.dll")] private static extern bool UnregisterHotKey(IntPtr hwnd, int id);
-    [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern IntPtr FindWindow(string name, string? title);
 }

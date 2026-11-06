@@ -56,7 +56,9 @@ device backend; use the Connection page to select a paired device.
 Options: `--profile <existing-profile-id>`, `--backend <host-executable>`,
 `--locale en|zh_CN`, `--theme system|light|dark`, `--panel`,
 `--route home|connection|sound|noise|equalizer|behavior|touch|voice|devices|application` (`appearance` remains an alias).
-Left-click the tray icon to toggle quick controls, or use its context menu.
+Left-click the tray icon to open quick controls at the taskbar corner, or bring
+them forward if already open. The panel stays open when focus moves, when
+Escape closes a picker, and when full settings opens. Use its × button to close it.
 Closing the main window hides it to the tray; Quit terminates both processes.
 
 `--capture <absolute.png>` renders the actual WinUI visual tree and exits. It
@@ -98,8 +100,8 @@ merely counting widgets. Preview acceptance is not physical device acceptance.
   the 2026-10-15 rerun passed 16/16 and 8/8 respectively (existing Windows builds). The installed headless host also passes
   the process contract test.
 - Offline NuGet restore reports unavailable vulnerability metadata (NU1900).
-- Real headset operation, multi-monitor/taskbar placement, accessibility,
-  high contrast, Windows 10 and clean-machine deployment are not yet accepted.
+- At this stage, real headset operation, multi-monitor/taskbar placement,
+  Windows 10 and clean-machine deployment still needed verification.
 
 ## Preference and desktop follow-up
 

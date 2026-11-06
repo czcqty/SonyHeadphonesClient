@@ -31,9 +31,7 @@ internal sealed partial class MainWindow : Window
     private bool updating;
     private bool exiting;
     private string actionMessage = "";
-    private bool popupEscape;
-    private readonly WindowSizing? sizing;
-    private readonly DispatcherTimer dismissTimer = new() { Interval = TimeSpan.FromMilliseconds(150) };
+    private readonly WindowSizing sizing;
     private string T(string zh, string en) => app.T(zh, en);
 
     public MainWindow(bool compact, string initialRoute = "home")
@@ -41,12 +39,12 @@ internal sealed partial class MainWindow : Window
         this.compact = compact;
         route = initialRoute == "appearance" ? "application" : initialRoute;
         Title = compact ? "Sound Connect" : "Sound Connect · WinUI";
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "app-icon.ico"));
         SystemBackdrop = compact ? new DesktopAcrylicBackdrop() : new MicaBackdrop();
         var presenter = (OverlappedPresenter)AppWindow.Presenter;
-        if (!compact) sizing = new WindowSizing(WinRT.Interop.WindowNative.GetWindowHandle(this));
+        sizing = new WindowSizing(WinRT.Interop.WindowNative.GetWindowHandle(this), compact);
         if (compact)
         {
-            presenter.SetBorderAndTitleBar(true, false);
             presenter.IsResizable = false;
             presenter.IsMaximizable = false;
             presenter.IsMinimizable = false;
@@ -57,20 +55,15 @@ internal sealed partial class MainWindow : Window
         AppWindow.Resize(new SizeInt32(Math.Min(workArea.Width, (int)((compact ? 440 : 1080) * scale)),
             Math.Min(workArea.Height, (int)((compact ? 560 : 800) * scale))));
         AppWindow.Closing += (_, e) => {
-            if (!exiting) { e.Cancel = true; if (app.HasTray) AppWindow.Hide(); else app.Quit(); }
+            if (exiting) return;
+            e.Cancel = true;
+            if (compact) {
+                AppWindow.Hide();
+                if (!app.HasTray) app.ShowMain();
+            } else if (app.HasTray) AppWindow.Hide();
+            else app.Quit();
         };
-        Closed += (_, _) => { dismissTimer.Stop(); backend.Changed -= Refresh; sizing?.Dispose(); };
-        Activated += (_, e) => {
-            if (compact && app.HasTray && e.WindowActivationState == WindowActivationState.Deactivated) dismissTimer.Start();
-            else dismissTimer.Stop();
-        };
-        dismissTimer.Tick += (_, _) => {
-            // A WinUI popup may briefly take focus during activation. Keep the
-            // panel while focus belongs to its window or an attached popup.
-            if (GetOpenPopups().Any()) return;
-            if (GetForegroundWindow() == WinRT.Interop.WindowNative.GetWindowHandle(this)) return;
-            dismissTimer.Stop(); AppWindow.Hide();
-        };
+        Closed += (_, _) => { backend.Changed -= Refresh; sizing.Dispose(); };
         backend.Changed += Refresh;
         Rebuild();
     }
@@ -87,11 +80,6 @@ internal sealed partial class MainWindow : Window
         // detaches XamlRoot until the next layout pass, breaking popups/dialogs.
         if (root is null) {
             root = new Grid { RequestedTheme = app.Theme };
-            root.KeyDown += (_, e) => {
-                if (compact && e.Key == VirtualKey.Escape && !popupEscape && !GetOpenPopups().Any()) {
-                    AppWindow.Hide(); if (!app.HasTray) app.ShowMain(); e.Handled = true;
-                }
-            };
             Content = root;
         }
         root.Children.Clear();
@@ -115,8 +103,9 @@ internal sealed partial class MainWindow : Window
             };
             foreach (var entry in Catalog["pages"]!.AsArray()) {
                 var spec = entry!.AsObject();
+                string id = spec["id"]!.GetValue<string>();
                 navigation.MenuItems.Add(new NavigationViewItem { Content = CatalogText(spec["label"]),
-                    Tag = spec["id"]!.GetValue<string>() });
+                    Tag = id, Icon = new SymbolIcon(NavigationSymbol(id)) });
             }
             navigation.SelectionChanged += (_, e) => {
                 if (e.SelectedItem is NavigationViewItem item) { route = (string)item.Tag; BuildPage(); }
@@ -133,6 +122,21 @@ internal sealed partial class MainWindow : Window
         Refresh();
     }
 
+    private static Symbol NavigationSymbol(string id) => id switch
+    {
+        "home" => Symbol.Home,
+        "connection" => Symbol.Sync,
+        "sound" => Symbol.Volume,
+        "noise" => Symbol.Mute,
+        "equalizer" => Symbol.Audio,
+        "behavior" => Symbol.Clock,
+        "touch" => Symbol.TouchPointer,
+        "voice" => Symbol.Microphone,
+        "devices" => Symbol.Link,
+        "application" => Symbol.Setting,
+        _ => Symbol.Document
+    };
+
     private void BuildPage()
     {
         bindings.Clear();
@@ -144,7 +148,7 @@ internal sealed partial class MainWindow : Window
             root.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             root.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             root.Children.Add(scroll);
-            var open = ActionButton(T("打开完整设置", "Open full settings"), () => { AppWindow.Hide(); app.ShowMain(); });
+            var open = ActionButton(T("打开完整设置", "Open full settings"), app.ShowMain);
             open.Margin = new Thickness(20, 8, 20, 12); open.HorizontalAlignment = HorizontalAlignment.Stretch;
             Grid.SetRow(open, 1); root.Children.Add(open);
         }
@@ -220,11 +224,11 @@ internal sealed partial class MainWindow : Window
 
     internal void PositionAtTray()
     {
-        GetCursorPos(out POINT point);
-        var area = DisplayArea.GetFromPoint(new PointInt32(point.X, point.Y), DisplayAreaFallback.Nearest).WorkArea;
-        int width = AppWindow.Size.Width, height = AppWindow.Size.Height;
-        AppWindow.Move(new PointInt32(Math.Clamp(point.X - width / 2, area.X, Math.Max(area.X, area.X + area.Width - width)),
-            Math.Clamp(point.Y - height - 12, area.Y, Math.Max(area.Y, area.Y + area.Height - height))));
+        var bounds = TrayPlacement.PanelBounds(WinRT.Interop.WindowNative.GetWindowHandle(this));
+        var position = AppWindow.Position;
+        var size = AppWindow.Size;
+        if (position.X != bounds.X || position.Y != bounds.Y || size.Width != bounds.Width || size.Height != bounds.Height)
+            AppWindow.MoveAndResize(bounds);
     }
 
     internal void ExitWindow() { exiting = true; Close(); }
@@ -254,8 +258,5 @@ internal sealed partial class MainWindow : Window
         var png = new byte[stream.Size]; reader.ReadBytes(png);
         await File.WriteAllBytesAsync(path, png);
     }
-    [StructLayout(LayoutKind.Sequential)] private struct POINT { public int X; public int Y; }
-    [DllImport("user32.dll")] private static extern bool GetCursorPos(out POINT point);
-    [DllImport("user32.dll")] private static extern IntPtr GetForegroundWindow();
     [DllImport("user32.dll")] private static extern uint GetDpiForWindow(IntPtr hwnd);
 }
