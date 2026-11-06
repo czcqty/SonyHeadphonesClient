@@ -12,9 +12,9 @@ transitional frontend requires the [migration gates](backend-migration.md).
 | `main` | Shared Qt Core backend, private process, protocol library, common contract, transitional Qt Quick frontend | [Backend](../backend/README.md), [Qt Quick](../gui/README.md) |
 | `winui` | Windows WinUI 3 / .NET presentation. Functional migration complete. | [WinUI README](https://github.com/czcqty/SonyHeadphonesClient/blob/winui/gui/winui/README.md), [Windows acceptance and outstanding checks](windows-acceptance-2026-10-31.md) |
 | `codex/macos-swift` | macOS Swift / AppKit presentation | [AppKit README](https://github.com/czcqty/SonyHeadphonesClient/blob/codex/macos-swift/gui/macos/README.md) |
-| `codex/kde` | KDE Qt Widgets / KDE Frameworks presentation | [KDE README](https://github.com/czcqty/SonyHeadphonesClient/blob/codex/kde/gui/kde/README.md) |
-| `codex/gnome` | GTK 4 / libadwaita presentation | [GNOME README](https://github.com/czcqty/SonyHeadphonesClient/blob/codex/gnome/gui/gnome/README.md) |
-| `codex/xfce` | GTK 3 / libxfce4ui presentation | [Xfce README](https://github.com/czcqty/SonyHeadphonesClient/blob/codex/xfce/gui/xfce/README.md) |
+| `kde` | KDE Qt Widgets / KDE Frameworks presentation. Functional migration complete. | [KDE README](https://github.com/czcqty/SonyHeadphonesClient/blob/kde/gui/kde/README.md) |
+| `gnome` | GTK 4 / libadwaita presentation. Functional migration complete. | [GNOME README](https://github.com/czcqty/SonyHeadphonesClient/blob/gnome/gui/gnome/README.md) |
+| `xfce` | GTK 3 / libxfce4ui presentation. Functional migration complete. | [Xfce README](https://github.com/czcqty/SonyHeadphonesClient/blob/xfce/gui/xfce/README.md) |
 
 Native source paths exist only on their respective branches. Each adapter uses
 `SoundConnectBackend` and `clients/common/catalog.json`; device logic and backend
@@ -27,8 +27,8 @@ separate native layouts. Their implementation is not proof of real-device or
 desktop acceptance; see the dated evidence and remaining checks in
 [backend-migration.md](backend-migration.md).
 
-Linux release candidates and the remaining platform checks are described in the
-[Linux acceptance record](linux-acceptance-2026-11-07.md).
+The [Linux acceptance record](linux-acceptance-2026-11-07.md) identifies the
+tested revisions and tracks the remaining real-headset and workstation checks.
 
 ## Working with the branches
 
@@ -43,8 +43,18 @@ If a local branch already exists, use `git switch winui`. If it is checked
 out in another worktree, use the path from `git worktree list` instead. Check
 `git status` in each worktree before switching, merging, or cleaning files.
 
+For an existing checkout of a renamed Linux branch, run the following in its
+worktree. This example uses KDE. Substitute `gnome` or `xfce` for the other
+two desktops. Renaming keeps local commits.
+
+```sh
+git fetch origin --prune
+git branch -m kde
+git branch --set-upstream-to=origin/kde
+```
+
 For a checkout still on the former `codex/winui` branch, run these commands
-in its worktree to keep its local commits and track the renamed branch:
+in its worktree:
 
 ```sh
 git fetch origin --prune

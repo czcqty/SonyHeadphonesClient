@@ -57,11 +57,11 @@ Apply these checks to WinUI, KDE, GNOME, Xfce and AppKit on their target desktop
 
 ## Current status
 
-The three Linux branches have native widget and installed-package acceptance
-on Ubuntu 24.04 and Debian 13. Each adapter exercises all 45 commands across 12
-preview profiles in English and Chinese. The [November 7 Linux acceptance
-record](linux-acceptance-2026-11-07.md) separates desktop session observations
-from the outstanding physical headset and display checks.
+**Linux functional migration is complete on `kde`, `gnome`, and `xfce` (2026-11-07).**
+On Ubuntu 24.04 and Debian 13, each installed adapter passed all 45 commands
+across 12 preview profiles in English and Chinese. The [Linux acceptance
+record](linux-acceptance-2026-11-07.md) documents nested desktop testing and
+tracks the remaining BlueZ headset, physical display, and login-session checks.
 
 **Windows functional migration is complete on `winui` (2026-11-07).** The
 installed build from `00ab8243a0` passed the local Windows 11 acceptance checks,
@@ -133,9 +133,9 @@ this maintenance check does not add platform or real-device acceptance.
   bilingual choices/errors and baseline shortcuts are now implemented, but the
   automated checks below do not replace platform-specific desktop acceptance.
 - macOS SDK build and actual AppKit runtime checks (no macOS host is available).
-- Linux BlueZ/hardware checks and real Plasma/GNOME/Xfce desktop validation.
-  The Ubuntu/Debian backend and KF6 build checks are covered by the native package
-  follow-up below; the supported backend minimum remains Qt 6.5.
+- Linux BlueZ headset readback, reconnect and multipoint switching, plus
+  physical multi-display scaling and full workstation login sessions. See the
+  [outstanding Linux checks](linux-acceptance-2026-11-07.md#bluetooth-and-outstanding-checks).
 - Real headphones, disconnect/reconnect and protocol fallback, clean-machine
   packaging, multi-monitor/DPI and attached popups on each OS.
 
