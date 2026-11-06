@@ -1,4 +1,4 @@
-# KDE native prototype
+# KDE presentation
 
 C++ Qt Widgets + KDE Frameworks: actual `KPageWidget` settings navigation,
 `QCheckBox`, `QSlider`, `QComboBox`, native menus, `QScrollArea` and
@@ -9,7 +9,7 @@ retains the repository's Qt 6.5+ requirement.
 
 ```sh
 # Plasma 5 / Ubuntu 24.04 example; Plasma 6 needs the KF6 equivalents.
-sudo apt install cmake g++ qtbase5-dev libkf5widgetsaddons-dev libkf5notifications-dev libkf5configwidgets-dev
+sudo apt install cmake g++ qtbase5-dev libkf5widgetsaddons-dev libkf5notifications-dev libkf5configwidgets-dev libkf5wayland-dev breeze libqt5svg5
 cmake -S gui/kde -B build/kde
 cmake --build build/kde --parallel
 build/kde/SoundConnectKDE --backend "$PWD/build/backend/SoundConnectBackend"
@@ -17,24 +17,35 @@ build/kde/SoundConnectKDE --backend "$PWD/build/backend/SoundConnectBackend"
 
 Build the shared host using [../native/README.md](../native/README.md). Optional
 `--panel`, `--route`, `--profile`, `--locale en|zh_CN` and explicit `--live`.
-The separately laid out quick panel is a native popup. KDE's native tray menu
-opens it or full settings. Closing settings hides to tray only when a host is
-available; otherwise it quits. Qt handles popup Escape, focus dismissal and
-nested combo popups. Popup screen bounds are clamped to the selected display.
+The tray and Ctrl+Alt+M open the same quick-controls window. Its Close
+button dismisses it. Opening settings, opening a picker, pressing Escape after
+the picker closes, or activating the tray again keeps the panel available.
+It uses the display and corner reported by the tray item, with panel
+reservations from Plasma's strut manager. Plasma Wayland receives a position
+request through KWayland. If the host has yet to report an item position,
+the adapter uses the reserved screen edge. When several displays have
+panels, the settings display takes priority until tray activation identifies
+the actual display. Closing settings without a tray host exits the application.
+
+Settings uses KDE's icon list, or a native page picker at narrow widths.
+Both windows display the application icon. The full and quick layouts use
+the shared binding catalog and backend state for device controls.
+The safe-listening picker indicates when the device has yet to report its
+state. Unsupported controls expose a localized explanation. Paired-device
+actions use the connection and playback flags reported for each device.
 
 ```sh
 xvfb-run -a dbus-run-session -- build/kde/SoundConnectKDE --backend /absolute/backend --smoke-test
+xvfb-run -a dbus-run-session -- build/kde/SoundConnectKDE --backend /absolute/backend --locale zh_CN --parity-test
 ```
 
-The smoke test instantiates all pages and checks startup/state refresh isolation
-and one write per toggle/slider update. A KDE Plasma session, KF6 build, tray
-positioning on Wayland/multiple displays and real-device
-acceptance are still required. No target desktop appearance is inferred from
-Xvfb. See the shared README for remaining prototype feature and packaging work.
-
-For the next native migration pass, replace popup dismissal with an explicit
-close button and anchor the panel at the tray corner. Navigation symbols and
-the application window icon are part of the [desktop requirements](../../docs/backend-migration.md).
+Run both checks with `--locale en` and `--locale zh_CN`. Smoke exercises
+compact and expanded navigation, icons, panel lifetime, shortcuts, theme
+and silent refresh. Parity exercises the actual controls for all profiles
+and verifies the backend reply to each request. It also checks confirmed and
+canceled actions, open pickers, unknown safe listening, lost state and recovery.
+Hardware readback, mixed-DPI placement and compositor behavior require
+separate [desktop and device acceptance](../../docs/backend-migration.md).
 
 ## Local verification (2026-10-14)
 

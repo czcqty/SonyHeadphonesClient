@@ -1,0 +1,5 @@
+<RCC>
+  <qresource prefix="/icons">
+    <file alias="soundconnect.png">../assets/icons/app-icon-128.png</file>
+  </qresource>
+</RCC>

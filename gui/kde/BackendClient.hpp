@@ -16,6 +16,7 @@ public:
     bool ready = false;
     int sent = 0;
     std::function<void()> changed;
+    std::function<void(const QJsonObject&)> received;
     int startupTimeout = 10000;
 
     explicit BackendClient(QObject* parent = nullptr) : QObject(parent) {}
@@ -66,6 +67,7 @@ private:
                     error = event.value("ok").toBool() ? QString() : event.value("errorCode").toString();
                 }
                 notify();
+                if (received) received(event);
             }
             if (pending->size() > 1048576) fail("backend-protocol-error");
         });
