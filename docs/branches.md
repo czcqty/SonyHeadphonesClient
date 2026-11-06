@@ -27,6 +27,9 @@ separate native layouts. Their implementation is not proof of real-device or
 desktop acceptance; see the dated evidence and remaining checks in
 [backend-migration.md](backend-migration.md).
 
+Linux release candidates and the remaining platform checks are described in the
+[Linux acceptance record](linux-acceptance-2026-11-07.md).
+
 ## Working with the branches
 
 From a fresh clone, create a tracking checkout for the desired adapter:
