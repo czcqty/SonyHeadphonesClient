@@ -1,5 +1,10 @@
 # Windows acceptance: WH-1000XM5
 
+**Status on 2026-11-07: functional migration complete on `winui`.** The local
+Windows 11 configuration passed the functional and desktop checks. The
+[outstanding device and environment checks](#outstanding-device-and-environment-checks)
+remain open for hardware and platform verification.
+
 Hardware and installer checks ran on October 29–31, 2026 on Windows 11 x64
 (build 26200) with WH-1000XM5 firmware 2.3.1. That WinUI candidate underwent
 desktop checks on October 31 and November 5–6. For the current Windows installer,
@@ -14,8 +19,8 @@ see the [November 7 tray and icon update](#november-7-tray-and-icon-update).
 - SHA-256: `e7357572838cdd6670b11d75f983f35b9a7e9fcdaa8b1a049b69cb2a7810fd24`.
 - Local delivery directory: `cmake-build-native/packages/windows-acceptance-2026-10-30/`.
   Its `manifest.json` records source and payload hashes. Documentation-only
-  follow-ups do not change this tested code. This candidate has not been pushed
-  or validated by a new hosted CI run.
+  follow-ups do not change this tested code. The October acceptance evidence
+  came from local testing.
 
 ## Hardware results
 
@@ -210,7 +215,7 @@ removed the application and its registrations and preserved the unrelated test
 file. The package checks are under `candidate-00ab8243a0/` in the same report
 directory.
 
-## Reproduction and remaining gates
+## Reproduction
 
 Use `backend/tests/verify_xm5_settings.py --backend <host.exe> --allow-writes
 --report <report.json>` with the XM5 connected and no other live backend.
@@ -219,16 +224,17 @@ and stops on failed restoration. `--only multipoint` runs its isolated retest.
 Safe listening is excluded from this persistence test because GET cannot supply
 the current mode; its acceptance requires actual mode notifications.
 
-On the WinUI branch, run `gui/winui/Build.ps1`, `Package.ps1` and `Verify.ps1`
+On `winui`, run `gui/winui/Build.ps1`, `Package.ps1` and `Verify.ps1`
 as documented in `gui/winui/README.md`. Use a fresh verification directory.
 
-The tester has one Windows 11 PC and one XM5. Windows 10, installation on a
-clean OS image, mixed-DPI multi-monitor placement, actual two-host audio
-switching and other headset models still need suitable environments. Open
-desktop checks include Ctrl+Alt+M with the key available.
-Actual playback/pause, previous/next track
-and cancellation during an XM5 connection attempt need a connected headset.
-The tested XM5 reported support for the multipoint enable switch. Device-list
-management and source switching need a model that reports those capabilities.
-Keep Qt Quick until the full removal matrix passes.
-See [backend-migration.md](backend-migration.md).
+## Outstanding device and environment checks
+
+| Environment needed | Verification still open |
+| --- | --- |
+| Connected WH-1000XM5 and a player with identifiable tracks | Check actual play/pause and previous/next track. Cancel a connection attempt and reconnect. |
+| Two audio hosts and a suitable headset | Verify an actual audio-source switch. The XM5 multipoint setting itself passed enable/disable and restoration. Exercise device-list operations on a model that reports support for them. |
+| Windows 10 and a clean Windows installation | Check Windows 10 behavior and install, run and uninstall the package on a clean OS image. |
+| Multiple displays with different scaling | Verify panel placement and sizing across displays and DPI changes. |
+| Windows session with Ctrl+Alt+M available | Open quick controls with the registered global shortcut. The test PC exercised the registration-conflict warning. |
+
+Qt Quick stays available until the project's [removal gate](backend-migration.md#removal-gate) passes.

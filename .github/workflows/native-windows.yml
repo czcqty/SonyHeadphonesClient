@@ -10,7 +10,7 @@ jobs:
       - uses: actions/checkout@v6
       - name: Check WinUI adapter exists on this branch
         run: |
-          if (!(Test-Path gui/winui/Build.ps1)) { throw 'Select the codex/winui branch to build this adapter.' }
+          if (!(Test-Path gui/winui/Build.ps1)) { throw 'Select the winui branch to build this adapter.' }
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.0.x'
