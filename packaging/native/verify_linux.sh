@@ -38,7 +38,9 @@ export PATH=/usr/bin:/bin GSK_RENDERER=cairo G_DEBUG=fatal-criticals GDK_BACKEND
 unset QT_PLUGIN_PATH QT_QPA_PLATFORM_PLUGIN_PATH QML2_IMPORT_PATH LD_LIBRARY_PATH
 for locale in en zh_CN; do
   for suite in smoke parity; do
-    timeout 300 xvfb-run -a dbus-run-session -- "soundconnect-$desktop" --locale "$locale" "--$suite-test" \
+    pointer_test=0
+    if [[ "$desktop" == gnome && "$suite" == parity ]]; then pointer_test=1; fi
+    SOUNDCONNECT_TEST_X11_POINTER=$pointer_test timeout 300 xvfb-run -a dbus-run-session -- "soundconnect-$desktop" --locale "$locale" "--$suite-test" \
       2>&1 | tee "$reports/$desktop-$locale-$suite.log"
   done
 done

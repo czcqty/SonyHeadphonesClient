@@ -25,12 +25,16 @@ def bluez_fixture():
     inactive = '/org/bluez/hci1'
     def adapter(powered):
         return {'org.bluez.Adapter1': {'Powered': GLib.Variant('b', powered)}}
-    def device(controller, address):
+    def device(controller, address, paired, connected):
         return {'org.bluez.Device1': {'Adapter': GLib.Variant('o', controller),
                                       'Name': GLib.Variant('s', '耳' * 60),
+                                      'Paired': GLib.Variant('b', paired),
+                                      'Connected': GLib.Variant('b', connected),
                                       'Address': GLib.Variant('s', address)}}
-    populated = {hci + '/dev_00': device(hci, '12:34:56:78:9A:BC'),
-                 inactive + '/dev_01': device(inactive, '12:34:56:78:9A:BD'),
+    populated = {hci + '/dev_00': device(hci, '12:34:56:78:9A:BC', True, False),
+                 inactive + '/dev_01': device(inactive, '12:34:56:78:9A:BD', True, True),
+                 hci + '/dev_02': device(hci, '12:34:56:78:9A:BE', False, False),
+                 hci + '/dev_03': device(hci, '12:34:56:78:9A:BF', False, True),
                  hci: adapter(True), inactive: adapter(False)}
     replies = iter([{}, {hci: adapter(False)}, {hci: adapter(True)}, populated, None, populated])
     def query(_bus, _sender, _path, _interface, _method, _parameters, invocation):
@@ -74,7 +78,7 @@ def exercise(executable, directory):
             assert scan()['errorCode'] == 'bluetooth-adapter-unavailable'
         empty = scan()
         assert not empty['errorCode'] and empty['devices'] == [], empty
-        expected = [{'name': '耳' * 42, 'mac': '12:34:56:78:9A:BC'}]
+        expected = [{'name': '耳' * 42, 'mac': '12:34:56:78:9A:' + suffix} for suffix in ('BC', 'BF')]
         assert scan()['devices'] == expected
         rejected = scan()
         assert rejected['errorCode'] == 'bluetooth-scan-failed' and 'Test scan denied' in rejected['errorDetail']
