@@ -55,6 +55,9 @@ private:
             auto plasmaSurface = PlasmaShellSurface::get(surface);
             if (!plasmaSurface) plasmaSurface = shell->createSurface(surface, surface);
             plasmaSurface->setPosition(position);
+            // KWin applies a changed position with the next wl_surface commit.
+            // Re-activating a visible panel can leave Qt with nothing to paint.
+            if (window->isExposed()) surface->commit(Surface::CommitFlag::None);
         }
     }
     QPointer<KWayland::Client::PlasmaShell> shell;

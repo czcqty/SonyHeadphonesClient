@@ -9,6 +9,7 @@
 #include "PanelPlacement.hpp"
 #include "PlasmaPanel.hpp"
 #include <QStandardPaths>
+#include <QLineEdit>
 #include <QCursor>
 #include <QKeyEvent>
 #include <QPointer>
@@ -208,7 +209,11 @@ public:
         const auto method = field.value("method").toString();
         if (method == "powerOff" || method == "unpairDevice") {
             const auto question = method == "powerOff" ? tr("Power off headphones?", "是否关闭耳机电源？") : tr("Unpair device?", "是否取消设备配对？");
-            if (QMessageBox::question(&window, "Sound Connect", question, QMessageBox::Yes | QMessageBox::Cancel, QMessageBox::Cancel) != QMessageBox::Yes) return;
+            QMessageBox dialog(QMessageBox::Question, "Sound Connect", question, QMessageBox::Yes | QMessageBox::Cancel, &window);
+            dialog.setDefaultButton(QMessageBox::Cancel);
+            dialog.button(QMessageBox::Yes)->setText(tr("Yes", "是"));
+            dialog.button(QMessageBox::Cancel)->setText(tr("Cancel", "取消"));
+            if (dialog.exec() != QMessageBox::Yes) return;
         }
         send(field.value("group").toString(), method, args);
     }
@@ -411,6 +416,8 @@ public:
         message->setWordWrap(true); layout->addWidget(message); layout->addWidget(retry); layout->addWidget(compactPages); layout->addWidget(pages);
         connect(retry, &QPushButton::clicked, this, [this] { backend.restart(); });
         pages->setFaceType(KPageView::FlatList);
+        if (auto search = qobject_cast<QLineEdit*>(pages->focusProxy()))
+            translations.push_back([this, search] { search->setPlaceholderText(tr("Search…", "搜索…")); });
         const QHash<QString, QString> pageIcons{
             {"home", "go-home"}, {"connection", "network-bluetooth"}, {"sound", "audio-volume-high"},
             {"noise", "audio-volume-muted"}, {"equalizer", "view-media-equalizer"},
