@@ -305,7 +305,7 @@ class App(Adw.Application):
                     if self.syncing or index >= len(b['choices']):
                         return
                     item = b['choices'][index]
-                    if item['value'] != value(self.client.state, b['field']):
+                    if item['value'] is not None and item['value'] != value(self.client.state, b['field']):
                         self.send(b['field'], item['value'])
                 row.connect('notify::selected', selected)
             elif kind == 'button':
@@ -451,6 +451,11 @@ class App(Adw.Application):
                 row.set_subtitle(str(current) if raw and current is not None else display(current, self.locale))
             elif kind == 'choice':
                 items = choices(state, field)
+                if items and value(state, field) is None:
+                    # AdwComboRow can force selection of the first model item.
+                    # Keep an explicit non-command item until a real state arrives.
+                    placeholder = self.tr('State not reported', '状态尚未确认') if field.get('knownKey') else '—'
+                    items = [dict(value=None, label=placeholder), *items]
                 names = [dynamic(i['label'], self.locale) if isinstance(i['label'], str)
                          else title(i['label'], self.locale) for i in items]
                 b['choices'] = items

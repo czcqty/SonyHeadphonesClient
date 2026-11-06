@@ -174,7 +174,9 @@ class Parity:
         safe = self.field('safeListeningEnabled')
         self.client.state['settings']['safeListeningStateKnown'] = False
         self.app.refresh()
-        assert safe['widget'].get_selected() == Gtk.INVALID_LIST_POSITION and safe['row'].get_subtitle()
+        selected = safe['widget'].get_selected()
+        assert safe['choices'][selected]['value'] is None and safe['row'].get_subtitle()
+        assert safe['widget'].get_selected_item().get_string() == self.app.tr('State not reported', '状态尚未确认')
         self.edit(safe, False)
         self.navigate('noise')
         picker = self.field('mode')['widget']
