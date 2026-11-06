@@ -1,5 +1,10 @@
 # GNOME presentation
 
+The GNOME functional migration is complete on the `gnome` branch. The
+installed Ubuntu 24.04 and Debian 13 clients passed English and Chinese
+acceptance across 12 preview profiles and all 45 commands. Physical headset
+and workstation verification remains open. [Linux acceptance record](../../docs/linux-acceptance-2026-11-07.md)
+
 Python 3 + PyGObject, GTK 4.10+ and libadwaita 1.4+. The actual controls are
 `Adw.ApplicationWindow`, `HeaderBar`, `PreferencesPage`, `PreferencesGroup`,
 `ActionRow`, `ComboRow`, `Gtk.Switch`, `Gtk.Scale` and `Gtk.SpinButton`.
@@ -43,13 +48,13 @@ connecting a paired host. Bluetooth and multi-host audio need real devices.
 
 ## Local verification (2026-11-07)
 
-Ubuntu 24.04 WSL, GTK 4.14 and libadwaita 1.5 with the Linux backend:
+The checks used the Linux backend with GTK 4.14/libadwaita 1.5 on Ubuntu and
+GTK 4.18/libadwaita 1.7 on Debian.
 
 - English and Simplified Chinese each passed all 12 preview profiles and all 45
-  commands, including 1,411 accepted native writes per language. The package
-  check also sets `SOUNDCONNECT_TEST_X11_POINTER=1` on its dedicated Xvfb
-  display, clicks a switch and slider, and drags the slider to verify one
-  acknowledged write per gesture on release.
+  commands. The installed check verified 1,414 writes per language with
+  `SOUNDCONNECT_TEST_X11_POINTER=1` on a dedicated Xvfb display. It clicked
+  a switch and a slider, and verified one write when a drag ended.
 - Both language smoke tests passed on Xvfb. The English smoke also passed on the
   WSLg Wayland display.
 - XTest delivered Escape and Ctrl+Alt+M/P/N to the application windows.
@@ -65,23 +70,7 @@ Ubuntu 24.04 WSL, GTK 4.14 and libadwaita 1.5 with the Linux backend:
 - Physical GNOME Shell sessions, real Bluetooth/headphones and mixed-DPI
   multiple monitors remain in the [desktop acceptance gate](../../docs/backend-migration.md).
 
-## Local verification (2026-10-14)
-
-Ubuntu 24.04 WSL: GTK 4.14.5/libadwaita 1.5 native UI starts and passes the Xvfb
-smoke test for all pages, zero startup writes, silent refresh and one write per
-toggle/slider commit. The host was the real shared Windows C++ executable over
-WSL interoperability pipes in isolated simulation. This does not validate the
-Linux Bluetooth backend or GNOME Shell/Wayland integration.
-
-## Shared backend migration
-
-The adapter now consumes the main branch's `SoundConnectBackend` and
-`clients/common/catalog.json`. The former branch-local backend source and
-catalog copies have been removed. Advanced device operations are present in
-the shared catalog; application/desktop parity still follows the migration gate.
-Native widget smoke test passed again against the new standalone backend.
-
-## Preference and desktop follow-up
+## Preferences and shortcuts
 
 - The application-settings page supports live persistent language and
   system/light/dark, including migration of the old Qt preferences. Preview
@@ -91,8 +80,6 @@ Native widget smoke test passed again against the new standalone backend.
 - Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls within
   the application, preserving the previous Linux Qt shortcut scope.
 - Native dialogs confirm power-off and unpair; cancellation sends no command.
-  Separate quick/full layouts, native menu styling and Qt Quick removal gates
-  remain unchanged.
 
 ## Installed packages and recovery
 
@@ -106,4 +93,4 @@ Commands remain disabled until a valid initial snapshot arrives. Startup has a
 ten-second timeout; backend failure clears old state and exposes Retry startup
 in full settings. Retry obtains fresh state without replaying commands or
 reconnecting headphones. Normal exit drains stdin/EOF, allowing two seconds
-before terminating the owned child. Desktop/headphone migration gates remain.
+before terminating the owned child.
