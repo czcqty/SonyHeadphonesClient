@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.31 FATAL_ERROR)
 project(
     SonyHeadphonesClient
-    VERSION 2.0.4
+    VERSION 2.9.1
     LANGUAGES C CXX
 )
 
