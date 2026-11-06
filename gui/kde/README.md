@@ -28,9 +28,13 @@ xvfb-run -a dbus-run-session -- build/kde/SoundConnectKDE --backend /absolute/ba
 
 The smoke test instantiates all pages and checks startup/state refresh isolation
 and one write per toggle/slider update. A KDE Plasma session, KF6 build, tray
-positioning on Wayland/multiple displays, keyboard/accessibility and real-device
+positioning on Wayland/multiple displays and real-device
 acceptance are still required. No target desktop appearance is inferred from
 Xvfb. See the shared README for remaining prototype feature and packaging work.
+
+For the next native migration pass, replace popup dismissal with an explicit
+close button and anchor the panel at the tray corner. Navigation symbols and
+the application window icon are part of the [desktop requirements](../../docs/backend-migration.md).
 
 ## Local verification (2026-10-14)
 
