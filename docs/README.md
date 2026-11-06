@@ -50,6 +50,7 @@ features you tested.
 The Windows checks rerun on 2026-10-15 are **16/16 CTest suites** with
 the transitional frontend and **8/8 suites** in the backend-only Release build.
 For the newer native results, see the [Windows acceptance record](windows-acceptance-2026-10-31.md)
-and the [Linux acceptance record](linux-acceptance-2026-11-07.md). The Linux
-record covers installed packages and nested Plasma, GNOME and Xfce sessions.
-Physical Linux workstations and headphones remain outstanding.
+and the [Linux acceptance record](linux-acceptance-2026-11-07.md). Linux
+functional migration is complete on `kde`, `gnome`, and `xfce`. The record covers
+installed packages and nested desktop sessions, and lists the outstanding
+physical workstation and headphone checks.

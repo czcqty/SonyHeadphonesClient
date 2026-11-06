@@ -23,9 +23,12 @@ the application scope.
 is complete on [`winui`](https://github.com/czcqty/SonyHeadphonesClient/tree/winui).
 The Windows 11 desktop and installer checks passed. Remaining headset and
 Windows environment checks are listed in the [acceptance record](docs/windows-acceptance-2026-10-31.md).
-Other native adapters live on `codex/macos-swift`, `codex/kde`, `codex/gnome`, and
-`codex/xfce`. See the [branch guide](docs/branches.md) for each build entry,
-checkout instructions, and validation limits. The old `rebuild` work is already
+The Linux functional migration is complete on `kde`, `gnome`, and `xfce`.
+All three installed adapters passed bilingual control and packaging checks on
+Ubuntu 24.04 and Debian 13. The [Linux acceptance record](docs/linux-acceptance-2026-11-07.md)
+lists the outstanding headset and physical workstation checks.
+The macOS adapter lives on `codex/macos-swift`. See the [branch guide](docs/branches.md)
+for build and checkout instructions. The old `rebuild` work is already
 included in `main`; it is no longer a development branch.
 
 The Qt Quick features, tray layout, previews, and desktop packages described
