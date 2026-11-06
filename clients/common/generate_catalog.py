@@ -20,8 +20,8 @@ def slider(en, zh, group, key, method, cap, low, high, **kw):
     return field('slider', en, zh, group, key, method, cap, min=low, max=high, **kw)
 
 
-def choice(en, zh, group, key, method, cap, values):
-    return field('choice', en, zh, group, key, method, cap,
+def choice(en, zh, group, key, method, cap, values, **kw):
+    return field('choice', en, zh, group, key, method, cap, **kw,
                  options=[{'value': v, 'label': text(a, b)} for v, a, b in values])
 
 
@@ -58,7 +58,8 @@ pages = [
         choice('Room size', '房间大小', 'settings', 'listeningRoomSize', 'setListeningRoomSize', 'listeningModeSupported',
                [(0, 'Small', '小'), (1, 'Medium', '中'), (2, 'Large', '大')]),
         toggle('Adaptive volume', '自适应音量', 'adaptiveVolumeEnabled', 'adaptiveVolumeSupported'),
-        toggle('Safe listening', '安全聆听', 'safeListeningEnabled', 'safeListeningSupported')]),
+        choice('Safe listening', '安全聆听', 'settings', 'safeListeningEnabled', 'setSafeListeningEnabled',
+               'safeListeningSupported', [(False, 'Off', '关'), (True, 'On', '开')], knownKey='safeListeningStateKnown')]),
     page('noise', 'Noise control', '降噪 / 环境声', [noise,
         slider('Ambient level', '环境声等级', 'noiseControl', 'ambientLevel', 'setAmbientLevel', 'ambientSupported', 1, 20),
         toggle('Focus on voice', '聚焦人声', 'focusOnVoice', 'ambientSupported', 'noiseControl'),

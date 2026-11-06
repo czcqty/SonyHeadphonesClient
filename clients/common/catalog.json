@@ -382,7 +382,7 @@
           "capability": "adaptiveVolumeSupported"
         },
         {
-          "kind": "toggle",
+          "kind": "choice",
           "label": {
             "en": "Safe listening",
             "zh_CN": "安全聆听"
@@ -390,7 +390,24 @@
           "group": "settings",
           "key": "safeListeningEnabled",
           "method": "setSafeListeningEnabled",
-          "capability": "safeListeningSupported"
+          "capability": "safeListeningSupported",
+          "knownKey": "safeListeningStateKnown",
+          "options": [
+            {
+              "value": false,
+              "label": {
+                "en": "Off",
+                "zh_CN": "关"
+              }
+            },
+            {
+              "value": true,
+              "label": {
+                "en": "On",
+                "zh_CN": "开"
+              }
+            }
+          ]
         }
       ]
     },
@@ -1931,6 +1948,10 @@
     "bluetooth-backend-unavailable": {
       "en": "No Bluetooth backend available",
       "zh_CN": "没有可用的蓝牙后端"
+    },
+    "bluetooth-adapter-unavailable": {
+      "en": "No Bluetooth adapter available. Turn on Bluetooth on your computer or connect an adapter, then refresh.",
+      "zh_CN": "没有可用的蓝牙适配器。请打开电脑蓝牙或连接适配器，然后刷新。"
     },
     "bluetooth-scan-failed": {
       "en": "Bluetooth scan failed",

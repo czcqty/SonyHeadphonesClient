@@ -23,7 +23,10 @@ QJsonObject DeviceService::deviceDiagnostics() const
     }
     // No addresses, unique IDs, paired-device names or media metadata.
     return {{"protocolVersion", int(device.mProtocol.version)}, {"lastAlertCode", int(device.mLastAlertMessage)},
-        {"table1", table1}, {"table2", table2}, {"generalSettings", general}};
+        {"table1", table1}, {"table2", table2}, {"generalSettings", general},
+        {"safeListening", QJsonObject{{"available", device.mSafeListeningAvailable},
+            {"reportedEnabled", device.mSafeListeningReportedEnabled},
+            {"notifications", int(device.mSafeListeningNotificationCount)}}}};
 }
 
 DeviceService::DeviceService(bool previewMode, QObject* parent)

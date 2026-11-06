@@ -157,7 +157,9 @@ namespace mdr
         {
             SafeListeningNotifyParamSL res;
             SafeListeningNotifyParamSL::Deserialize(cmd.data(), res, cmd.size());
-            self->mSafeListeningPreviewMode.overwrite(res.previewMode == MessageMdrV2EnableDisable::ENABLE);
+            self->mSafeListeningEnabled.overwrite(res.safeListeningMode == MessageMdrV2EnableDisable::ENABLE);
+            self->mSafeListeningReportedEnabled = self->mSafeListeningEnabled.current;
+            ++self->mSafeListeningNotificationCount;
             return MDR_HEADPHONES_EVT_SAFE_LISTENING_PARAM;
         }
         default:
@@ -194,6 +196,18 @@ namespace mdr
         case PERI_RET_PARAM:
         case PERI_NTFY_PARAM:
             return HandlePeripheralParamT2(this, cmd);
+        case SAFE_LISTENING_RET_PARAM:
+        {
+            SafeListeningRetParam res;
+            SafeListeningRetParam::Deserialize(cmd.data(), res, cmd.size());
+            if (res.inquiredType != SafeListeningInquiredType::SAFE_LISTENING_HBS_1
+                && res.inquiredType != SafeListeningInquiredType::SAFE_LISTENING_HBS_2
+                && res.inquiredType != SafeListeningInquiredType::SAFE_LISTENING_TWS_1
+                && res.inquiredType != SafeListeningInquiredType::SAFE_LISTENING_TWS_2)
+                return MDR_HEADPHONES_EVT_UNHANDLED;
+            mSafeListeningAvailable = res.availability == MessageMdrV2EnableDisable::ENABLE;
+            return MDR_HEADPHONES_EVT_SAFE_LISTENING_PARAM;
+        }
         case SAFE_LISTENING_NTFY_PARAM:
             return HandleSafeListeningParamsT2(this, cmd);
         case SAFE_LISTENING_RET_EXTENDED_PARAM:
