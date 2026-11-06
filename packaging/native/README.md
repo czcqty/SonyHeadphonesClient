@@ -39,6 +39,12 @@ service is installed.
 `verify_linux.sh` installs, reinstalls and removes packages. It tests both
 languages outside the checkout without a backend override or SDK path and checks
 isolated preferences survive removal. Xvfb provides widget/packaging evidence.
+Each installed launcher runs both `--smoke-test` and `--parity-test` in English
+and Chinese. Pass the previous release's DEB directory as a third argument to
+`verify_linux.sh` to exercise a version upgrade before the reinstall. Place
+one revision per directory. The verification compares the installed files with
+the candidate DEBs and checks file removal and preference preservation.
+
 The manual native Linux workflow runs Ubuntu 24.04 and Debian 13 container jobs
 and uploads packages and reports.
 
