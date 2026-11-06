@@ -2,7 +2,7 @@
 
 The target is a backend-only main branch, retaining Qt Core for now, with
 WinUI, AppKit, KDE, GNOME and Xfce presentations on their existing branches.
-Native controls, navigation, window/tray lifetime, accessibility, shortcuts
+Native controls, navigation, window/tray lifetime, shortcuts
 and appearance belong to presentation adapters. Bluetooth, capabilities,
 validation, connection recovery and device operations belong to one backend.
 
@@ -22,14 +22,38 @@ functional migration, not just removal of the QML build dependency.
 | Touch/voice | left/right reported assignments, NC button assignment, voice enable/volume |
 | Device management | pairing, reported device list, source switch, connect/disconnect/unpair |
 | Application | English/Chinese including dynamic choices/errors, existing preference migration and persistence, system/light/dark, all navigation |
-| Desktop | distinct quick panel/full settings, native tray menu, focus/popups/Escape, shortcuts, no-tray fallback, multi-monitor/DPI, startup/shutdown |
+| Desktop | native quick panel and full settings, tray menu, panel placement and close behavior, navigation symbols, application icon, shortcuts, no-tray fallback, multi-monitor/DPI, startup/shutdown |
 | Distribution | per-platform build, packaging, child lookup/lifetime, missing backend/error handling |
 
 Backend command coverage and native widget coverage are separate acceptance
 criteria. The backend contract test must cover all business methods for all
-device profiles; it does not establish native accessibility or hardware
-behavior. Linux windows under Xvfb and a Windows simulation host do not
+device profiles. Test hardware behavior on real headsets.
+Linux windows under Xvfb and a Windows simulation host do not
 establish BlueZ or real desktop integration. macOS needs its own SDK/runtime.
+
+### Native desktop acceptance
+
+Apply these checks to WinUI, KDE, GNOME, Xfce and AppKit on their target desktops.
+
+- With the tray at the bottom right, open quick controls at the bottom-right
+  corner of that display's usable work area. A top-right menu-bar item opens
+  the panel at the top right. For other tray positions use the corresponding
+  corner, keeping the entire panel clear of the taskbar, dock or desktop panel.
+  Repeat from the shortcut with the pointer elsewhere. Both entry points must
+  use the same corner. On desktops without a tray, keep an ordinary window
+  reachable.
+- While the application is running, the quick panel stays open until its
+  visible Close (×) control is activated. Click another window, press Escape,
+  open full settings and activate the tray item again. The panel must survive
+  each action. Escape can cancel an open picker or menu. Reopening a visible
+  panel brings the same instance forward. Application Quit still ends the app.
+- Inspect the settings navigation in its expanded and compact layouts where
+  available. Every page, including application settings, has a recognizable
+  platform symbol. Expanded navigation shows the symbol alongside the label.
+- Launch the installed app and check for the Sound Connect icon in the window.
+  Use the native window icon where visible, or show it in the window header
+  on desktops that omit title-bar icons. Verify the packaged app uses the
+  same identity in the system's launcher, taskbar or Dock.
 
 ## Current status
 
@@ -41,9 +65,8 @@ establish BlueZ or real desktop integration. macOS needs its own SDK/runtime.
   gates. Do not delete the transitional frontend or claim parity from IPC tests.
 - WinUI's reproduced XM5 capability, equalizer write and safe-listening state
   issues have been corrected and checked on hardware. Windows 11 desktop checks
-  also cover Explorer restart, quick-panel Escape behavior, selected accessibility
-  controls and playback shortcuts with the app visible or hidden. For the tested
-  configuration, observations and outstanding cases, see the
+  also cover Explorer restart and playback shortcuts with the app visible or
+  hidden. For the tested configuration, observations and outstanding cases, see the
   [Windows acceptance record](windows-acceptance-2026-10-31.md).
 - Main `8444b51` fixes discovery when Windows has no available Bluetooth
   adapter. WinUI `ef2ed5ca` displays the recovery instruction in English and
@@ -93,7 +116,7 @@ this maintenance check does not add platform or real-device acceptance.
 
 ## Still required before Qt Quick deletion
 
-- Actual desktop lifecycle and accessibility acceptance. Preference migration,
+- Actual desktop lifecycle acceptance. Preference migration,
   bilingual choices/errors and baseline shortcuts are now implemented, but the
   automated checks below do not replace platform-specific desktop acceptance.
 - macOS SDK build and actual AppKit runtime checks (no macOS host is available).
@@ -101,7 +124,7 @@ this maintenance check does not add platform or real-device acceptance.
   The Ubuntu/Debian backend and KF6 build checks are covered by the native package
   follow-up below; the supported backend minimum remains Qt 6.5.
 - Real headphones, disconnect/reconnect and protocol fallback, clean-machine
-  packaging, multi-monitor/DPI, accessibility and attached popups on each OS.
+  packaging, multi-monitor/DPI and attached popups on each OS.
 
 No Qt Quick source deletion is performed before these gates pass. The default
 build keeps the transitional UI; `MDR_BUILD_QT_FRONTEND=OFF` is the validated
@@ -132,10 +155,8 @@ Implemented on main and consumed by all five native branches:
   window, releases registrations on exit and reports conflicts with local fallback.
 - Native tray menus include playback/next/disconnect/settings/quit. GNOME uses
   ordinary quick/full windows because stock GNOME has no tray. WinUI keeps full
-  settings reachable if the shell tray disappears. Xfce defers focus dismissal
-  while combos/menus own a grab, positions against the X11 tray/workarea, and
-  falls back to ordinary windows without a tray. KDE delegates popup stacking
-  and Escape to Qt; AppKit uses a transient NSPopover and native status menu.
+  settings reachable if the shell tray disappears. Xfce falls back to ordinary
+  windows without a tray.
 - Power-off/unpair confirmations use each framework's dialogs. Cancel sends no
   command. Native control binding updates remain silent.
 
@@ -171,7 +192,7 @@ Implemented on main and consumed by all five native branches:
 ### Release gates recorded on 2026-10-14
 
 1. **macOS**: compile Swift/AppKit and Qt backend on a Mac; native menu-bar/popup,
-   theme switching, preference-file migration, keyboard/VoiceOver, permission and
+   theme switching, preference-file migration, shortcuts, permission and
    packaging/signing/notarization acceptance. AppKit changes are source-only here.
 2. **Linux**: BlueZ and real Plasma/GNOME/Xfce sessions. Native Ubuntu/Debian
    backend and KF6 builds are now automated checks, not desktop acceptance.
@@ -182,13 +203,13 @@ Implemented on main and consumed by all five native branches:
    on the target Wayland session. This is a known platform limitation, not a
    successful Wayland tray check.
 3. **Windows**: Windows 10 and clean-machine installation; real Explorer/taskbar
-   placement, high contrast/reduced effects, actual global key presses/conflicts,
-   tray restart, multi-monitor/DPI, Narrator and minimum-size visual checks.
+   placement, actual global key presses/conflicts, tray restart, multi-monitor/DPI
+   and minimum-size visual checks.
 4. **All real devices**: Bluetooth discovery, pairing, connection cancellation,
    reconnect/recovery, MDR fallback, device-reported capability choices and actual
    headphone acknowledgements. Simulation does not establish hardware correctness.
-5. **All desktops**: manual Chinese/English, light/dark/system, minimum-size,
-   accessibility and multi-display acceptance across every page. Automated native
+5. **All desktops**: manual Chinese/English, light/dark/system, minimum-size
+   and multi-display acceptance across every page. Automated native
    widgets and image previews do not replace these checks.
 
 Qt Quick is still present and enabled by default. No Qt Quick source, platform
@@ -255,7 +276,7 @@ default; no frontend or hardware support was removed.
   WSLg Wayland backend with GTK criticals treated as failures. This does not
   establish an actual Xfce Wayland desktop or tray implementation.
 
-Real headphones/BlueZ, real desktop focus and tray behavior, accessibility,
+Real headphones/BlueZ, real desktop focus and tray behavior,
 multiple monitors/DPI, Windows 10, clean-machine OS checks and signing remain
 release gates. Xvfb/WSLg and a restricted development-machine PATH do not replace
 those checks. macOS remains outside this follow-up.
@@ -363,7 +384,7 @@ the small stale-error follow-up; its checks must be recorded separately.
 
 This does not establish complete migration acceptance. Actual two-host audio
 switching, the remaining device features/models, Linux Bluetooth and desktop
-behavior, macOS, Windows 10, multi-monitor DPI and accessibility remain open.
+behavior, macOS, Windows 10 and multi-monitor DPI remain open.
 Qt Quick remains available and enabled by default.
 
 ### Follow-up acceptance (2026-10-24)
@@ -445,15 +466,10 @@ These checks close the reproduced issues on this Windows 11/XM5 configuration.
 
 After Explorer restarted, the tester opened quick controls from the recovered
 tray icon. WinUI and its backend kept their original process IDs. In quick
-controls Escape canceled a dropdown change, then dismissed the panel on the next
-press. The tester confirmed Narrator spoke the Chinese Appearance selector and
-option names correctly. Noise and EQ controls were readable with the Windows
-Aquatic contrast theme. Ctrl+Alt+P and Ctrl+Alt+N sent one request per keypress
-to the shared preview backend with WinUI in front. They did the same with WinUI
+controls Escape canceled a dropdown change. Ctrl+Alt+P and Ctrl+Alt+N sent one
+request per keypress to the shared preview backend with WinUI in front. They did the same with WinUI
 hidden and the `winver` dialog in front. Windows reported Ctrl+Alt+M in use.
 
-With Windows animation and transparency off, the quick panel opened full
-settings and the noise selector worked. Both system settings were restored.
 On a private desktop with a test taskbar window, a normal close hid WinUI.
 Removing the taskbar brought the main window back after about two seconds.
 With the tray still absent, a second close ended both WinUI and its child.
@@ -462,7 +478,7 @@ Review of 66 native captures covered the initial viewport of every page and
 the quick panel in English and Chinese under light, dark and system themes.
 
 Windows 10, clean-OS installation, mixed-DPI multi-monitor placement and
-two-host audio switching require additional environments. Broader accessibility,
-Ctrl+Alt+M with the key available, and live XM5 playback and connection
+two-host audio switching require additional environments.
+Ctrl+Alt+M with the key available and live XM5 playback and connection
 cancellation still need verification. See the
 [acceptance record](windows-acceptance-2026-10-31.md).
