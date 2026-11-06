@@ -95,6 +95,7 @@ void MdrSession::refreshDevices()
     MDRConnection* connection = m_platform->connection;
     m_workerThread = std::thread([this, connection, generation]() {
         QVariantList devices;
+        QString errorCode;
         QString error;
         MDRDeviceInfo* list = nullptr;
         int count = 0;
@@ -110,7 +111,10 @@ void MdrSession::refreshDevices()
                     {QStringLiteral("mac"), mac},
                 });
             }
+        } else if (result == MDR_RESULT_ERROR_NOT_FOUND) {
+            errorCode = QStringLiteral("bluetooth-adapter-unavailable");
         } else {
+            errorCode = QStringLiteral("bluetooth-scan-failed");
             const char* message = mdrConnectionGetLastError(connection);
             error = QString::fromUtf8(message && message[0] ? message : "Bluetooth scan failed");
         }
@@ -118,11 +122,11 @@ void MdrSession::refreshDevices()
             mdrConnectionFreeDevicesList(connection, &list);
 
         m_scanInProgress = false;
-        QMetaObject::invokeMethod(this, [this, devices, error, generation]() {
+        QMetaObject::invokeMethod(this, [this, devices, errorCode, error, generation]() {
             if (generation != m_operationGeneration)
                 return;
-            if (!error.isEmpty())
-                emit errorOccurred(QStringLiteral("bluetooth-scan-failed"), error);
+            if (!errorCode.isEmpty())
+                emit errorOccurred(errorCode, error);
             emit devicesChanged(devices);
             emit stateChanged(QStringLiteral("disconnected"));
         }, Qt::QueuedConnection);

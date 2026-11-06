@@ -377,7 +377,11 @@ namespace mdr
         MDRProperty<String> mMultipointDeviceMac;
         MDRProperty<String> mPairedDeviceDisconnectMac, mPairedDeviceConnectMac, mPairedDeviceUnpairMac;
 
-        MDRProperty<bool> mSafeListeningPreviewMode;
+        MDRProperty<bool> mSafeListeningEnabled;
+        bool mSafeListeningWritePending = false;
+        bool mSafeListeningAvailable = false;
+        bool mSafeListeningReportedEnabled = false;
+        unsigned mSafeListeningNotificationCount = 0;
 #pragma endregion
 
 #pragma region Tasks
