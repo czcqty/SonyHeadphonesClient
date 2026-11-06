@@ -26,8 +26,12 @@ xvfb-run -a python3 gui/xfce/main.py --backend /absolute/backend --smoke-test
 
 The smoke check verifies page creation, zero startup writes, state refresh, and
 one command for a toggle/slider commit. Xfce panel integration, actual desktop
-scaling, accessibility and live hardware acceptance remain separate checks.
+scaling and live hardware acceptance remain separate checks.
 See the common README for remaining feature-parity and packaging work.
+
+The next native migration pass must anchor quick controls at the tray corner
+and keep the window open until its close button is used. Navigation symbols and
+the application window icon are part of the [desktop requirements](../../docs/backend-migration.md).
 
 ## Local verification (2026-10-14)
 
