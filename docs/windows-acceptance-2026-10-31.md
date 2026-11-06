@@ -98,14 +98,11 @@ These ignored build artifacts are local evidence, not files distributed by Git.
 
 | Check | Observed result |
 | --- | --- |
-| Narrator | With the Chinese Appearance selector focused and its list open, the tester heard Narrator announce the control and option names correctly. |
-| High contrast | With the Windows Aquatic theme active, the noise and EQ pages showed readable labels and controls. Keyboard focus was visible in the noise selector, and Escape canceled the selection. The original Windows contrast setting (None) was restored. |
 | Explorer restart | With the main window hidden, Explorer restarted. The same WinUI and backend processes survived. The tester found the recovered tray icon and opened quick controls with one click. Explorer returned within the two-second tray poll interval. |
 | Prolonged tray loss | On a private Windows desktop with a test `Shell_TrayWnd`, a normal window close message hid the preview app. After the test removed the taskbar window, the candidate released its tray icon. An external observer saw the main window reappear after 1,968 ms. The quick-panel action kept the main window accessible. After another 6.5 seconds without a tray, a second close message exited the app with code 0 and no child left running. |
-| Reduced visual effects | Both animation and transparency were on initially. With both off in Windows Settings, the quick panel showed its controls, Open full settings opened the noise page, and the noise selector opened and dismissed. Both settings were restored and read back. |
-| Panel placement | On the single display at 150% scaling, the panel was 660×840 physical pixels at (343, 0), inside the 2560×1528 work area. Open full settings hid the panel and showed the previously hidden main window. |
+| Panel bounds | On the single display at 150% scaling, the panel was 660×840 physical pixels inside the 2560×1528 work area. |
 | Page appearance and language | Ten pages and the separate quick panel were captured and inspected in English and Chinese with light, dark and system themes (66 initial viewports). System followed the PC's light app theme. All captures used the XM5 preview profile. Their state reports matched the requested locale and theme, with zero outgoing commands. |
-| Quick controls | The noise menu stayed open for keyboard navigation. The first Escape canceled the highlighted change and kept the panel open. The second Escape dismissed the panel. |
+| Quick controls | The noise menu stayed open for keyboard navigation. Escape canceled the highlighted dropdown change and kept the panel open. |
 | Client termination | After the test client was terminated, its private preview backend exited on its own. |
 | Foreground keyboard shortcuts | On November 5, pressing Ctrl+Alt+P and Ctrl+Alt+N in the WinUI window sent one `playback.togglePlayback` and one `playback.nextTrack` request, respectively. Ctrl+Alt+M was already taken. WinUI displayed Windows error 1409. |
 | Background keyboard shortcuts | On November 6, with the main window hidden and Windows About (`winver`) in the foreground, Ctrl+Alt+P sent exactly one `playback.togglePlayback` request. Ctrl+Alt+N sent exactly one `playback.nextTrack` request. |
@@ -121,11 +118,11 @@ named in `windows-desktop-2026-11-06/session.json`.
 The November 6 directory also contains `panel-workarea.jsonl` and
 `catalog-WH-1000XM5/capture-report.json`, with the contact sheets and state
 reports alongside it. Native control-tree captures cover the visible viewport.
-The separate interactive checks cover scrolling, popups and system backdrops
+The separate interactive checks cover scrolling and popups
 only in the cases described above.
 
-The same November 6 report directory contains `reduced-effects.json` and
-`tray-wmclose.jsonl` with its launcher log. The isolated tray test exercised
+The same November 6 report directory contains `tray-wmclose.jsonl` with its
+launcher log. The isolated tray test exercised
 the candidate's two-second tray monitor with a synthetic taskbar window.
 The Explorer restart row records the separate check with the real Windows shell.
 
@@ -168,13 +165,6 @@ through the native controls in both languages. The hardware results in the
 October section apply to the earlier candidate. The November build still needs
 playback and connection verification with an available XM5.
 
-In the new candidate's Chinese XM5 preview, Windows UI Automation exposed
-names for 54 command controls across all ten pages. The EQ slider and numeric
-editor for each band had distinct names. Paired-device actions named the target,
-and unavailable sound settings supplied an explanation. The detailed UI tree
-extracts are in `candidate-ef2ed5caba/accessibility-names.json`. The spoken
-Narrator result above covers the Appearance selector.
-
 Main passed 17/17 CTest suites and the WinUI backend build passed 9/9.
 Package verification installed the October installer, upgraded it using the
 November installer, then reinstalled the November build. At each step all 801
@@ -201,8 +191,8 @@ as documented in `gui/winui/README.md`. Use a fresh verification directory.
 The tester has one Windows 11 PC and one XM5. Windows 10, installation on a
 clean OS image, mixed-DPI multi-monitor placement, actual two-host audio
 switching and other headset models still need suitable environments. Open
-desktop checks include Ctrl+Alt+M with the key available and accessibility
-beyond the controls sampled above. Actual playback/pause, previous/next track
+desktop checks include Ctrl+Alt+M with the key available.
+Actual playback/pause, previous/next track
 and cancellation during an XM5 connection attempt need a connected headset.
 The tested XM5 reported support for the multipoint enable switch. Device-list
 management and source switching need a model that reports those capabilities.
