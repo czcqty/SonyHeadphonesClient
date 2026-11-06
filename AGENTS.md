@@ -15,6 +15,12 @@
 - Retain Qt Core in the shared backend and keep Qt Quick until the migration gates pass. Native frontend experiments stay on their own branches: macOS uses Swift/AppKit, KDE uses Qt Widgets/KDE Frameworks, GNOME uses GTK 4/libadwaita, and Xfce uses GTK 3/libxfce4ui. Use the actual framework controls without custom skins or replacement control painting.
 - Native frontends use SoundConnectBackend and the shared clients/common contract; AppController belongs to the transitional Qt Quick presentation. Keep simulation isolated and require an explicit --live option for Bluetooth operation. Never claim target-platform validation from simulated visuals.
 - Treat the tray's quick controls and the full settings window as distinct layouts; do not shrink the entire settings interface into a tray popup.
+- On Windows, Linux and macOS, anchor quick controls to the work-area corner
+  nearest the tray or menu-bar item on its display. Keep the panel open until
+  its Close (×) is activated. Reopening it brings the existing panel forward.
+- Give every native settings navigation item its own standard page symbol
+  alongside its label. Display the Sound Connect application icon in the
+  program window and use that icon for its desktop application identity.
 
 # Payload Struct Implementation Details (libmdr)
 A MDR Payload struct 

@@ -64,5 +64,5 @@ and obtains fresh state. Device commands are not replayed and headphones are not
 automatically reconnected. Normal exit closes stdin and allows two seconds for
 EOF shutdown before terminating the owned child.
 
-Real desktop, BlueZ/headphone, accessibility, Windows 10 and multiple-display
+Real desktop, BlueZ/headphone, Windows 10 and multiple-display
 checks remain in [the migration gates](../../docs/backend-migration.md).

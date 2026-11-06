@@ -26,8 +26,13 @@ xvfb-run -a python3 gui/gnome/main.py --backend /absolute/backend --smoke-test
 ```
 
 See the common README for feature-parity limitations. GNOME Shell/Wayland,
-real headset, accessibility, multiple displays and packaging remain acceptance
+real headset, multiple displays and packaging remain acceptance
 work; Xvfb tests are not a substitute for those checks.
+
+The next native migration pass must keep quick controls open until explicitly
+closed and request the appropriate work-area corner where the shell permits.
+See the [desktop requirements](../../docs/backend-migration.md) for placement,
+navigation symbols and the application window icon.
 
 ## Local verification (2026-10-14)
 
