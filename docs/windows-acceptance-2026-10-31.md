@@ -2,8 +2,8 @@
 
 Hardware and installer checks ran on October 29–31, 2026 on Windows 11 x64
 (build 26200) with WH-1000XM5 firmware 2.3.1. That WinUI candidate underwent
-desktop checks on October 31 and November 5–6. For the newer candidate and
-its installer, see the [November candidate and installer](#november-candidate-and-installer).
+desktop checks on October 31 and November 5–6. For the current Windows installer,
+see the [November 7 tray and icon update](#november-7-tray-and-icon-update).
 
 ## October candidate and installer
 
@@ -175,6 +175,40 @@ silent uninstall removed the application, uninstaller, registry entries and
 shortcuts. Only the unrelated sentinel file remained. Local evidence
 is in `cmake-build-native/reports/windows-desktop-2026-11-06/`, including
 `main-radio-fix.xml` and the `candidate-ef2ed5caba/` subdirectory.
+
+## November 7 tray and icon update
+
+- Installer: `cmake-build-native/packages/windows-acceptance-00ab8243a0/SoundConnect-WinUI-2.0.4-windows-x64-setup.exe` (98,147,707 bytes).
+- SHA-256: `7cae7511bdf75c5f523a4a23aa4f472249c73b7145de2d92fe9cc23a04b8571e`.
+
+WinUI `00ab8243a0` anchors the quick panel to the notification area's corner
+of the monitor work area. On the test PC with the taskbar at the bottom,
+the panel occupied (1888, 676) to (2548, 1516) in a 2560×1528 work area at
+150% scaling. The right and bottom gaps were both 12 physical pixels (8 DIPs).
+
+With the panel open, the first Escape closed the noise selector. A second
+Escape left the panel open. Open full settings activated the main window.
+The same panel stayed visible while the navigation was collapsed there.
+Clicking the panel's native × closed just the panel.
+In a separate preview run, invoking the app's tray left-click handler twice
+kept the same window handle, position and size. After a window close message,
+the next invocation reopened that same panel at the same coordinates. See
+`tray-repeat.jsonl` in the November 7 report directory.
+
+All ten navigation items had native symbols in expanded and collapsed views,
+including the gear for App settings. Both title bars showed the Sound Connect
+headphones icon. The large and small window icons returned by Windows matched
+the published application icon pixel for pixel. The geometry and icon report
+is `cmake-build-native/reports/windows-desktop-2026-11-07/window-icons-and-panel.json`.
+
+The backend passed all nine CTest suites. Upgrading the previous November
+installer and reinstalling this build produced 802 files matching the release
+manifest each time. The installed executable, its window, and the Windows
+Installed apps entry used the project icon. English and Chinese native parity
+each passed on 12 preview profiles and 45 commands. A normal silent uninstall
+removed the application and its registrations and preserved the unrelated test
+file. The package checks are under `candidate-00ab8243a0/` in the same report
+directory.
 
 ## Reproduction and remaining gates
 
