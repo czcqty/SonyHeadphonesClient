@@ -8,6 +8,7 @@ import threading
 
 class ProcessClient:
     START_TIMEOUT = 10
+    REQUEST_TIMEOUT = 10
     DIAGNOSTIC_LIMIT = 4096
 
     def __init__(self, argv, dispatch, changed):
@@ -28,12 +29,14 @@ class ProcessClient:
     def restart(self):
         if self.closed:
             return
+        self.ready = False
         old = self._session
         previous_cleanup = self._retire(old) if old else None
         self._generation += 1
         self.state, self.error, self.diagnostic, self.ready = {}, 'backend-starting', '', False
         session = dict(cancel=threading.Event(), outgoing=queue.Queue(64), process=None,
-                       diagnostic='', diagnostic_pending=False, timer=None, generation=self._generation, cleanup=None)
+                       diagnostic='', diagnostic_pending=False, timer=None, generation=self._generation,
+                       callbacks={}, reply=None, cleanup=None)
         self._session = session
         timer = threading.Timer(self.START_TIMEOUT, lambda: self._post(session, lambda: self._timeout(session)))
         timer.daemon = True
@@ -112,7 +115,16 @@ class ProcessClient:
                 self.error = ''
             self.state, self.ready = event, True
             session['timer'].cancel()
+            # The host emits one complete snapshot immediately after each result.
+            reply, session['reply'] = session['reply'], None
+            if reply is not None:
+                callback, timer = session['callbacks'].pop(reply['id'])
+                timer.cancel()
+                callback(reply)
         elif event.get('type') == 'result':
+            request_id = event.get('id')
+            if isinstance(request_id, str) and request_id in session['callbacks']:
+                session['reply'] = event
             self.error = '' if event.get('ok') is True else event.get('errorCode', 'Command rejected')
         self.changed()
 
@@ -122,14 +134,24 @@ class ProcessClient:
         self._retire(session)
         self.changed()
 
-    def send(self, request):
+    def send(self, request, on_result=None):
+        """True queues the request. Its callback sees the reply's snapshot or None on failure."""
         if self.closed or not self.ready:
             return False
         session = self._session
+        request_id = str(self.sent + 1)
         try:
-            frame = json.dumps(dict(request, version=1, id=str(self.sent + 1)), ensure_ascii=False).encode('utf-8') + b'\n'
+            frame = json.dumps(dict(request, version=1, id=request_id), ensure_ascii=False).encode('utf-8') + b'\n'
             session['outgoing'].put_nowait(frame)
             self.sent += 1
+            if on_result is not None:
+                def timeout():
+                    if request_id in session['callbacks']:
+                        self._fail(session, 'backend-request-timeout')
+                timer = threading.Timer(self.REQUEST_TIMEOUT, lambda: self._post(session, timeout))
+                timer.daemon = True
+                session['callbacks'][request_id] = on_result, timer
+                timer.start()
             return True
         except queue.Full:
             self._fail(session, 'backend-write-failed', 'Command queue is full')
@@ -185,6 +207,11 @@ class ProcessClient:
         thread = threading.Thread(target=self._shutdown, args=(session,))
         session['cleanup'] = thread
         thread.start()
+        pending, session['callbacks'] = session['callbacks'], {}
+        session['reply'] = None
+        for callback, timer in pending.values():
+            timer.cancel()
+            callback(None)
         return thread
 
     def close(self):

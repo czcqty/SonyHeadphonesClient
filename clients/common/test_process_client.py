@@ -133,6 +133,37 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(client.sent, 20)
         old_process.wait(timeout=5)
 
+    def test_callbacks_observe_their_own_snapshot(self):
+        client = self.make()
+        self.pump(lambda: client.ready)
+        seen = []
+        def finished(result):
+            seen.append((result['id'], client.state['app']['lastId']))
+        for i in range(3):
+            self.assertTrue(client.send({}, finished))
+        self.pump(lambda: len(seen) == 3)
+        self.assertEqual(seen, [('1', '1'), ('2', '2'), ('3', '3')])
+
+    def test_restart_releases_pending_callbacks_once(self):
+        client = self.make()
+        self.pump(lambda: client.ready)
+        seen = []
+        client.send({}, seen.append)
+        client.restart()
+        self.pump(lambda: client.ready)
+        self.assertEqual(seen, [None])
+        self.assertEqual(client.state['app'], {})
+
+    def test_unanswered_command_exposes_retry(self):
+        client = self.make('hang')
+        self.pump(lambda: client.ready)
+        client.REQUEST_TIMEOUT = .1
+        seen = []
+        client.send({}, seen.append)
+        self.pump(lambda: client.error == 'backend-request-timeout')
+        self.assertFalse(client.ready)
+        self.assertEqual(seen, [None])
+
     def test_restart_reaps_previous_owner_before_launch(self):
         client = self.make('slow-exit')
         self.pump(lambda: client.ready)
