@@ -1,5 +1,10 @@
 # KDE presentation
 
+The KDE functional migration is complete on the `kde` branch. The
+installed Ubuntu 24.04 and Debian 13 clients passed English and Chinese
+acceptance across 12 preview profiles and all 45 commands. Physical headset
+and workstation verification remains open. [Linux acceptance record](../../docs/linux-acceptance-2026-11-07.md)
+
 C++ Qt Widgets + KDE Frameworks: actual `KPageWidget` settings navigation,
 `QCheckBox`, `QSlider`, `QComboBox`, native menus, `QScrollArea` and
 `KStatusNotifierItem`. This is KDE's own toolkit family. No hand-painted Breeze
@@ -44,26 +49,16 @@ compact and expanded navigation, icons, panel lifetime, shortcuts, theme
 and silent refresh. Parity exercises the actual controls for all profiles
 and verifies the backend reply to each request. It also checks confirmed and
 canceled actions, open pickers, unknown safe listening, lost state and recovery.
-Hardware readback, mixed-DPI placement and compositor behavior require
-separate [desktop and device acceptance](../../docs/backend-migration.md).
 
-## Local verification (2026-10-14)
+## Plasma verification (2026-11-07)
 
-Ubuntu 24.04 WSL: GCC 13.3, Qt 5.15.13 and KDE Frameworks 5.115 build succeeds.
-The Xvfb/DBus native-control smoke test passes for all nine pages, zero startup
-writes, silent state refresh and one write per toggle/slider update. The host was
-the real shared C++ Windows executable over WSL interoperability pipes in isolated
-simulation; this does not verify Linux Bluetooth or a Plasma desktop session.
+On nested Plasma 6, both X11 and Wayland checks placed quick controls at the
+expected corners for top and bottom panels. After plasmashell restarted,
+the existing backend stayed alive and the tray reopened the same quick panel.
+Physical mixed-DPI displays, a full login session and real BlueZ/headphones
+remain on the [workstation checklist](../../docs/linux-acceptance-2026-11-07.md#bluetooth-and-outstanding-checks).
 
-## Shared backend migration
-
-The adapter now consumes the main branch's `SoundConnectBackend` and
-`clients/common/catalog.json`. The former branch-local backend source and
-catalog copies have been removed. Advanced device operations are present in
-the shared catalog; application/desktop parity still follows the migration gate.
-Native widget smoke test passed again against the new standalone backend.
-
-## Preference and desktop follow-up
+## Preferences and shortcuts
 
 - The application-settings page supports live persistent language and
   system/light/dark, including migration of the old Qt preferences. Preview
@@ -73,8 +68,6 @@ Native widget smoke test passed again against the new standalone backend.
 - Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls within
   the application, preserving the previous Linux Qt shortcut scope.
 - Native dialogs confirm power-off and unpair; cancellation sends no command.
-  Separate quick/full layouts, native menu styling and Qt Quick removal gates
-  remain unchanged.
 
 Manual modes use installed official BreezeLight/BreezeDark schemes through
 KColorSchemeManager; system mode restores KDE tracking. No palette is painted
@@ -92,4 +85,4 @@ Commands remain disabled until a valid initial snapshot arrives. Startup has a
 ten-second timeout; backend failure clears old state and exposes Retry startup
 in full settings. Retry obtains fresh state without replaying commands or
 reconnecting headphones. Normal exit drains stdin/EOF, allowing two seconds
-before terminating the owned child. Desktop/headphone migration gates remain.
+before terminating the owned child.
