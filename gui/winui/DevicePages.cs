@@ -50,7 +50,8 @@ internal sealed partial class MainWindow
             activity.Visibility = activity.IsActive ? Visibility.Visible : Visibility.Collapsed;
             progress.Text = Dynamic(backend.Text("connection", "state"));
             string devices = backend.State["connection"]?["devices"]?.ToJsonString() ?? "[]";
-            string next = devices + backend.Ready + backend.Connected + ConnectionBusy;
+            bool showEmptyHint = backend.Ready && !backend.Connected && !ConnectionBusy && ConnectionError().Length == 0;
+            string next = devices + backend.Ready + backend.Connected + ConnectionBusy + showEmptyHint;
             if (signature == next) return;
             signature = next; list.Children.Clear();
             foreach (string id in deviceButtons.Keys.Where(k => k.StartsWith("discover.")).ToArray()) deviceButtons.Remove(id);
@@ -63,8 +64,8 @@ internal sealed partial class MainWindow
                 connect.IsEnabled = backend.Ready && !backend.Connected && !ConnectionBusy;
                 row.Children.Add(connect); list.Children.Add(row);
             }
-            if (list.Children.Count == 0 && backend.Ready && !ConnectionBusy)
-                list.Children.Add(new TextBlock { Text = T("没有发现耳机。请打开耳机并扫描设备。", "No headphones found. Turn them on and scan for devices."), TextWrapping = TextWrapping.Wrap });
+            if (list.Children.Count == 0 && showEmptyHint)
+                list.Children.Add(new TextBlock { Text = T("请先在 Windows 蓝牙设置中连接耳机，然后刷新列表。", "Connect your headphones in Windows Bluetooth settings, then refresh the list."), TextWrapping = TextWrapping.Wrap });
         });
     }
 
