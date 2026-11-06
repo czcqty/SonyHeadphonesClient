@@ -890,5 +890,33 @@
   "backend-retry": {
     "en": "Retry startup",
     "zh_CN": "重试启动"
+  },
+  "Waiting for backend state.": {
+    "en": "Waiting for backend state.",
+    "zh_CN": "正在等待后端状态。"
+  },
+  "Cancel or disconnect the current connection first.": {
+    "en": "Cancel or disconnect the current connection first.",
+    "zh_CN": "请先取消或断开当前连接。"
+  },
+  "No connection is active.": {
+    "en": "No connection is active.",
+    "zh_CN": "当前没有设备连接。"
+  },
+  "Connect headphones on the Connection page first.": {
+    "en": "Connect headphones on the Connection page first.",
+    "zh_CN": "请先在“连接”页连接耳机。"
+  },
+  "These headphones do not report support for this feature.": {
+    "en": "These headphones do not report support for this feature.",
+    "zh_CN": "此耳机未报告对该功能的支持。"
+  },
+  "This equalizer band is not provided by these headphones.": {
+    "en": "This equalizer band is not provided by these headphones.",
+    "zh_CN": "此耳机未提供该均衡器频段。"
+  },
+  "backend-request-timeout": {
+    "en": "The backend did not respond to the command. Retry to get the current device state.",
+    "zh_CN": "后端未响应命令。请重试以读取当前设备状态。"
   }
 }
