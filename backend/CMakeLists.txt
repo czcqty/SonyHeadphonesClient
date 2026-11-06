@@ -79,6 +79,9 @@ if(BUILD_TESTING)
     add_test(NAME backend-client-lifecycle COMMAND ${Python3_EXECUTABLE}
         "${CMAKE_SOURCE_DIR}/clients/common/test_process_client.py")
     if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        add_executable(linux_cancel_test tests/LinuxCancelTest.cpp)
+        target_link_libraries(linux_cancel_test PRIVATE device_backend)
+        add_test(NAME backend-linux-cancel COMMAND linux_cancel_test)
         find_program(DBUS_RUN_SESSION dbus-run-session)
         if(DBUS_RUN_SESSION)
             add_test(NAME backend-bluez-discovery COMMAND "${DBUS_RUN_SESSION}" -- ${Python3_EXECUTABLE}

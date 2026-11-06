@@ -69,9 +69,7 @@ MdrSession::~MdrSession()
 {
     m_pollTimer.stop();
     ++m_operationGeneration;
-    if (backendAvailable())
-        mdrConnectionDisconnect(m_platform->connection);
-    joinWorker();
+    stopConnection();
 }
 
 bool MdrSession::backendAvailable() const
@@ -167,9 +165,7 @@ void MdrSession::disconnectDevice()
     m_userDisconnect = true;
     m_pollTimer.stop();
     ++m_operationGeneration;
-    if (backendAvailable())
-        mdrConnectionDisconnect(m_platform->connection);
-    joinWorker();
+    stopConnection();
     m_connectInProgress = false;
     m_scanInProgress = false;
     m_stateData->device = mdr::MDRHeadphones();
@@ -297,8 +293,7 @@ bool MdrSession::retryWithLegacyProtocol()
 {
     if (m_usingLegacyProtocol || !backendAvailable())
         return false;
-    mdrConnectionDisconnect(m_platform->connection);
-    joinWorker();
+    stopConnection();
     m_usingLegacyProtocol = true;
     m_state = State::Connecting;
     emit stateChanged(QStringLiteral("connecting"));
@@ -339,8 +334,7 @@ bool MdrSession::scheduleReconnect(const QString& errorCode, const QString& erro
     const int delay = 500 * (1 << (m_reconnectAttempts - 1));
     m_pollTimer.stop();
     ++m_operationGeneration;
-    mdrConnectionDisconnect(m_platform->connection);
-    joinWorker();
+    stopConnection();
     m_connectInProgress = false;
     m_stateData->device = mdr::MDRHeadphones();
     m_state = State::Disconnected;
@@ -359,6 +353,21 @@ bool MdrSession::scheduleReconnect(const QString& errorCode, const QString& erro
         m_pollTimer.start();
     });
     return true;
+}
+
+void MdrSession::stopConnection()
+{
+#if defined(__linux__)
+    // The nonblocking RFCOMM/SDP setup runs on the worker. Let it publish
+    // both handles before closing them, including when cancellation is immediate.
+    joinWorker();
+#endif
+    if (backendAvailable())
+        mdrConnectionDisconnect(m_platform->connection);
+#if !defined(__linux__)
+    // Other transports use disconnect to interrupt an outstanding connect.
+    joinWorker();
+#endif
 }
 
 void MdrSession::joinWorker()

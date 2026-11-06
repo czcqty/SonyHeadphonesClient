@@ -123,7 +123,8 @@ def main():
             deps = 'python3' if name == 'soundconnect-common' else backend_deps if name == 'soundconnect-backend' else native_deps + ', soundconnect-backend (= ' + version + '), soundconnect-common (= ' + version + ')'
             metadata = directory / 'DEBIAN'
             metadata.mkdir(exist_ok=True)
-            (metadata / 'control').write_text(f'Package: {name}\nVersion: {version}\nArchitecture: {"all" if name == "soundconnect-common" else "amd64"}\nMaintainer: Sound Connect contributors <noreply@github.com>\nSection: sound\nPriority: optional\nDepends: {deps}\nDescription: Native Sound Connect {name.removeprefix("soundconnect-")}\n Shared local controls for supported Sony headphones.\n')
+            recommends = 'Recommends: fonts-noto-cjk\n' if name == 'soundconnect-common' else ''
+            (metadata / 'control').write_text(f'Package: {name}\nVersion: {version}\nArchitecture: {"all" if name == "soundconnect-common" else "amd64"}\nMaintainer: Sound Connect contributors <noreply@github.com>\nSection: sound\nPriority: optional\nDepends: {deps}\n{recommends}Description: Native Sound Connect {name.removeprefix("soundconnect-")}\n Shared local controls for supported Sony headphones.\n')
             copy(ROOT / 'LICENSE', directory / 'usr/share/doc' / name / 'copyright')
             archive = output / (name + '_' + version + '_' + ('all' if name == 'soundconnect-common' else 'amd64') + '.deb')
             run('dpkg-deb', '--root-owner-group', '--build', directory, archive)
