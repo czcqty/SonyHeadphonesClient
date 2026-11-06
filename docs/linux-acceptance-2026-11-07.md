@@ -9,7 +9,7 @@ workstation checks remain release gates for all three branches.
 
 | Adapter | Candidate source | Ubuntu 24.04 amd64 | Debian 13 amd64 |
 | --- | --- | --- | --- |
-| KDE | `f04d5caa61f3` | Qt 5 / KDE Frameworks 5 | Qt 6 / KDE Frameworks 6 |
+| KDE | `b05512f9e764` | Qt 5 / KDE Frameworks 5 | Qt 6 / KDE Frameworks 6 |
 | GNOME | `28c3af96a87d` | GTK 4.14 / libadwaita 1.5 | GTK 4.18 / libadwaita 1.7 |
 | Xfce | `79857ee08bfe` | GTK 3 / libxfce4ui | GTK 3 / libxfce4ui |
 
@@ -19,8 +19,8 @@ after accounting for Windows line endings. New development lives on the
 shared main and three existing adapter branches.
 
 Both Linux backend builds passed all eleven CTest suites. Ubuntu used the private
-Qt 6.8.3 SDK and Debian used system Qt Core. Each KDE transport build passed
-its separate CTest suite. The native tests traversed all ten settings pages,
+Qt 6.8.3 SDK and Debian used system Qt Core. The KDE Frameworks 5 and 6 builds each passed both
+private-process transport and tray host CTest suites. The native tests traversed all ten settings pages,
 quick controls, capability-dependent actions, single edits, confirmations,
 language and theme changes, backend loss and retry. Per adapter, each
 language covered all 45 distinct commands across the 12 profiles in aggregate. The installed GNOME
@@ -55,7 +55,12 @@ the SVG, and the Xfce package declares its icon theme and SVG loader.
   Frameworks, Breeze and KWayland dependencies. Nested KWin on Wayland
   reported the same quick-window position and size for each panel location and (1002,412)
   with no tray or reserved work area. Repositioning the already visible surface
-  required committing the Plasma surface after setting its position.
+  required committing the Plasma surface after setting its position. When
+  plasmashell exited, kded's watcher still advertised a tray. Checking the
+  actual host's D-Bus owner restored the hidden settings window. Restarting
+  plasmashell restored tray activation with the same application and backend
+  PIDs. Explicit Quit, and closing settings after tray loss, both ended the
+  app and its child even with quick controls open.
 - **GNOME Shell 48.7 with Mutter, nested Wayland.** Stock GNOME uses ordinary
   quick and settings windows. Keyboard events delivered through the compositor
   exercised Ctrl+Alt+M/P/N and Escape. Reopening quick controls reused the
