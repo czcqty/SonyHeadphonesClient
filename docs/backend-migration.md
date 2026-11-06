@@ -57,6 +57,12 @@ Apply these checks to WinUI, KDE, GNOME, Xfce and AppKit on their target desktop
 
 ## Current status
 
+The three Linux branches have native widget and installed-package acceptance
+on Ubuntu 24.04 and Debian 13. Each adapter exercises all 45 commands across 12
+preview profiles in English and Chinese. The [November 7 Linux acceptance
+record](linux-acceptance-2026-11-07.md) separates desktop session observations
+from the outstanding physical headset and display checks.
+
 **Windows functional migration is complete on `winui` (2026-11-07).** The
 installed build from `00ab8243a0` passed the local Windows 11 acceptance checks,
 including tray placement and lifetime, navigation symbols, application icons,
