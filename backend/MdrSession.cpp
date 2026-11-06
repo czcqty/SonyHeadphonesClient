@@ -111,6 +111,8 @@ void MdrSession::refreshDevices()
                     {QStringLiteral("mac"), mac},
                 });
             }
+        } else if (result == MDR_RESULT_ERROR_NOT_SUPPORTED) {
+            errorCode = QStringLiteral("bluetooth-backend-unavailable");
         } else if (result == MDR_RESULT_ERROR_NOT_FOUND) {
             errorCode = QStringLiteral("bluetooth-adapter-unavailable");
         } else {

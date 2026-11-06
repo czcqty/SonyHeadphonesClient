@@ -84,7 +84,7 @@ int mdrConnectionPoll(MDRConnection* conn, int timeout);
  * @param conn The connection object.
  * @param ppList Pointer to a pointer that will be set to the list of devices. The caller is responsible for freeing this list with @ref mdrConnectionFreeDevicesList.
  * @param pCount Pointer to an integer that will be set to the number of devices in the list.
- * A successful scan may return zero devices. On Windows, an unavailable Bluetooth
+ * A successful scan may return zero devices. On Windows and Linux, an unavailable Bluetooth
  * adapter returns MDR_RESULT_ERROR_NOT_FOUND.
  * @return @ref MDR_RESULT_OK on success, or an error code on failure.
  */
