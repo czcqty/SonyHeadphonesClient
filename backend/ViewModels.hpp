@@ -174,6 +174,7 @@ class SettingsViewModel final : public QObject
     Q_PROPERTY(bool adaptiveVolumeEnabled READ adaptiveVolumeEnabled NOTIFY changed)
     Q_PROPERTY(bool safeListeningSupported READ safeListeningSupported NOTIFY changed)
     Q_PROPERTY(bool safeListeningEnabled READ safeListeningEnabled NOTIFY changed)
+    Q_PROPERTY(bool safeListeningStateKnown READ safeListeningStateKnown NOTIFY changed)
     Q_PROPERTY(bool captureVoiceSupported READ captureVoiceSupported NOTIFY changed)
     Q_PROPERTY(bool captureVoiceEnabled READ captureVoiceEnabled NOTIFY changed)
     Q_PROPERTY(bool touchPanelSupported READ touchPanelSupported NOTIFY changed)
@@ -217,6 +218,7 @@ public:
     bool adaptiveVolumeEnabled() const;
     bool safeListeningSupported() const;
     bool safeListeningEnabled() const;
+    bool safeListeningStateKnown() const;
     bool captureVoiceSupported() const;
     bool captureVoiceEnabled() const;
     bool touchPanelSupported() const;

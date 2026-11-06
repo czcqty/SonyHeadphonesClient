@@ -831,6 +831,10 @@
     "en": "No Bluetooth backend available",
     "zh_CN": "没有可用的蓝牙后端"
   },
+  "bluetooth-adapter-unavailable": {
+    "en": "No Bluetooth adapter available. Turn on Bluetooth on your computer or connect an adapter, then refresh.",
+    "zh_CN": "没有可用的蓝牙适配器。请打开电脑蓝牙或连接适配器，然后刷新。"
+  },
   "bluetooth-scan-failed": {
     "en": "Bluetooth scan failed",
     "zh_CN": "蓝牙扫描失败"

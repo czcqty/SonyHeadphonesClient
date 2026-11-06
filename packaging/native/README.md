@@ -1,6 +1,7 @@
 # Native desktop packages
 
-Adapters remain on `codex/winui`, `codex/kde`, `codex/gnome`, and `codex/xfce`.
+The Windows adapter is on `winui`. The Linux adapters are on `codex/kde`,
+`codex/gnome`, and `codex/xfce`.
 Shared transport, catalog and Linux recipes live on main. Merge main before
 building an adapter; do not copy device/backend implementations. Qt Quick stays
 available until the platform and hardware migration gates pass.

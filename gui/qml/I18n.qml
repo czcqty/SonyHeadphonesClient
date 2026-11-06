@@ -157,6 +157,8 @@ QtObject {
         switch (code) {
         case "bluetooth-backend-unavailable":
             return qsTr("No Bluetooth backend available")
+        case "bluetooth-adapter-unavailable":
+            return qsTr("No Bluetooth adapter available. Turn on Bluetooth on your computer or connect an adapter, then refresh.")
         case "bluetooth-scan-failed":
             return detail.length > 0 ? qsTr("Bluetooth scan failed: %1").arg(detail)
                                      : qsTr("Bluetooth scan failed")

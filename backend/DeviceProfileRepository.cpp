@@ -163,7 +163,8 @@ void DeviceProfileRepository::apply(const DeviceProfile& profile,
     device.mPlayPause = PlaybackStatus::PLAY;
     device.mAudioCodec = AudioCodec::LDAC;
     device.mSafeListeningSoundPressure = 74;
-    device.mSafeListeningPreviewMode.overwrite(true);
+    device.mSafeListeningEnabled.overwrite(true);
+    device.mSafeListeningNotificationCount = 1; // Preview has a known simulated state.
     device.mBatteryL.charging = BatteryChargingStatus::NOT_CHARGING;
     device.mBatteryR.charging = BatteryChargingStatus::CHARGING;
     device.mBatteryCase.charging = BatteryChargingStatus::NOT_CHARGING;

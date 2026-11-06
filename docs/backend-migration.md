@@ -57,16 +57,30 @@ Apply these checks to WinUI, KDE, GNOME, Xfce and AppKit on their target desktop
 
 ## Current status
 
+**Windows functional migration is complete on `winui` (2026-11-07).** The
+installed build from `00ab8243a0` passed the local Windows 11 acceptance checks,
+including tray placement and lifetime, navigation symbols, application icons,
+and English/Chinese parity across 12 preview profiles and 45 commands. Hardware
+and cross-environment verification continues under the
+[outstanding Windows checks](windows-acceptance-2026-10-31.md#outstanding-device-and-environment-checks).
+
 - Device logic is extracted to `backend/`; protocol command mappings and
   session polling/recovery remain the existing implementation.
 - The Qt Quick application is a transitional consumer of that same library.
 - `MDR_BUILD_QT_FRONTEND=OFF` builds the standalone Qt Core backend and tests.
 - Native presentation parity and real-device desktop checks are still release
   gates. Do not delete the transitional frontend or claim parity from IPC tests.
-- User testing reports WinUI functionality missing relative to Qt Quick and
-  controls that cannot be adjusted or remain disabled. These reports are open
-  acceptance blockers; a catalog entry or a successful preview smoke test is
-  insufficient evidence to close them.
+- WinUI's reproduced XM5 capability, equalizer write and safe-listening state
+  issues have been corrected and checked on hardware. Windows 11 desktop checks
+  also cover Explorer restart and playback shortcuts with the app visible or
+  hidden. For the tested configuration, observations and outstanding cases, see the
+  [Windows acceptance record](windows-acceptance-2026-10-31.md).
+- Main `8444b51` fixes discovery when Windows has no available Bluetooth
+  adapter. WinUI `ef2ed5ca` displays the recovery instruction in English and
+  Chinese. Actual refreshes with Bluetooth off and repeated scans with it on
+  passed on the development machine. Upgrading from the previous installer
+  and reinstalling the new build both passed payload verification. The updated
+  candidate passed installed English and Chinese native parity checks.
 
 Branch ownership and build entries are listed in the [branch guide](branches.md).
 
@@ -210,10 +224,9 @@ support, protocol mapping or backend Qt dependency was removed in this follow-up
 
 ## Native installer and recovery follow-up (2026-10-19)
 
-**Migration is not complete.** The checks below cover automated installation,
-transport and simulated controls only. User testing has not accepted the native
-migration; observed failures must be reproduced and fixed before acceptance.
-Hosted CI success, when available, does not close the real desktop/device gates.
+At the October 19 checkpoint, the checks covered automated installation,
+transport and simulated controls. The reported failures and outstanding
+desktop/device checks at that time are recorded below.
 
 Shared changes live on main and are merged into WinUI, KDE, GNOME and Xfce.
 The backend still uses Qt Core and protocol v1. Qt Quick remains enabled by
@@ -279,7 +292,7 @@ those checks. macOS remains outside this follow-up.
 The five branches have been pushed. The following hosted runs exercise the
 shared code and native package paths; they do not establish functional parity.
 
-| Branch | Run | Result and scope |
+| Branch at the time of the run | Run | Result and scope |
 | --- | --- | --- |
 | main | [39248061259](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39248061259) | Passed all six Windows/Linux/macOS jobs, Qt Quick ON and OFF; JUnit and test logs retained |
 | codex/winui | [39248167461](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39248167461) | Passed backend 9/9, C# transport, NSIS build, install/reinstall, English/Chinese native smoke and uninstall; installer and evidence retained |
@@ -439,3 +452,39 @@ This hash identifies the local vcpkg-built installer, not the separately built
 CI artifact. Subsequent documentation-only merges do not change this tested code.
 The remaining real-device/platform gates above remain open; this is not a claim
 that the migration is complete.
+
+### Windows/XM5 follow-up (2026-10-29 through 2026-10-31)
+
+Shared backend fixes now preserve edited equalizer bands when selecting Custom,
+send built-in presets without an unwanted band payload, and distinguish
+safe-listening mode notifications from preview mode and availability responses.
+WinUI displays an explicit unknown safe-listening state until the headset reports
+the mode, and adapts navigation at narrow window sizes using native controls.
+
+The [acceptance record](windows-acceptance-2026-10-31.md) documents 18 reversible
+XM5 setting cases, separate safe-listening notification checks, actual WinUI
+editing followed by independent device readback, minimum-window inspection,
+17/17 main tests, 9/9 backend-only tests, and installed English/Chinese parity.
+The installer from WinUI `d454bf9` passed installation, upgrade and uninstall.
+These checks close the reproduced issues on this Windows 11/XM5 configuration.
+
+### Windows desktop follow-up (October 31 and November 5–6, 2026)
+
+After Explorer restarted, the tester opened quick controls from the recovered
+tray icon. WinUI and its backend kept their original process IDs. In quick
+controls Escape canceled a dropdown change. Ctrl+Alt+P and Ctrl+Alt+N sent one
+request per keypress to the shared preview backend with WinUI in front. They did the same with WinUI
+hidden and the `winver` dialog in front. Windows reported Ctrl+Alt+M in use.
+
+On a private desktop with a test taskbar window, a normal close hid WinUI.
+Removing the taskbar brought the main window back after about two seconds.
+With the tray still absent, a second close ended both WinUI and its child.
+The quick panel fit within the single display's work area at 150% scaling.
+Review of 66 native captures covered the initial viewport of every page and
+the quick panel in English and Chinese under light, dark and system themes.
+
+Windows 10, clean-OS installation, mixed-DPI multi-monitor placement and
+two-host audio switching require additional environments.
+Ctrl+Alt+M with the key available and live XM5 playback and connection
+cancellation still need verification. See the
+[acceptance record](windows-acceptance-2026-10-31.md).

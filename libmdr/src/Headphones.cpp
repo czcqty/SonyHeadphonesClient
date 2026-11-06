@@ -61,7 +61,7 @@ namespace mdr
         dirty |= mSpeakToModeOutTime.dirty() || mHeadGestureEnabled.dirty() || mEqAvailable.dirty();
         dirty |= mEqPresetId.dirty() || mEqClearBass.dirty() || mEqConfig.dirty();
         dirty |= mVoiceGuidanceEnabled.dirty() || mVoiceGuidanceVolume.dirty() || mPairingMode.dirty();
-        dirty |= mMultipointDeviceMac.dirty() || mSafeListeningPreviewMode.dirty();
+        dirty |= mMultipointDeviceMac.dirty() || mSafeListeningEnabled.dirty() || mSafeListeningWritePending;
         dirty |= mPairedDeviceConnectMac.dirty() || mPairedDeviceDisconnectMac.dirty() || mPairedDeviceUnpairMac.
             dirty();
         return dirty;

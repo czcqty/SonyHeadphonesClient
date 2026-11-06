@@ -330,21 +330,29 @@ namespace mdr
         /* Sound Pressure */
         if (mSupport.contains(MessageMdrV2FunctionType_Table2::SAFE_LISTENING_HBS_1))
         {
+            SendCommandACK(t2::SafeListeningGetParam,
+                           {.inquiredType = t2::SafeListeningInquiredType::SAFE_LISTENING_HBS_1});
             SendCommandACK(t2::SafeListeningGetExtendedParam,
                            {.type = t2::SafeListeningInquiredType::SAFE_LISTENING_HBS_1});
         }
         else if (mSupport.contains(MessageMdrV2FunctionType_Table2::SAFE_LISTENING_HBS_2))
         {
+            SendCommandACK(t2::SafeListeningGetParam,
+                           {.inquiredType = t2::SafeListeningInquiredType::SAFE_LISTENING_HBS_2});
             SendCommandACK(t2::SafeListeningGetExtendedParam,
                            {.type = t2::SafeListeningInquiredType::SAFE_LISTENING_HBS_2});
         }
         else if (mSupport.contains(MessageMdrV2FunctionType_Table2::SAFE_LISTENING_TWS_1))
         {
+            SendCommandACK(t2::SafeListeningGetParam,
+                           {.inquiredType = t2::SafeListeningInquiredType::SAFE_LISTENING_TWS_1});
             SendCommandACK(t2::SafeListeningGetExtendedParam,
                            {.type = t2::SafeListeningInquiredType::SAFE_LISTENING_TWS_1});
         }
         else if (mSupport.contains(MessageMdrV2FunctionType_Table2::SAFE_LISTENING_TWS_2))
         {
+            SendCommandACK(t2::SafeListeningGetParam,
+                           {.inquiredType = t2::SafeListeningInquiredType::SAFE_LISTENING_TWS_2});
             SendCommandACK(t2::SafeListeningGetExtendedParam,
                            {.type = t2::SafeListeningInquiredType::SAFE_LISTENING_TWS_2});
         }
@@ -621,15 +629,24 @@ namespace mdr
             || mSupport.contains(MessageMdrV2FunctionType_Table1::PRESET_EQ_NON_CUSTOMIZABLE)
             || mSupport.contains(MessageMdrV2FunctionType_Table1::PRESET_EQ_AND_ERRORCODE);
         /* EQ */
-        if (mEqPresetId.dirty() && hasEqualizer)
+        // A band edit also selects CUSTOM. Send both in one packet: selecting
+        // the preset first elicits a device notification that overwrites the
+        // pending bands before the coroutine reaches the band write.
+        if (mEqPresetId.dirty() && hasEqualizer
+            && (mEqPresetId.desired != t1::EqPresetId::CUSTOM
+                || (!mEqConfig.dirty() && !mEqClearBass.dirty())))
         {
             using namespace t1;
             EqEbbParamEq res;
             res.base.command = Command::EQEBB_SET_PARAM;
             res.base.type = EqEbbInquiredType::PRESET_EQ;
             res.presetId = mEqPresetId.desired;
-            SendCommandACK(EqEbbParamEq, res);
+            // Built-in presets must not carry local bands: XM5 interprets a
+            // packet containing bands as CUSTOM, even when its preset is OFF.
             mEqPresetId.commit();
+            mEqConfig.commit();
+            mEqClearBass.commit();
+            SendCommandACK(EqEbbParamEq, res);
             // Ask for a equalizer param update afterwards
             SendCommandACK(EqEbbGetParam);
         }
@@ -639,7 +656,7 @@ namespace mdr
             EqEbbParamEq res;
             res.base.command = Command::EQEBB_SET_PARAM;
             res.base.type = EqEbbInquiredType::PRESET_EQ;
-            res.presetId = mEqPresetId.current;
+            res.presetId = mEqPresetId.desired;
             int eqBands = mEqConfig.desired.size(), eqOffset = 0;
             if (eqBands == 0)
             {
@@ -674,6 +691,7 @@ namespace mdr
                     }};
                 else
                     MDR_CHECK_MSG(false, "mEqConfig size can only be 0, 5, or 10. Got {}.", eqBands);
+                mEqPresetId.commit();
                 mEqConfig.commit();
                 mEqClearBass.commit();
                 SendCommandACK(EqEbbParamEq, res);
@@ -935,52 +953,53 @@ namespace mdr
         }
 
         /* Safe Listening */
-        if (mSafeListeningPreviewMode.dirty())
+        if (mSafeListeningEnabled.dirty() || mSafeListeningWritePending)
         {
+            mSafeListeningWritePending = false;
             using namespace t2;
             if (mSupport.contains(MessageMdrV2FunctionType_Table2::SAFE_LISTENING_HBS_1))
             {
                 SafeListeningSetParamSL res;
                 res.base.type = SafeListeningInquiredType::SAFE_LISTENING_HBS_1;
                 res.previewMode = MessageMdrV2EnableDisable::DISABLE;
-                res.safeListeningMode = mSafeListeningPreviewMode.desired
+                res.safeListeningMode = mSafeListeningEnabled.desired
                     ? MessageMdrV2EnableDisable::ENABLE
                     : MessageMdrV2EnableDisable::DISABLE;
                 SendCommandACK(SafeListeningSetParamSL, res);
-                mSafeListeningPreviewMode.commit();
+                mSafeListeningEnabled.commit();
             }
             else if (mSupport.contains(MessageMdrV2FunctionType_Table2::SAFE_LISTENING_HBS_2))
             {
                 SafeListeningSetParamSL res;
                 res.base.type = SafeListeningInquiredType::SAFE_LISTENING_HBS_2;
                 res.previewMode = MessageMdrV2EnableDisable::DISABLE;
-                res.safeListeningMode = mSafeListeningPreviewMode.desired
+                res.safeListeningMode = mSafeListeningEnabled.desired
                     ? MessageMdrV2EnableDisable::ENABLE
                     : MessageMdrV2EnableDisable::DISABLE;
                 SendCommandACK(SafeListeningSetParamSL, res);
-                mSafeListeningPreviewMode.commit();
+                mSafeListeningEnabled.commit();
             }
             else if (mSupport.contains(MessageMdrV2FunctionType_Table2::SAFE_LISTENING_TWS_1))
             {
                 SafeListeningSetParamSL res;
                 res.base.type = SafeListeningInquiredType::SAFE_LISTENING_TWS_1;
                 res.previewMode = MessageMdrV2EnableDisable::DISABLE;
-                res.safeListeningMode = mSafeListeningPreviewMode.desired
+                res.safeListeningMode = mSafeListeningEnabled.desired
                     ? MessageMdrV2EnableDisable::ENABLE
                     : MessageMdrV2EnableDisable::DISABLE;
                 SendCommandACK(SafeListeningSetParamSL, res);
-                mSafeListeningPreviewMode.commit();
+                mSafeListeningEnabled.commit();
             }
             else if (mSupport.contains(MessageMdrV2FunctionType_Table2::SAFE_LISTENING_TWS_2))
             {
                 SafeListeningSetParamSL res;
                 res.base.type = SafeListeningInquiredType::SAFE_LISTENING_TWS_2;
                 res.previewMode = MessageMdrV2EnableDisable::DISABLE;
-                res.safeListeningMode = mSafeListeningPreviewMode.desired
+                res.safeListeningMode = mSafeListeningEnabled.desired
                     ? MessageMdrV2EnableDisable::ENABLE
                     : MessageMdrV2EnableDisable::DISABLE;
                 SendCommandACK(SafeListeningSetParamSL, res);
-                mSafeListeningPreviewMode.commit();
+                mSafeListeningEnabled.commit();
             }
         }
         co_return MDR_HEADPHONES_TASK_COMMIT_OK;
