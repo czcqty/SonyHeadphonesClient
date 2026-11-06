@@ -36,6 +36,7 @@ features you tested.
 - [Shared backend build and pipe protocol](../backend/README.md)
 - [Native binding and localization contract](../clients/common/README.md)
 - [Backend migration, recorded checks, and remaining release gates](backend-migration.md)
+- [Linux desktop and installed-package acceptance](linux-acceptance-2026-11-07.md)
 - [Qt Quick desktop client](../gui/README.md)
 - [libmdr](../libmdr/README.md)
 - [Code generation](../tooling/README.md)
@@ -48,8 +49,7 @@ features you tested.
 
 The Windows checks rerun on 2026-10-15 are **16/16 CTest suites** with
 the transitional frontend and **8/8 suites** in the backend-only Release build.
-Native WinUI and Linux toolkit smoke checks are recorded separately in
-[backend migration](backend-migration.md), together with their environment limits.
-macOS compilation/runtime, actual Linux desktops, clean-machine packaging, and
-real-device acceptance remain outstanding. These are recorded software results,
-not evidence that every platform or headset has passed validation.
+For the newer native results, see the [Windows acceptance record](windows-acceptance-2026-10-31.md)
+and the [Linux acceptance record](linux-acceptance-2026-11-07.md). The Linux
+record covers installed packages and nested Plasma, GNOME and Xfce sessions.
+Physical Linux workstations and headphones remain outstanding.
