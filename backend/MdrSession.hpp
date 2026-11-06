@@ -47,6 +47,7 @@ private:
     bool retryWithLegacyProtocol();
     void connectionAttemptFailed(const QString& errorCode, const QString& errorDetail = {});
     void finishInitialization();
+    void stopConnection();
     void joinWorker();
     void failPermanently(const QString& errorCode, const QString& errorDetail);
     bool scheduleReconnect(const QString& errorCode, const QString& errorDetail);
