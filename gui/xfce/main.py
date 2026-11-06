@@ -57,6 +57,9 @@ class App:
         self.quitting = False
         load_identity()
         self.window = Libxfce4ui.TitledDialog.new()
+        # This is the primary settings window. xfwm otherwise keeps dialog
+        # windows above the independent quick panel even after it gains focus.
+        self.window.set_type_hint(Gdk.WindowTypeHint.NORMAL)
         self.window.set_title('Sound Connect')
         self.window.set_icon_name(APP_ICON)
         self.window.set_subtitle(self.tr('Headphone settings', '耳机设置'))

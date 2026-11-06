@@ -158,6 +158,7 @@ class WidgetParity:
         from __main__ import APP_ICON, PAGE_ICONS, panel_geometry
         app = self.app
         theme = Gtk.IconTheme.get_default()
+        assert app.window.get_type_hint() == Gdk.WindowTypeHint.NORMAL
         assert app.window.get_icon_name() == APP_ICON and app.quick.get_icon_name() == APP_ICON
         assert theme.lookup_icon(APP_ICON, 32, Gtk.IconLookupFlags.USE_BUILTIN)
         assert len(set(PAGE_ICONS.values())) == len(CATALOG['pages'])
