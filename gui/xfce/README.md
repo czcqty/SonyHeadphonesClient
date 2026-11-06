@@ -1,81 +1,66 @@
-# Xfce native prototype
+# Xfce native client
 
-Python 3 + PyGObject, GTK 3.24 and libxfce4ui 4.18+. Uses the actual Xfce
-`TitledDialog`, GTK notebook, check buttons, scales, combo boxes and native menu.
-Appearance/fonts come from Xfce's GTK settings; no custom CSS or control painting.
+The Xfce branch provides a GTK 3.24 and libxfce4ui 4.18+ presentation for
+`SoundConnectBackend`. The full window uses the Xfce settings dialog, stock
+GTK controls and the desktop's GTK theme. Each notebook tab has its own page
+symbol and translated label. Narrow windows keep the symbols and tooltips.
+
+## Run
+
+Install the matching common, backend and Xfce packages described in the
+[Linux packaging guide](../../packaging/native/README.md). The installed
+desktop entry starts live mode. Running `soundconnect-xfce` from the shell
+starts an isolated preview. For a source checkout, build the shared backend
+and supply its path explicitly.
 
 ```sh
 sudo apt install python3-gi gir1.2-gtk-3.0 gir1.2-libxfce4ui-2.0
-python3 gui/xfce/main.py --backend "$PWD/build/backend/SoundConnectBackend"
+/usr/bin/python3 gui/xfce/main.py --backend "$PWD/build/backend/SoundConnectBackend"
 ```
 
-Build the host using [../native/README.md](../native/README.md). Supports
-`--panel`, `--route`, `--locale en|zh_CN`, `--profile` and explicit `--live`.
-The full settings dialog and quick-control window have independent layouts.
-GTK's XEmbed status icon supports Xfce's X11 notification area and a native context
-menu. If no tray host embeds the icon, closing the window exits normally. Escape
-closes the quick window; the settings link restores the full dialog. The quick
-window dismisses on focus loss only when an XEmbed tray host is present. An open
-combo or context menu defers dismissal. Without a tray, including Wayland, an
-ordinary window remains reachable and positioning belongs to the compositor.
-A Wayland status-notifier tray integration is not provided or claimed.
+`--panel` opens quick controls directly. `--route`, `--profile`,
+`--locale en|zh_CN` and `--theme system|light|dark` select a starting
+page, preview profile, language and appearance. Live preferences use the
+shared backend's existing settings. Preview changes apply to the current
+process only.
+
+## Desktop and controls
+
+On X11 the XEmbed notification area supplies the icon's position. The
+quick window opens in the nearest corner of that monitor's work area.
+Activating the tray again or pressing the application-local Ctrl+Alt+M
+brings the existing panel forward. Focus changes, Escape and opening full
+settings leave the panel open. Its visible × closes it. Application Quit
+ends both windows and the private backend. If the tray goes away while
+settings are hidden, settings reopen. Without XEmbed, including on Wayland,
+ordinary windows remain reachable and placement belongs to the compositor.
+
+Quick controls provide playback, volume, noise mode and ambient adjustments.
+Full settings also support direct numeric entry, device-reported choices and
+per-device actions. Confirming power off or unpair submits one request.
+Canceling submits none. Buttons reflect connection state, capabilities and
+pending responses. A failed backend clears device state and exposes Retry in
+settings. Ctrl+Alt+P and Ctrl+Alt+N control playback within the app.
+
+## Validation
+
+From an installed environment, run each test with a Linux backend under
+X11. For a source checkout, use the Python entry above with the same flags.
 
 ```sh
-xvfb-run -a python3 gui/xfce/main.py --backend /absolute/backend --smoke-test
+for locale in en zh_CN; do
+  for suite in smoke parity; do
+    G_DEBUG=fatal-criticals xvfb-run -a dbus-run-session -- \
+      soundconnect-xfce --locale "$locale" "--$suite-test" || exit 1
+  done
+done
 ```
 
-The smoke check verifies page creation, zero startup writes, state refresh, and
-one command for a toggle/slider commit. Xfce panel integration, actual desktop
-scaling and live hardware acceptance remain separate checks.
-See the common README for remaining feature-parity and packaging work.
-
-The next native migration pass must anchor quick controls at the tray corner
-and keep the window open until its close button is used. Navigation symbols and
-the application window icon are part of the [desktop requirements](../../docs/backend-migration.md).
-
-## Local verification (2026-10-14)
-
-Ubuntu 24.04 WSL: GTK 3.24.41 and libxfce4ui 4.18.4 start successfully. The Xvfb
-test passes with GTK criticals treated as fatal, covering nine pages, native
-dialog actions, zero startup writes and single toggle/slider commits. GTK's
-legacy StatusIcon reports its expected deprecation warnings. The shared C++
-Windows host ran in simulation via WSL pipes; Linux Bluetooth, an actual Xfce
-panel and Wayland tray behavior were not validated.
-
-## Shared backend migration
-
-The adapter now consumes the main branch's `SoundConnectBackend` and
-`clients/common/catalog.json`. The former branch-local backend source and
-catalog copies have been removed. Advanced device operations are present in
-the shared catalog; application/desktop parity still follows the migration gate.
-Native widget smoke test passed again against the new standalone backend.
-
-## Preference and desktop follow-up
-
-- The application-settings page supports live persistent language and
-  system/light/dark, including migration of the old Qt preferences. Preview
-  changes are intentionally session-only. `--locale` / `--theme` override the
-  initial session without saving. Both device pages and dynamic choices/errors
-  update when switching English/Chinese.
-- Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls within
-  the application, preserving the previous Linux Qt shortcut scope.
-- Native dialogs confirm power-off and unpair; cancellation sends no command.
-  Separate quick/full layouts, native menu styling and Qt Quick removal gates
-  remain unchanged.
-
-GTK 3 requests its official dark variant; rendering depends on the installed
-GTK theme. It does not synthesize a replacement for themes without variants.
-
-## Installed packages and recovery
-
-Ubuntu 24.04 and Debian 13 DEB recipes are documented in the
-[shared native packaging guide](../../packaging/native/README.md). Installed
-launchers find the shared backend and catalog without a source checkout or
-`--backend`; the explicit override remains available. Menu entries pass `--live`,
-while a command without that flag remains an isolated preview.
-
-Commands remain disabled until a valid initial snapshot arrives. Startup has a
-ten-second timeout; backend failure clears old state and exposes Retry startup
-in full settings. Retry obtains fresh state without replaying commands or
-reconnecting headphones. Normal exit drains stdin/EOF, allowing two seconds
-before terminating the owned child. Desktop/headphone migration gates remain.
+Parity exercises GTK controls against every profile and every declared
+operation of the preview backend, including unknown safe-listening state,
+numeric edits, unavailable features, confirmation, device rows, recovery
+and quick-panel lifetime. Per-device switching also uses reported-state
+fixtures. Xvfb provides a virtual X11 display. Physical BlueZ/headset
+behavior, compositor placement, desktop tray recovery, mixed-DPI layouts
+and Wayland fallback need the target environments listed in the
+[migration checklist](../../docs/backend-migration.md).
