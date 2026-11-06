@@ -1,8 +1,9 @@
 # WinUI comparison with Qt Quick (2026-10-19)
 
-The baseline is the existing QML pages and the shared ViewModels, not the whole
-libmdr API. Qt Quick remains enabled. This follow-up does not close real-device,
-Windows 10, DPI or Explorer lifecycle acceptance.
+This October 19 snapshot compares the native controls with the existing QML
+pages and shared ViewModels. For the completed Windows functional migration
+and the remaining headset and cross-environment checks, see the
+[current Windows acceptance record](windows-acceptance-2026-10-31.md).
 
 | Qt Quick behavior | WinUI implementation and check |
 | --- | --- |

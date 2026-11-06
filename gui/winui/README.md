@@ -1,6 +1,18 @@
-# WinUI experiment
+# Sound Connect for Windows
 
-This branch adds a real WinUI 3 frontend alongside the Qt frontend. It uses
+**Windows functional migration is complete on the `winui` branch.** The
+November 7 candidate passed desktop and installer acceptance on Windows 11
+x64. Its installed English and Chinese checks each exercised 12 preview
+profiles and 45 commands.
+
+The remaining XM5 checks cover actual playback, track changes, cancellation
+during connection and reconnect. Cross-environment checks cover Windows 10,
+clean Windows installation, mixed-DPI monitors, two-host audio switching,
+other headset capabilities and opening the panel with Ctrl+Alt+M on a system
+where that shortcut is free. See the [Windows acceptance record](../../docs/windows-acceptance-2026-10-31.md)
+for tested builds, earlier XM5 results and outstanding checks.
+
+The Windows frontend uses WinUI 3 with
 Microsoft's NavigationView, InfoBar, RadioButton, ToggleSwitch, Slider,
 ComboBox and standard theme resources, without replacement control templates.
 The full settings window and tray quick panel have separate layouts. Mica and
@@ -76,10 +88,8 @@ The host contract test verifies real shared ViewModel updates, invalid argument
 rejection, capability enforcement, preview isolation and orderly EOF shutdown.
 All device commands now have native controls, including advanced listening and
 speak-to-chat settings, automatic power-off timing, NC-button assignment and
-multipoint actions. That is command coverage, not complete production parity:
-preferences, migration, dynamic-option localization and Windows global shortcuts
-are implemented. Actual desktop/hardware acceptance remains tracked in
-`docs/backend-migration.md`.
+multipoint actions. Preferences, preference migration, localized dynamic options
+and Windows global shortcuts are also implemented.
 
 Run `--smoke-test` with the preview backend for the short desktop check, or
 `--parity-test` for native control roundtrips across all twelve configurations,
@@ -91,19 +101,7 @@ The installed English/Chinese verification runs `--parity-test`. It checks
 exactly one request per interaction and the returned snapshot, rather than
 merely counting widgets. Preview acceptance is not physical device acceptance.
 
-## Shared-backend verification (2026-10-14)
-
-- Windows 11 x64: .NET 8.0.426 / Windows App SDK 1.8 build succeeds.
-- Native widget smoke test passes with `ok: true, sentCommands: 2`.
-- The initial shared Qt Core backend check passed 14 CTest suites with the
-  transitional Qt UI and six with Qt Quick disabled. After the preference follow-up,
-  the 2026-10-15 rerun passed 16/16 and 8/8 respectively (existing Windows builds). The installed headless host also passes
-  the process contract test.
-- Offline NuGet restore reports unavailable vulnerability metadata (NU1900).
-- At this stage, real headset operation, multi-monitor/taskbar placement,
-  Windows 10 and clean-machine deployment still needed verification.
-
-## Preference and desktop follow-up
+## Preferences and desktop behavior
 
 - The application-settings page supports live persistent language and
   system/light/dark, including migration of the old Qt preferences. Preview
@@ -112,9 +110,8 @@ merely counting widgets. Preview acceptance is not physical device acceptance.
   update when switching English/Chinese.
 - Ctrl+Alt+P / N / M invoke play/pause, next track and quick controls. Windows
   uses global registration in live mode and reports conflicts with a local fallback.
-- Native dialogs confirm power-off and unpair; cancellation sends no command.
-  Separate quick/full layouts, native menu styling and Qt Quick removal gates
-  remain unchanged.
+- Native dialogs confirm power-off and unpair. Canceling closes the dialog
+  without sending a command.
 
 ## Backend recovery
 
@@ -126,16 +123,5 @@ Quit gives the owned child two seconds for EOF shutdown. Logs use the user's
 SoundConnect data directory. Run `dotnet run --project gui/winui/tests/TransportTests.csproj -c Release`
 for transport failure tests. The native smoke also exercises child restart.
 
-## XM5 and installer acceptance (2026-10-31)
-
-The candidate from `d454bf9` passed installed English/Chinese parity on all
-12 profiles and 45 commands, upgrade and uninstall without SDK lookup. Real
-XM5 EQ editing passed independent device readback and restoration. Safe listening
-shows an unknown state until a mode notification arrives and allows an explicit
-Off/On choice. The full window uses the native adaptive NavigationView and an
-interactive 480x400 minimum (scaled for DPI and bounded by the work area).
-Minimum-size EQ scrolling and navigation were inspected on Windows 11.
-
-See [the acceptance record](../../docs/windows-acceptance-2026-10-31.md) for
-source/hash, hardware evidence, setting restoration and remaining platform
-gates. These results do not authorize removal of the transitional Qt Quick UI.
+The transitional Qt Quick frontend follows the separate
+[cross-platform removal gates](../../docs/backend-migration.md#removal-gate).
