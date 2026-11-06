@@ -1,9 +1,10 @@
-# GNOME native prototype
+# GNOME presentation
 
 Python 3 + PyGObject, GTK 4.10+ and libadwaita 1.4+. The actual controls are
 `Adw.ApplicationWindow`, `HeaderBar`, `PreferencesPage`, `PreferencesGroup`,
-`ActionRow`, `ComboRow`, `Gtk.Switch`, `Gtk.Scale` and `StackSidebar`. No custom
-CSS or painted replacements. System appearance comes from libadwaita.
+`ActionRow`, `ComboRow`, `Gtk.Switch`, `Gtk.Scale` and `Gtk.SpinButton`.
+The navigation uses a symbol and label for each page. Its libadwaita
+`OverlaySplitView` collapses to a header menu on narrow windows.
 
 ```sh
 # Debian/Ubuntu runtime dependencies
@@ -14,25 +15,47 @@ python3 gui/gnome/main.py --backend "$PWD/build/backend/SoundConnectBackend" --p
 
 Build the backend first as documented in [../native/README.md](../native/README.md).
 `--locale en|zh_CN`, `--route`, `--profile` and explicit `--live` are supported.
-GNOME does not provide a default app tray: quick controls use their own small
-native window, reachable from the settings header or `--panel`. No Shell extension
-is required. Escape closes quick controls, and All settings opens the full window.
-Closing the main window quits the prototype and its backend. Live preferences persist through the shared backend; preview preferences remain session-only.
+Stock GNOME provides ordinary application windows. Open quick controls from
+the settings header, Ctrl+Alt+M or `--panel`. Escape dismisses a picker. Opening
+settings or repeating the shortcut keeps the same quick window available.
+The panel's × closes it. If it was the only window, settings becomes reachable.
+Repeated live launcher invocations bring forward the primary process's window.
+Ctrl+Q quits the application and closes its backend.
 
-Optional isolated smoke test (never combine with `--live`):
+Use the installed `soundconnect-gnome` command or run these preview checks from
+the source tree with a Linux backend:
 
 ```sh
-xvfb-run -a python3 gui/gnome/main.py --backend /absolute/backend --smoke-test
+for locale in en zh_CN; do
+  for check in --smoke-test --parity-test; do
+    xvfb-run -a dbus-run-session -- /usr/bin/python3 gui/gnome/main.py \
+      --backend /absolute/path/to/SoundConnectBackend --locale "$locale" "$check"
+  done
+done
 ```
 
-See the common README for feature-parity limitations. GNOME Shell/Wayland,
-real headset, multiple displays and packaging remain acceptance
-work; Xvfb tests are not a substitute for those checks.
+The parity check drives the GTK controls against every profile advertised by
+`app.describe`. It checks single writes and their reply snapshots, unavailable
+controls, stale state during selection, real picker and confirmation widgets,
+discovery, multipoint actions, preference changes and recovery after a missing
+child. It also injects a disconnected multipoint report to exercise the row for
+connecting a paired host. Bluetooth and multi-host audio need real devices.
 
-The next native migration pass must keep quick controls open until explicitly
-closed and request the appropriate work-area corner where the shell permits.
-See the [desktop requirements](../../docs/backend-migration.md) for placement,
-navigation symbols and the application window icon.
+## Local verification (2026-11-07)
+
+Ubuntu 24.04 WSL, GTK 4.14 and libadwaita 1.5 with the Linux backend:
+
+- English and Simplified Chinese each passed all 12 preview profiles and all 45
+  commands, including 1,411 accepted native writes per language.
+- Both language smoke tests passed on Xvfb. The English smoke also passed on the
+  WSLg Wayland display.
+- XTest delivered Escape and Ctrl+Alt+M/P/N to the application windows.
+  Reopening quick controls or opening settings kept the panel visible, × closed
+  it, and playback and next each sent one request. Compact navigation opened
+  at 450 × 550. Three separate live launcher invocations reused the same
+  settings window, quick window and backend PID. Quit reaped the child.
+- Physical GNOME Shell sessions, real Bluetooth/headphones and mixed-DPI
+  multiple monitors remain in the [desktop acceptance gate](../../docs/backend-migration.md).
 
 ## Local verification (2026-10-14)
 
