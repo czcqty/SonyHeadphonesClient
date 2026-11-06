@@ -46,7 +46,10 @@ connecting a paired host. Bluetooth and multi-host audio need real devices.
 Ubuntu 24.04 WSL, GTK 4.14 and libadwaita 1.5 with the Linux backend:
 
 - English and Simplified Chinese each passed all 12 preview profiles and all 45
-  commands, including 1,411 accepted native writes per language.
+  commands, including 1,411 accepted native writes per language. The package
+  check also sets `SOUNDCONNECT_TEST_X11_POINTER=1` on its dedicated Xvfb
+  display, clicks a switch and slider, and drags the slider to verify one
+  acknowledged write per gesture on release.
 - Both language smoke tests passed on Xvfb. The English smoke also passed on the
   WSLg Wayland display.
 - XTest delivered Escape and Ctrl+Alt+M/P/N to the application windows.
@@ -54,6 +57,11 @@ Ubuntu 24.04 WSL, GTK 4.14 and libadwaita 1.5 with the Linux backend:
   it, and playback and next each sent one request. Compact navigation opened
   at 450 × 550. Three separate live launcher invocations reused the same
   settings window, quick window and backend PID. Quit reaped the child.
+- Debian 13 GNOME Shell/Mutter 48.7 ran as a nested Wayland compositor.
+  English lifecycle and Chinese 12-profile control tests passed. Shell-level
+  key delivery, panel focus/lifetime and moving settings between virtual
+  1920 × 1080 outputs at scale factors 1 and 2 passed. Normal login, power,
+  authentication and Bluetooth services were outside this isolated session.
 - Physical GNOME Shell sessions, real Bluetooth/headphones and mixed-DPI
   multiple monitors remain in the [desktop acceptance gate](../../docs/backend-migration.md).
 

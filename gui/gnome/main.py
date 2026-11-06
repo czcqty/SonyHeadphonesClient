@@ -6,7 +6,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'clients' / 'common
 import gi
 gi.require_version('Gtk', '4.0')
 gi.require_version('Adw', '1')
-from gi.repository import Adw, Gdk, Gio, GLib, Gtk
+from gi.repository import Adw, Gio, GLib, Gtk
 from client import (CATALOG, Client, choices, command, connection_error, display, dynamic,
                     enabled, options, quick_page, title, unavailable_reason, value, visible)
 
@@ -263,6 +263,7 @@ class App(Adw.Application):
             elif kind == 'slider':
                 widget = Gtk.Scale.new_with_range(Gtk.Orientation.HORIZONTAL, field['min'], field['max'], 1)
                 widget.set_digits(0)
+                widget.set_round_digits(0)
                 widget.set_hexpand(True)
                 widget.set_size_request(70, -1)
                 number = Gtk.SpinButton.new_with_range(field['min'], field['max'], 1)
@@ -281,13 +282,13 @@ class App(Adw.Application):
                         self.send(b['field'], round(b['widget'].get_value()))
                     return False
                 widget.connect('value-changed', changed)
-                pointer = Gtk.EventControllerLegacy()
-                pointer.set_propagation_phase(Gtk.PropagationPhase.CAPTURE)
-                def pointer_event(_, event, cb=commit):
-                    if event.get_event_type() in (Gdk.EventType.BUTTON_RELEASE, Gdk.EventType.TOUCH_END):
-                        GLib.idle_add(cb)
-                    return False
-                pointer.connect('event', pointer_event); widget.add_controller(pointer)
+                # GtkRange's own gestures claim the pointer sequence. Observe
+                # their completion after GTK has applied the final thumb position.
+                for gesture in widget.observe_controllers():
+                    if isinstance(gesture, Gtk.GestureDrag):
+                        gesture.connect_after('drag-end', lambda *_, cb=commit: GLib.idle_add(cb))
+                    elif isinstance(gesture, Gtk.GestureClick):
+                        gesture.connect_after('released', lambda *_, cb=commit: GLib.idle_add(cb))
                 keys = Gtk.EventControllerKey(); keys.connect('key-released', commit); widget.add_controller(keys)
                 focus = Gtk.EventControllerFocus(); focus.connect('leave', commit); widget.add_controller(focus)
                 scroll = Gtk.EventControllerScroll(flags=Gtk.EventControllerScrollFlags.BOTH_AXES)

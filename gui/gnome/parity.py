@@ -1,4 +1,5 @@
 """Preview-only integration checks against real GTK controls and the private backend."""
+import os
 import sys
 import time
 import traceback
@@ -163,6 +164,83 @@ class Parity:
         self.action('playback', 'powerOff', lambda: confirm('confirm'))
         assert not b['widget'].is_sensitive()
 
+    def check_pointer(self):
+        """Opt in only on the isolated Xvfb display created by the package test."""
+        import ctypes as c
+        import gi
+        gi.require_version('GdkX11', '4.0')
+        from gi.repository import GdkX11
+
+        assert isinstance(self.app.window.get_display(), GdkX11.X11Display)
+        x11 = c.CDLL('libX11.so.6')
+        xtest = c.CDLL('libXtst.so.6')
+        x11.XOpenDisplay.argtypes = [c.c_char_p]
+        x11.XOpenDisplay.restype = c.c_void_p
+        x11.XDefaultRootWindow.argtypes = [c.c_void_p]
+        x11.XDefaultRootWindow.restype = c.c_ulong
+        x11.XTranslateCoordinates.argtypes = [c.c_void_p, c.c_ulong, c.c_ulong, c.c_int, c.c_int,
+                                              c.POINTER(c.c_int), c.POINTER(c.c_int), c.POINTER(c.c_ulong)]
+        x11.XSync.argtypes = [c.c_void_p, c.c_int]
+        x11.XCloseDisplay.argtypes = [c.c_void_p]
+        xtest.XTestFakeMotionEvent.argtypes = [c.c_void_p, c.c_int, c.c_int, c.c_int, c.c_ulong]
+        xtest.XTestFakeButtonEvent.argtypes = [c.c_void_p, c.c_uint, c.c_int, c.c_ulong]
+        display = x11.XOpenDisplay(None)
+        assert display
+
+        def settle(seconds=.12):
+            x11.XSync(display, False)
+            until = time.monotonic() + seconds
+            wait(lambda: time.monotonic() >= until, 'Waiting for pointer events')
+
+        def move(widget, fraction):
+            ok, box = widget.compute_bounds(self.app.window)
+            assert ok and box.get_width() and box.get_height()
+            x, y, child = c.c_int(), c.c_int(), c.c_ulong()
+            assert x11.XTranslateCoordinates(display, self.app.window.get_surface().get_xid(),
+                                             x11.XDefaultRootWindow(display),
+                                             round(box.get_x() + fraction * box.get_width()),
+                                             round(box.get_y() + box.get_height() / 2),
+                                             c.byref(x), c.byref(y), c.byref(child))
+            xtest.XTestFakeMotionEvent(display, -1, x.value, y.value, 0)
+            settle()
+
+        def click(binding, fraction):
+            move(binding['widget'], fraction)
+            xtest.XTestFakeButtonEvent(display, 1, True, 0)
+            xtest.XTestFakeButtonEvent(display, 1, False, 0)
+            settle()
+
+        try:
+            self.navigate('home')
+            self.app.window.present()
+            settle(.3)
+            volume = self.field('volume', 'home')
+            level = value(self.client.state, volume['field'])
+            self.action('playback', 'setVolume', lambda: click(volume, .24))
+            clicked = value(self.client.state, volume['field'])
+            assert clicked != level
+            settle(.4)
+            def drag():
+                count = self.client.sent
+                move(volume['widget'], .24)
+                xtest.XTestFakeButtonEvent(display, 1, True, 0)
+                for fraction in (.35, .5, .72, .80):
+                    move(volume['widget'], fraction)
+                    assert self.client.sent == count, 'Slider wrote while the pointer was held'
+                xtest.XTestFakeButtonEvent(display, 1, False, 0)
+                settle()
+            self.action('playback', 'setVolume', drag)
+            assert value(self.client.state, volume['field']) > clicked
+            self.navigate('sound')
+            settle()
+            dsee = self.field('dseeEnabled')
+            original = value(self.client.state, dsee['field'])
+            self.action('settings', 'setDseeEnabled', lambda: click(dsee, .5))
+            assert value(self.client.state, dsee['field']) != original
+            print('PASS: native pointer click, slider drag/release and switch each issued one command', flush=True)
+        finally:
+            x11.XCloseDisplay(display)
+
     def extras(self):
         self.navigate('application')
         for key, target in [('locale', 'zh_CN' if self.app.locale == 'en' else 'en'), ('themeMode', 'dark')]:
@@ -250,6 +328,8 @@ class Parity:
             wait(lambda: self.client.ready, 'Backend failed to start ' + profile)
             assert self.client.state['app']['previewMode']
             before = len(self.requests)
+            if profile == 'WH-1000XM6' and os.environ.get('SOUNDCONNECT_TEST_X11_POINTER') == '1':
+                self.check_pointer()
             for page in ('home', 'sound', 'noise', 'equalizer', 'behavior', 'touch', 'voice', 'devices'):
                 self.check_page(page)
             self.devices()
