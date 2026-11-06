@@ -13,6 +13,7 @@ namespace {
 struct BluezDevice
 {
     std::string adapter, name, address;
+    bool pairedOrConnected = false;
 };
 
 // Both the properties and the object/interface maps are D-Bus dictionaries.
@@ -99,6 +100,12 @@ int bluez_list_devices(std::vector<MDRDeviceInfo>& devices, std::string& error)
                     dbus_message_iter_get_basic(&value, &on);
                     if (on) powered.insert(path);
                 }
+                if (device && type == DBUS_TYPE_BOOLEAN &&
+                    (std::strcmp(key, "Paired") == 0 || std::strcmp(key, "Connected") == 0)) {
+                    dbus_bool_t flag;
+                    dbus_message_iter_get_basic(&value, &flag);
+                    found.pairedOrConnected |= flag != 0;
+                }
                 if (device && (type == DBUS_TYPE_STRING || type == DBUS_TYPE_OBJECT_PATH)) {
                     const char* text;
                     dbus_message_iter_get_basic(&value, &text);
@@ -108,7 +115,7 @@ int bluez_list_devices(std::vector<MDRDeviceInfo>& devices, std::string& error)
                 }
                 dbus_message_iter_next(&properties);
             }
-            if (device) reported.push_back(std::move(found));
+            if (found.pairedOrConnected) reported.push_back(std::move(found));
             dbus_message_iter_next(&interfaces);
         }
         dbus_message_iter_next(&objects);
