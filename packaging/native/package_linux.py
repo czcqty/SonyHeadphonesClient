@@ -47,7 +47,7 @@ def main():
     if run('dpkg', '--print-architecture') != 'amd64':
         raise SystemExit('This package recipe targets amd64')
     version = re.search(r'\bVERSION\s+(\d+\.\d+\.\d+)', (ROOT / 'CMakeLists.txt').read_text())[1]
-    version += '-1~' + args.distro
+    version += '-2~' + args.distro
     revision = os.environ.get('SOUNDCONNECT_SOURCE_REVISION') or run('git', '-C', ROOT, 'rev-parse', 'HEAD')
     with tempfile.TemporaryDirectory(prefix='soundconnect-deb-') as temporary:
         temp = Path(temporary)
@@ -93,9 +93,12 @@ def main():
         if args.desktop == 'kde':
             target = frontend / 'usr/bin' / command
             copy(build / 'kde/SoundConnectKDE', target, True)
-            native_deps = dependencies(target, frontend) + (', kde-style-breeze-data' if args.distro == 'debian13' else ', breeze')
+            run('patchelf', '--remove-rpath', target)
+            native_deps = dependencies(target, frontend) + (', kde-style-breeze-data, kf6-breeze-icon-theme, qt6-svg-plugins'
+                                                            if args.distro == 'debian13' else ', breeze, libqt5svg5')
         else:
-            copy(ROOT / 'gui' / args.desktop / 'main.py', frontend / 'usr/share/soundconnect/gui' / args.desktop / 'main.py')
+            for filename in ('main.py', 'parity.py'):
+                copy(ROOT / 'gui' / args.desktop / filename, frontend / 'usr/share/soundconnect/gui' / args.desktop / filename)
             target = frontend / 'usr/bin' / command
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_text('#!/bin/sh\nexec /usr/bin/python3 -B /usr/share/soundconnect/gui/' + args.desktop + '/main.py "$@"\n')
@@ -107,6 +110,10 @@ def main():
         desktop_file.write_text('[Desktop Entry]\nType=Application\nName=Sound Connect (' + args.desktop.upper() + ')\n'
             'Comment=Control supported Sony headphones\nExec=' + command + ' --live\n'
             'Icon=io.github.czcqty.SoundConnect\nTerminal=false\nCategories=AudioVideo;Audio;Settings;\n')
+        wm_class = {'kde': 'SoundConnectKDE', 'xfce': 'io.github.czcqty.SoundConnect.xfce'}.get(args.desktop)
+        if wm_class:
+            with desktop_file.open('a') as entry:
+                entry.write(f'StartupWMClass={wm_class}\n')
         run('desktop-file-validate', desktop_file)
         manifest = dict(version=version, source=revision, distro=args.distro, desktop=args.desktop, packages=[])
         for name, directory in packages.items():
