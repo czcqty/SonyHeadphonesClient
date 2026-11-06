@@ -1,5 +1,10 @@
 # Xfce native client
 
+The Xfce functional migration is complete on the `xfce` branch. The
+installed Ubuntu 24.04 and Debian 13 clients passed English and Chinese
+acceptance across 12 preview profiles and all 45 commands. Physical headset
+and workstation verification remains open. [Linux acceptance record](../../docs/linux-acceptance-2026-11-07.md)
+
 The Xfce branch provides a GTK 3.24 and libxfce4ui 4.18+ presentation for
 `SoundConnectBackend`. The full window uses the Xfce settings dialog, stock
 GTK controls and the desktop's GTK theme. Each notebook tab has its own page
@@ -60,7 +65,9 @@ Parity exercises GTK controls against every profile and every declared
 operation of the preview backend, including unknown safe-listening state,
 numeric edits, unavailable features, confirmation, device rows, recovery
 and quick-panel lifetime. Per-device switching also uses reported-state
-fixtures. Xvfb provides a virtual X11 display. Physical BlueZ/headset
-behavior, compositor placement, desktop tray recovery, mixed-DPI layouts
-and Wayland fallback need the target environments listed in the
-[migration checklist](../../docs/backend-migration.md).
+fixtures. In a separate xfwm4/xfce4-panel session on a virtual X11 display,
+the panel opened in the correct top-right and bottom-right work-area corners.
+The tray reappeared after a panel restart and the original backend stayed
+alive. WSLg exercised the ordinary-window fallback on Wayland. Full Xfce
+Wayland login, physical mixed-DPI displays and Bluetooth headset readback
+remain on the [workstation checklist](../../docs/linux-acceptance-2026-11-07.md#bluetooth-and-outstanding-checks).
