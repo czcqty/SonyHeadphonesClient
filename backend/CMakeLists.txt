@@ -78,5 +78,13 @@ if(BUILD_TESTING)
         "${CMAKE_SOURCE_DIR}/clients/common/test_localization.py")
     add_test(NAME backend-client-lifecycle COMMAND ${Python3_EXECUTABLE}
         "${CMAKE_SOURCE_DIR}/clients/common/test_process_client.py")
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        find_program(DBUS_RUN_SESSION dbus-run-session)
+        if(DBUS_RUN_SESSION)
+            add_test(NAME backend-bluez-discovery COMMAND "${DBUS_RUN_SESSION}" -- ${Python3_EXECUTABLE}
+                "${CMAKE_CURRENT_SOURCE_DIR}/tests/test_bluez_discovery.py" "$<TARGET_FILE:SoundConnectBackend>")
+            set_tests_properties(backend-bluez-discovery PROPERTIES SKIP_RETURN_CODE 77 TIMEOUT 45)
+        endif()
+    endif()
     set_tests_properties(backend-process-contract PROPERTIES TIMEOUT 90)
 endif()

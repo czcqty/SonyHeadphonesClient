@@ -1,282 +1,130 @@
 #include "DBusHelper.hpp"
+
+#include <algorithm>
 #include <cstring>
-#include <cstdio>
-#include <stdexcept>
+#include <memory>
+#include <unordered_set>
+#include <dbus/dbus.h>
 #include <bluetooth/sdp.h>
 #include <bluetooth/sdp_lib.h>
 #include <sys/poll.h>
 
-DBusConnection* dbus_open_system_bus(void)
+namespace {
+struct BluezDevice
 {
-    DBusError error;
-    DBusConnection* connection = NULL;
+    std::string adapter, name, address;
+};
 
-    dbus_error_init(&error);
-
-    connection = dbus_bus_get(DBUS_BUS_SYSTEM, &error);
-
-    if (dbus_error_is_set(&error))
-    {
-        fprintf(stderr, "Could not get system bus\nError: %s\n", error.message);
-        dbus_error_free(&error);
-        return NULL;
-    }
-
-    return connection;
+// Both the properties and the object/interface maps are D-Bus dictionaries.
+DBusMessageIter dict_entry(DBusMessageIter array, const char*& key)
+{
+    DBusMessageIter entry;
+    dbus_message_iter_recurse(&array, &entry);
+    dbus_message_iter_get_basic(&entry, &key);
+    dbus_message_iter_next(&entry);
+    DBusMessageIter contents;
+    dbus_message_iter_recurse(&entry, &contents);
+    return contents;
 }
 
-dbus_bool_t open_dict_read(DBusMessageIter* const iter, DBusMessageIter* const iter_dict)
+void close_bus(DBusConnection* bus)
 {
-    if (NULL == iter || NULL == iter_dict)
-    {
-        return FALSE;
-    }
-
-    if (dbus_message_iter_get_arg_type(iter) != DBUS_TYPE_ARRAY)
-    {
-        return FALSE;
-    }
-
-    if (dbus_message_iter_get_element_type(iter) != DBUS_TYPE_DICT_ENTRY)
-    {
-        return FALSE;
-    }
-
-    dbus_message_iter_recurse(iter, iter_dict);
-    return TRUE;
+    dbus_connection_close(bus);
+    dbus_connection_unref(bus);
 }
 
-dbus_bool_t read_next_object_path_entry(DBusMessageIter* const iter_object_paths, char** const object_path,
-                                        DBusMessageIter* const iter_interfaces)
+void copy_name(char (&dst)[128], const std::string& text)
 {
-    DBusMessageIter iter_dict_entry;
-
-    if (!iter_object_paths || !iter_interfaces)
-    {
-        goto error;
-    }
-
-    if (dbus_message_iter_get_arg_type(iter_object_paths) != DBUS_TYPE_DICT_ENTRY)
-    {
-        goto error;
-    }
-
-    dbus_message_iter_recurse(iter_object_paths, &iter_dict_entry);
-
-    if (dbus_message_iter_get_arg_type(&iter_dict_entry) != DBUS_TYPE_OBJECT_PATH)
-    {
-        fprintf(stderr, "Error: Unexpected arg type for object path\n");
-        goto error;
-    }
-
-    dbus_message_iter_get_basic(&iter_dict_entry, object_path);
-
-    dbus_message_iter_next(&iter_dict_entry);
-
-    if (FALSE == open_dict_read(&iter_dict_entry, iter_interfaces))
-    {
-        goto error;
-    }
-
-    dbus_message_iter_next(iter_object_paths);
-
-    return TRUE;
-
-error:
-    return FALSE;
+    auto size = std::min(text.size(), sizeof(dst) - 1);
+    // Keep a UTF-8 character whole at the fixed C API boundary.
+    while (size < text.size() && size && (static_cast<unsigned char>(text[size]) & 0xc0) == 0x80)
+        --size;
+    text.copy(dst, size);
+    dst[size] = '\0';
+}
 }
 
-dbus_bool_t read_next_interface_entry(DBusMessageIter* const interface_dict, char** const interface)
+int bluez_list_devices(std::vector<MDRDeviceInfo>& devices, std::string& error)
 {
-    DBusMessageIter iter_dict_entry;
-
-    if (!interface_dict)
-    {
-        goto error;
+    DBusError detail = DBUS_ERROR_INIT;
+    std::unique_ptr<DBusConnection, decltype(&close_bus)> bus(
+        dbus_bus_get_private(DBUS_BUS_SYSTEM, &detail), close_bus);
+    if (!bus) {
+        error = detail.message ? detail.message : "Could not get system bus";
+        dbus_error_free(&detail);
+        return MDR_RESULT_ERROR_NOT_SUPPORTED;
+    }
+    dbus_connection_set_exit_on_disconnect(bus.get(), false);
+    using Message = std::unique_ptr<DBusMessage, decltype(&dbus_message_unref)>;
+    Message request(dbus_message_new_method_call("org.bluez", "/",
+        "org.freedesktop.DBus.ObjectManager", "GetManagedObjects"), dbus_message_unref);
+    if (!request) {
+        error = "Could not allocate BlueZ request";
+        return MDR_RESULT_ERROR_GENERAL;
+    }
+    Message reply(dbus_connection_send_with_reply_and_block(bus.get(), request.get(), 5000, &detail),
+        dbus_message_unref);
+    if (!reply) {
+        const bool unavailable = dbus_error_has_name(&detail, DBUS_ERROR_SERVICE_UNKNOWN)
+            || dbus_error_has_name(&detail, DBUS_ERROR_NAME_HAS_NO_OWNER);
+        error = detail.message ? detail.message : "BlueZ discovery failed";
+        dbus_error_free(&detail);
+        return unavailable ? MDR_RESULT_ERROR_NOT_SUPPORTED : MDR_RESULT_ERROR_GENERAL;
+    }
+    if (!dbus_message_has_signature(reply.get(), "a{oa{sa{sv}}}")) {
+        error = "Invalid BlueZ GetManagedObjects reply";
+        return MDR_RESULT_ERROR_GENERAL;
     }
 
-    if (dbus_message_iter_get_arg_type(interface_dict) != DBUS_TYPE_DICT_ENTRY)
-    {
-        goto error;
-    }
-
-    dbus_message_iter_recurse(interface_dict, &iter_dict_entry);
-
-    if (dbus_message_iter_get_arg_type(&iter_dict_entry) != DBUS_TYPE_STRING)
-    {
-        fprintf(stderr, "Error: Unexpected arg type for interface\n");
-        goto error;
-    }
-
-    dbus_message_iter_get_basic(&iter_dict_entry, interface);
-
-    dbus_message_iter_next(interface_dict);
-
-    return TRUE;
-
-error:
-    return FALSE;
-}
-
-std::vector<std::string> dbus_list_adapters(DBusConnection* const connection)
-{
-
-    std::vector<std::string> ret;
-
-    DBusError error;
-    DBusMessage* msg = NULL;
-    DBusMessage* rsp = NULL;
-    DBusMessageIter args;
-    DBusMessageIter subargs;
-    DBusMessageIter interface_iter;
-    char* object_path = NULL;
-    char* interface = NULL;
-    char const* const device_interface = "org.bluez.Device1";
-
-    dbus_error_init(&error);
-
-    msg = dbus_message_new_method_call("org.bluez",
-                                       "/",
-                                       "org.freedesktop.DBus.ObjectManager",
-                                       "GetManagedObjects");
-    if (NULL == msg)
-    {
-        fprintf(stderr, "Error: Could not obtain method call\n");
-        goto clean_up;
-    }
-
-    /* No arguments */
-
-    /* Invoke the method */
-    rsp = dbus_connection_send_with_reply_and_block(connection,
-                                                    msg,
-                                                    DBUS_TIMEOUT_USE_DEFAULT,
-                                                    &error);
-    if (dbus_error_is_set(&error))
-    {
-        fprintf(stderr, "Could not send dbus message\nError: %s\n", error.message);
-        dbus_error_free(&error);
-        goto clean_up;
-    }
-
-    if (NULL == rsp)
-    {
-        fprintf(stderr, "Error: Response was NULL\n");
-        goto clean_up;
-    }
-
-    if (!dbus_message_iter_init(rsp, &args))
-    {
-        fprintf(stderr, "Error: RCould not start message iterator on response\n");
-        goto clean_up;
-    }
-
-    if (!open_dict_read(&args, &subargs))
-    {
-        fprintf(stderr, "Error: Could not start dict read\n");
-        goto clean_up;
-    }
-
-    while (FALSE != read_next_object_path_entry(&subargs, &object_path, &interface_iter))
-    {
-        /* dbus_bool_t found = FALSE; */
-        while (FALSE != read_next_interface_entry(&interface_iter, &interface))
-        {
-            if (strcmp(device_interface, interface) == 0)
-            {
-                ret.push_back(object_path);
+    std::unordered_set<std::string> powered;
+    std::vector<BluezDevice> reported;
+    DBusMessageIter body, objects;
+    dbus_message_iter_init(reply.get(), &body);
+    dbus_message_iter_recurse(&body, &objects);
+    while (dbus_message_iter_get_arg_type(&objects) != DBUS_TYPE_INVALID) {
+        const char* path;
+        auto interfaces = dict_entry(objects, path);
+        while (dbus_message_iter_get_arg_type(&interfaces) != DBUS_TYPE_INVALID) {
+            const char* interface;
+            auto properties = dict_entry(interfaces, interface);
+            bool adapter = std::strcmp(interface, "org.bluez.Adapter1") == 0;
+            bool device = std::strcmp(interface, "org.bluez.Device1") == 0;
+            BluezDevice found;
+            while ((adapter || device) && dbus_message_iter_get_arg_type(&properties) != DBUS_TYPE_INVALID) {
+                const char* key;
+                auto value = dict_entry(properties, key);
+                int type = dbus_message_iter_get_arg_type(&value);
+                if (adapter && std::strcmp(key, "Powered") == 0 && type == DBUS_TYPE_BOOLEAN) {
+                    dbus_bool_t on;
+                    dbus_message_iter_get_basic(&value, &on);
+                    if (on) powered.insert(path);
+                }
+                if (device && (type == DBUS_TYPE_STRING || type == DBUS_TYPE_OBJECT_PATH)) {
+                    const char* text;
+                    dbus_message_iter_get_basic(&value, &text);
+                    if (std::strcmp(key, "Address") == 0) found.address = text;
+                    else if (std::strcmp(key, "Name") == 0) found.name = text;
+                    else if (std::strcmp(key, "Adapter") == 0) found.adapter = text;
+                }
+                dbus_message_iter_next(&properties);
             }
+            if (device) reported.push_back(std::move(found));
+            dbus_message_iter_next(&interfaces);
         }
+        dbus_message_iter_next(&objects);
     }
-
-clean_up:
-    if (NULL != rsp)
-    {
-        dbus_message_unref(rsp);
+    if (powered.empty()) {
+        error = "No powered Bluetooth adapter";
+        return MDR_RESULT_ERROR_NOT_FOUND;
     }
-
-    if (NULL != msg)
-    {
-        dbus_message_unref(msg);
+    for (const auto& entry : reported) {
+        if (!powered.contains(entry.adapter) || bachk(entry.address.c_str()) != 0) continue;
+        MDRDeviceInfo info{};
+        copy_name(info.szDeviceName, entry.name);
+        entry.address.copy(info.szDeviceMacAddress, sizeof(info.szDeviceMacAddress) - 1);
+        devices.push_back(info);
     }
-    return ret;
-}
-
-std::string dbus_get_property(DBusConnection* const connection, const char* device_path, const char* property)
-{
-
-    std::string ret;
-
-    DBusError error;
-    DBusMessage* msg = NULL;
-    DBusMessage* rsp = NULL;
-    DBusMessageIter args;
-    DBusMessageIter subargs;
-    char* interface = NULL;
-    char const* const device_interface = "org.bluez.Device1";
-
-    dbus_error_init(&error);
-
-    msg = dbus_message_new_method_call("org.bluez",
-                                       device_path,
-                                       "org.freedesktop.DBus.Properties",
-                                       "Get");
-    if (NULL == msg)
-    {
-        fprintf(stderr, "Error: Could not obtain method call\n");
-        goto clean_up;
-    }
-
-    /* arguments */
-    dbus_message_append_args(msg,
-                             DBUS_TYPE_STRING, &device_interface,
-                             DBUS_TYPE_INVALID);
-
-    dbus_message_append_args(msg,
-                             DBUS_TYPE_STRING, &property,
-                             DBUS_TYPE_INVALID);
-
-    /* Invoke the method */
-    rsp = dbus_connection_send_with_reply_and_block(connection,
-                                                    msg,
-                                                    DBUS_TIMEOUT_USE_DEFAULT,
-                                                    &error);
-    if (dbus_error_is_set(&error))
-    {
-        fprintf(stderr, "Could not send dbus message\nError: %s\n", error.message);
-        dbus_error_free(&error);
-        goto clean_up;
-    }
-
-    if (NULL == rsp)
-    {
-        fprintf(stderr, "Error: Response was NULL\n");
-        goto clean_up;
-    }
-
-    if (!dbus_message_iter_init(rsp, &args))
-    {
-        fprintf(stderr, "Error: Could not start message iterator on response\n");
-        goto clean_up;
-    }
-
-    dbus_message_iter_recurse(&args, &subargs);
-
-    dbus_message_iter_get_basic(&subargs, &interface);
-    ret = std::string(interface);
-
-clean_up:
-    if (NULL != rsp)
-    {
-        dbus_message_unref(rsp);
-    }
-
-    if (NULL != msg)
-    {
-        dbus_message_unref(msg);
-    }
-
-    return ret;
+    return MDR_RESULT_OK;
 }
 
 sdp_session* sdp_connect_nb(const char* dev_addr)
