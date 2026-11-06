@@ -10,7 +10,7 @@ transitional frontend requires the [migration gates](backend-migration.md).
 | Branch | Responsibility | Build and run documentation |
 | --- | --- | --- |
 | `main` | Shared Qt Core backend, private process, protocol library, common contract, transitional Qt Quick frontend | [Backend](../backend/README.md), [Qt Quick](../gui/README.md) |
-| `codex/winui` | Windows WinUI 3 / .NET presentation | [WinUI README](https://github.com/czcqty/SonyHeadphonesClient/blob/codex/winui/gui/winui/README.md) |
+| `winui` | Windows WinUI 3 / .NET presentation. Functional migration complete. | [WinUI README](https://github.com/czcqty/SonyHeadphonesClient/blob/winui/gui/winui/README.md), [Windows acceptance and outstanding checks](windows-acceptance-2026-10-31.md) |
 | `codex/macos-swift` | macOS Swift / AppKit presentation | [AppKit README](https://github.com/czcqty/SonyHeadphonesClient/blob/codex/macos-swift/gui/macos/README.md) |
 | `codex/kde` | KDE Qt Widgets / KDE Frameworks presentation | [KDE README](https://github.com/czcqty/SonyHeadphonesClient/blob/codex/kde/gui/kde/README.md) |
 | `codex/gnome` | GTK 4 / libadwaita presentation | [GNOME README](https://github.com/czcqty/SonyHeadphonesClient/blob/codex/gnome/gui/gnome/README.md) |
@@ -33,12 +33,21 @@ From a fresh clone, create a tracking checkout for the desired adapter:
 
 ```sh
 git fetch origin --prune
-git switch --track origin/codex/winui
+git switch --track origin/winui
 ```
 
-If a local branch already exists, use `git switch codex/winui`. If it is checked
+If a local branch already exists, use `git switch winui`. If it is checked
 out in another worktree, use the path from `git worktree list` instead. Check
 `git status` in each worktree before switching, merging, or cleaning files.
+
+For a checkout still on the former `codex/winui` branch, run these commands
+in its worktree to keep its local commits and track the renamed branch:
+
+```sh
+git fetch origin --prune
+git branch -m winui
+git branch --set-upstream-to=origin/winui
+```
 
 Make shared backend/contract changes on `main`, then merge `main` into each
 native branch and run the affected contract and toolkit checks. Keep native

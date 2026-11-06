@@ -18,8 +18,11 @@ the application scope.
 
 ## Branches and project status
 
-`main` owns the shared backend and contract. Native presentation adapters live
-on `codex/winui`, `codex/macos-swift`, `codex/kde`, `codex/gnome`, and
+`main` owns the shared backend and contract. The Windows functional migration
+is complete on [`winui`](https://github.com/czcqty/SonyHeadphonesClient/tree/winui).
+The Windows 11 desktop and installer checks passed. Remaining headset and
+Windows environment checks are listed in the [acceptance record](docs/windows-acceptance-2026-10-31.md).
+Other native adapters live on `codex/macos-swift`, `codex/kde`, `codex/gnome`, and
 `codex/xfce`. See the [branch guide](docs/branches.md) for each build entry,
 checkout instructions, and validation limits. The old `rebuild` work is already
 included in `main`; it is no longer a development branch.

@@ -57,6 +57,13 @@ Apply these checks to WinUI, KDE, GNOME, Xfce and AppKit on their target desktop
 
 ## Current status
 
+**Windows functional migration is complete on `winui` (2026-11-07).** The
+installed build from `00ab8243a0` passed the local Windows 11 acceptance checks,
+including tray placement and lifetime, navigation symbols, application icons,
+and English/Chinese parity across 12 preview profiles and 45 commands. Hardware
+and cross-environment verification continues under the
+[outstanding Windows checks](windows-acceptance-2026-10-31.md#outstanding-device-and-environment-checks).
+
 - Device logic is extracted to `backend/`; protocol command mappings and
   session polling/recovery remain the existing implementation.
 - The Qt Quick application is a transitional consumer of that same library.
@@ -217,10 +224,9 @@ support, protocol mapping or backend Qt dependency was removed in this follow-up
 
 ## Native installer and recovery follow-up (2026-10-19)
 
-**Migration is not complete.** The checks below cover automated installation,
-transport and simulated controls only. User testing has not accepted the native
-migration; observed failures must be reproduced and fixed before acceptance.
-Hosted CI success, when available, does not close the real desktop/device gates.
+At the October 19 checkpoint, the checks covered automated installation,
+transport and simulated controls. The reported failures and outstanding
+desktop/device checks at that time are recorded below.
 
 Shared changes live on main and are merged into WinUI, KDE, GNOME and Xfce.
 The backend still uses Qt Core and protocol v1. Qt Quick remains enabled by
@@ -286,7 +292,7 @@ those checks. macOS remains outside this follow-up.
 The five branches have been pushed. The following hosted runs exercise the
 shared code and native package paths; they do not establish functional parity.
 
-| Branch | Run | Result and scope |
+| Branch at the time of the run | Run | Result and scope |
 | --- | --- | --- |
 | main | [39248061259](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39248061259) | Passed all six Windows/Linux/macOS jobs, Qt Quick ON and OFF; JUnit and test logs retained |
 | codex/winui | [39248167461](https://github.com/czcqty/SonyHeadphonesClient/actions/runs/39248167461) | Passed backend 9/9, C# transport, NSIS build, install/reinstall, English/Chinese native smoke and uninstall; installer and evidence retained |
