@@ -58,6 +58,9 @@ def main():
         for name in ('catalog.json', 'client.py', 'process_client.py'):
             copy(ROOT / 'clients/common' / name, common / 'usr/share/soundconnect/clients/common' / name)
         copy(ROOT / 'gui/assets/icons/app-icon.svg', common / 'usr/share/icons/hicolor/scalable/apps/io.github.czcqty.SoundConnect.svg')
+        for size in (16, 24, 32, 48, 64, 128, 256, 512):
+            copy(ROOT / f'gui/assets/icons/app-icon-{size}.png',
+                 common / f'usr/share/icons/hicolor/{size}x{size}/apps/io.github.czcqty.SoundConnect.png')
         backend = packages['soundconnect-backend']
         executable = backend / 'usr/libexec/soundconnect/SoundConnectBackend'
         copy(build / 'backend/backend/SoundConnectBackend', executable, True)
@@ -104,7 +107,7 @@ def main():
             target.write_text('#!/bin/sh\nexec /usr/bin/python3 -B /usr/share/soundconnect/gui/' + args.desktop + '/main.py "$@"\n')
             target.chmod(0o755)
             native_deps = ('python3, python3-gi, gir1.2-gtk-4.0 (>= 4.10), gir1.2-adw-1 (>= 1.4)'
-                           if args.desktop == 'gnome' else 'python3, python3-gi, gir1.2-gtk-3.0 (>= 3.24), gir1.2-libxfce4ui-2.0 (>= 4.18)')
+                           if args.desktop == 'gnome' else 'python3, python3-gi, adwaita-icon-theme, librsvg2-common, gir1.2-gtk-3.0 (>= 3.24), gir1.2-libxfce4ui-2.0 (>= 4.18)')
         desktop_file = frontend / 'usr/share/applications' / ('io.github.czcqty.SoundConnect.' + args.desktop + '.desktop')
         desktop_file.parent.mkdir(parents=True)
         desktop_file.write_text('[Desktop Entry]\nType=Application\nName=Sound Connect (' + args.desktop.upper() + ')\n'
