@@ -34,7 +34,7 @@ class ProcessClient:
         previous_cleanup = self._retire(old) if old else None
         self._generation += 1
         self.state, self.error, self.diagnostic, self.ready = {}, 'backend-starting', '', False
-        session = dict(cancel=threading.Event(), outgoing=queue.Queue(64), process=None,
+        session = dict(cancel=threading.Event(), started=threading.Event(), outgoing=queue.Queue(64), process=None,
                        diagnostic='', diagnostic_pending=False, timer=None, generation=self._generation,
                        callbacks={}, reply=None, cleanup=None)
         self._session = session
@@ -46,23 +46,26 @@ class ProcessClient:
         threading.Thread(target=self._start, args=(session, previous_cleanup)).start()
 
     def _start(self, session, previous_cleanup):
-        if previous_cleanup:
-            previous_cleanup.join()
-        if session['cancel'].is_set():
-            return
         try:
+            if previous_cleanup:
+                previous_cleanup.join()
+            if session['cancel'].is_set():
+                return
             process = subprocess.Popen(self.argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                        stderr=subprocess.PIPE, bufsize=0)
             session['process'] = process
-            if session['cancel'].is_set():
-                self._shutdown(session)
-                return
-            self._post(session, lambda: setattr(self, 'process', process))
-            threading.Thread(target=self._write, args=(session,), daemon=True).start()
-            threading.Thread(target=self._diagnostics, args=(session,), daemon=True).start()
-            self._read(session)
         except OSError as error:
             self._post(session, lambda detail=str(error): self._fail(session, 'backend-start-failed', detail))
+            return
+        finally:
+            # Retirement owns shutdown, including a child returned by a slow Popen.
+            session['started'].set()
+        if session['cancel'].is_set():
+            return
+        self._post(session, lambda: setattr(self, 'process', process))
+        threading.Thread(target=self._write, args=(session,), daemon=True).start()
+        threading.Thread(target=self._diagnostics, args=(session,), daemon=True).start()
+        self._read(session)
 
     def _timeout(self, session):
         if not self.ready:
@@ -178,6 +181,7 @@ class ProcessClient:
 
     @staticmethod
     def _shutdown(session):
+        session['started'].wait()
         process = session['process']
         if process is None:
             return

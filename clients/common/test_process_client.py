@@ -6,7 +6,9 @@ import subprocess
 import sys
 import tempfile
 import time
+import threading
 import unittest
+from unittest.mock import patch
 
 from process_client import ProcessClient
 
@@ -171,6 +173,29 @@ class LifecycleTests(unittest.TestCase):
         client.restart()
         self.pump(lambda: client.ready)
         self.assertIsNotNone(old_process.poll(), 'New child raced the old session owner')
+
+    def test_retry_while_popen_is_returning(self):
+        original = subprocess.Popen
+        created, release = threading.Event(), threading.Event()
+        children = []
+        def delayed(*args, **kwargs):
+            child = original(*args, **kwargs)
+            children.append(child)
+            if len(children) == 1:
+                created.set()
+                release.wait(timeout=5)
+            return child
+        with patch('process_client.subprocess.Popen', side_effect=delayed):
+            client = self.make()
+            self.assertTrue(created.wait(timeout=5))
+            client.restart()
+            # The new session can be queued immediately. Its Popen must wait for
+            # the prior launch to finish and its child to be reaped.
+            self.assertFalse(client.ready)
+            release.set()
+            self.pump(lambda: client.ready)
+            self.assertEqual(len(children), 2)
+            self.assertIsNotNone(children[0].poll())
 
     def test_crash_clears_state(self):
         client = self.make('stop')

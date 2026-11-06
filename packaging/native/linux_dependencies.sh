@@ -5,7 +5,7 @@ apt-get update
 apt-get install -y --no-install-recommends build-essential git ca-certificates curl \
   python3 python3-venv python3-pip dpkg-dev patchelf desktop-file-utils \
   libbluetooth-dev libdbus-1-dev libgl1-mesa-dev libxkbcommon-dev libfontconfig1-dev \
-  xvfb xauth dbus-x11 python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 \
+  xvfb xauth dbus-x11 libxtst6 python3-gi gir1.2-gtk-4.0 gir1.2-adw-1 \
   gir1.2-gtk-3.0 gir1.2-libxfce4ui-2.0
 case "$ID:$VERSION_ID" in
   ubuntu:24.04)
