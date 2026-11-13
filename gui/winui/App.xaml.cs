@@ -13,6 +13,7 @@ public partial class App : Application
     internal bool Chinese { get; private set; } = true;
     internal bool Live { get; private set; }
     internal ElementTheme Theme { get; private set; } = ElementTheme.Default;
+    private SetupWindow? setup;
     private MainWindow? main;
     private MainWindow? panel;
     private Forms.NotifyIcon? tray;
@@ -39,6 +40,11 @@ public partial class App : Application
         string Option(string name, string fallback) {
             int i = Array.IndexOf(arguments, name);
             return i >= 0 && i + 1 < arguments.Length ? arguments[i + 1] : fallback;
+        }
+        if (arguments.Length == 5 && arguments[1] == "--setup") {
+            setup = new SetupWindow(arguments[2], arguments[3], arguments[4]);
+            setup.Activate();
+            return;
         }
         Live = arguments.Contains("--live");
         Chinese = Option("--locale", "en") != "en";
@@ -105,7 +111,7 @@ public partial class App : Application
         if (tray is not null) return;
         {
             tray = new Forms.NotifyIcon {
-                Text = "Sound Connect",
+                Text = "SonyHeadphonesClient",
                 Icon = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!) ?? System.Drawing.SystemIcons.Application,
                 Visible = true
             };
@@ -127,7 +133,7 @@ public partial class App : Application
         if (tray is null) return;
         var old = tray.ContextMenuStrip;
         var menu = new Forms.ContextMenuStrip();
-        menu.Items.Add(T("打开 Sound Connect", "Open Sound Connect"), null, (_, _) => ShowMain());
+        menu.Items.Add(T("打开 SonyHeadphonesClient", "Open SonyHeadphonesClient"), null, (_, _) => ShowMain());
         menu.Items.Add(T("快捷控制", "Quick controls"), null, (_, _) => ShowPanel());
         menu.Items.Add(T("播放 / 暂停", "Play / Pause"), null, (_, _) => InvokeShortcut(1)).Name = "device";
         menu.Items.Add(T("下一曲", "Next track"), null, (_, _) => InvokeShortcut(2)).Name = "device";

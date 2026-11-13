@@ -39,7 +39,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: SoundConnect-WinUI-windows-x64
+          name: SonyHeadphonesClient-windows-x64
           path: |
             build/native-winui/packages/
             build/native-winui/install-check/reports/

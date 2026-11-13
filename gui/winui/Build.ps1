@@ -30,5 +30,5 @@ try {
     if ($LASTEXITCODE) { throw "WinUI publish failed" }
     & $CMake --install $BackendBuildDirectory --config $Configuration --prefix $OutputDirectory
     if ($LASTEXITCODE) { throw "Backend runtime deployment failed" }
-    Write-Output "Ready: $OutputDirectory/SoundConnect.WinUI.exe"
+    Write-Output "Ready: $OutputDirectory/SonyHeadphonesClient.exe"
 } finally { Pop-Location }

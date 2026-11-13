@@ -21,7 +21,7 @@ try {
     Set-Content -LiteralPath (Join-Path $install 'unrelated-test-file.txt') -Value 'keep'
     Run-Installer
     $shell = New-Object -ComObject WScript.Shell
-    $shortcut = $shell.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Programs')) 'Sound Connect (WinUI)/Sound Connect.lnk'))
+    $shortcut = $shell.CreateShortcut((Join-Path ([Environment]::GetFolderPath('Programs')) 'SonyHeadphonesClient/SonyHeadphonesClient.lnk'))
     if ($shortcut.Arguments -ne '--live') { throw 'Installed shortcut must explicitly select live mode' }
     $oldPath = $env:PATH
     $oldRoot = $env:DOTNET_ROOT
@@ -31,7 +31,7 @@ try {
         $env:DOTNET_MULTILEVEL_LOOKUP = '0'
         foreach ($locale in 'en','zh_CN') {
             $report = Join-Path $reports "$locale.json"
-            $process = Start-Process -FilePath (Join-Path $install 'SoundConnect.WinUI.exe') -WorkingDirectory $TestDirectory -ArgumentList @('--locale', $locale, '--parity-test', '--smoke-report', ('"' + $report + '"')) -PassThru -WindowStyle Hidden
+            $process = Start-Process -FilePath (Join-Path $install 'SonyHeadphonesClient.exe') -WorkingDirectory $TestDirectory -ArgumentList @('--locale', $locale, '--parity-test', '--smoke-report', ('"' + $report + '"')) -PassThru -WindowStyle Hidden
             if (!$process.WaitForExit(180000)) { $process.Kill($true); throw 'Native parity checks timed out' }
             if (!(Test-Path -LiteralPath $report)) { throw "Native smoke produced no report: $locale (exit $($process.ExitCode))" }
             $result = Get-Content -LiteralPath $report -Raw | ConvertFrom-Json
@@ -48,6 +48,6 @@ try {
         if ($process.ExitCode) { throw 'Uninstall failed' }
     }
 }
-if (Test-Path -LiteralPath (Join-Path $install 'SoundConnect.WinUI.exe')) { throw 'Uninstall left the application installed' }
+if (Test-Path -LiteralPath (Join-Path $install 'SonyHeadphonesClient.exe')) { throw 'Uninstall left the application installed' }
 if (!(Test-Path -LiteralPath (Join-Path $install 'unrelated-test-file.txt'))) { throw 'Uninstall removed an unrelated file' }
 Write-Output 'PASS: install, upgrade, default backend lookup, English/Chinese native parity checks on 12 profiles, no SDK path and uninstall'

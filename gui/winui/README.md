@@ -1,4 +1,4 @@
-# Sound Connect for Windows
+# SonyHeadphonesClient for Windows
 
 **Windows functional migration is complete on the `winui` branch.** The
 November 7 candidate passed desktop and installer acceptance on Windows 11
@@ -34,7 +34,7 @@ PowerShell with `cmake` and `dotnet` on PATH:
 
 ```powershell
 ./gui/winui/Build.ps1
-./build/native-winui/app/SoundConnect.WinUI.exe
+./build/native-winui/app/SonyHeadphonesClient.exe
 ```
 
 `-Dotnet` and `-CMake` accept absolute paths. `-CMakeConfigureArguments` passes
@@ -48,6 +48,12 @@ and stages the shared backend/runtime through CMake install into `app/backend`.
 ./gui/winui/Verify.ps1 -Installer /absolute/native-setup.exe -TestDirectory /absolute/fresh-test-directory
 ```
 
+Opening the setup EXE launches a WinUI 3 window in the system language
+(English or Chinese). Select the install folder and optional desktop shortcut,
+then choose Install. The wizard uses the bundled app runtime before installation.
+For unattended installs use `setup.exe /S`, optionally with `/DESKTOP` and a
+final unquoted `/D=C:\Path with spaces`.
+
 Packaging requires NSIS. The per-user installer adds a live-mode Start-menu
 entry, optional desktop shortcut and uninstall entry. Uninstall preserves
 preferences and unrelated files. `Verify.ps1` exercises installation, reinstall,
@@ -60,9 +66,9 @@ nor saves appearance preferences. `--live` explicitly enables the existing real
 device backend; use the Connection page to select a paired device.
 
 ```powershell
-./build/native-winui/app/SoundConnect.WinUI.exe --panel --theme dark
-./build/native-winui/app/SoundConnect.WinUI.exe --locale en --route equalizer
-./build/native-winui/app/SoundConnect.WinUI.exe --live
+./build/native-winui/app/SonyHeadphonesClient.exe --panel --theme dark
+./build/native-winui/app/SonyHeadphonesClient.exe --locale en --route equalizer
+./build/native-winui/app/SonyHeadphonesClient.exe --live
 ```
 
 Options: `--profile <existing-profile-id>`, `--backend <host-executable>`,

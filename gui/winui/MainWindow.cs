@@ -38,7 +38,7 @@ internal sealed partial class MainWindow : Window
     {
         this.compact = compact;
         route = initialRoute == "appearance" ? "application" : initialRoute;
-        Title = compact ? "Sound Connect" : "Sound Connect · WinUI";
+        Title = "SonyHeadphonesClient";
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "app-icon.ico"));
         SystemBackdrop = compact ? new DesktopAcrylicBackdrop() : new MicaBackdrop();
         var presenter = (OverlappedPresenter)AppWindow.Presenter;
@@ -99,7 +99,7 @@ internal sealed partial class MainWindow : Window
                 PaneDisplayMode = NavigationViewPaneDisplayMode.Auto,
                 IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed,
                 IsSettingsVisible = false, OpenPaneLength = 220,
-                PaneTitle = "Sound Connect", IsPaneOpen = true
+                PaneTitle = "SonyHeadphonesClient", IsPaneOpen = true
             };
             foreach (var entry in Catalog["pages"]!.AsArray()) {
                 var spec = entry!.AsObject();
