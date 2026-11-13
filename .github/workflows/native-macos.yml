@@ -11,5 +11,5 @@ jobs:
       - run: sh gui/macos/build.sh
       - uses: actions/upload-artifact@v4
         with:
-          name: SoundConnect-macOS-prototype-frontend
+          name: SonyHeadphonesClient-macOS-prototype-frontend
           path: build/macos/
