@@ -24,11 +24,11 @@ CMake 3.31+ is required. Ubuntu's private Qt 6.8.3 SDK includes `qtbase` and the
 matching `icu` archive, and is used only by the backend. KDE uses distro Qt/KF5.
 Debian 13 uses system Qt 6.8/KF6. The backend minimum remains Qt 6.5.
 
-Each build emits `soundconnect-common`, `soundconnect-backend`, and its adapter
+Each build emits `sonyheadphonesclient-common`, `sonyheadphonesclient-backend`, and its adapter
 DEB, plus a source/dependency manifest. Adapters depend on matching shared-package
 versions. All three adapters may be installed together. Runtime files use
-`/usr/share/soundconnect/` and `/usr/libexec/soundconnect/`; commands are
-`soundconnect-kde`, `soundconnect-gnome`, `soundconnect-xfce`.
+`/usr/share/sonyheadphonesclient/` and `/usr/libexec/sonyheadphonesclient/`; commands are
+`sonyheadphonesclient-kde`, `sonyheadphonesclient-gnome`, `sonyheadphonesclient-xfce`.
 
 Installed menu entries explicitly pass `--live`; CLI launches without it remain
 isolated previews. `--backend` overrides the installed host path. Ubuntu bundles

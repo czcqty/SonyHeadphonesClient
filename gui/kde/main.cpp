@@ -214,7 +214,7 @@ public:
         const auto method = field.value("method").toString();
         if (method == "powerOff" || method == "unpairDevice") {
             const auto question = method == "powerOff" ? tr("Power off headphones?", "是否关闭耳机电源？") : tr("Unpair device?", "是否取消设备配对？");
-            QMessageBox dialog(QMessageBox::Question, "Sound Connect", question, QMessageBox::Yes | QMessageBox::Cancel, &window);
+            QMessageBox dialog(QMessageBox::Question, "SonyHeadphonesClient", question, QMessageBox::Yes | QMessageBox::Cancel, &window);
             dialog.setDefaultButton(QMessageBox::Cancel);
             dialog.button(QMessageBox::Yes)->setText(tr("Yes", "是"));
             dialog.button(QMessageBox::Cancel)->setText(tr("Cancel", "取消"));
@@ -458,10 +458,10 @@ public:
             compactPages->setVisible(compact);
         };
         translations.push_back([this] { compactPages->setAccessibleName(tr("Settings page", "设置页面")); });
-        window.setCentralWidget(content); window.setWindowTitle("Sound Connect"); window.resize(900, 680);
+        window.setCentralWidget(content); window.setWindowTitle("SonyHeadphonesClient"); window.resize(900, 680);
         auto toolbar = window.addToolBar(tr("Actions", "操作")); toolbar->setMovable(false);
         auto brand = new QLabel;
-        brand->setPixmap(qApp->windowIcon().pixmap(24, 24)); brand->setAccessibleName("Sound Connect");
+        brand->setPixmap(qApp->windowIcon().pixmap(24, 24)); brand->setAccessibleName("SonyHeadphonesClient");
         toolbar->addWidget(brand);
         auto action = toolbar->addAction(tr("Quick controls", "快捷控制")); connect(action, &QAction::triggered, this, [this] { showQuick(); });
         translations.push_back([this, action] { action->setText(tr("Quick controls", "快捷控制")); });
@@ -470,7 +470,7 @@ public:
         auto quickLayout = new QVBoxLayout(&quick);
         auto header = new QHBoxLayout;
         auto quickIcon = new QLabel;
-        quickIcon->setPixmap(qApp->windowIcon().pixmap(24, 24)); quickIcon->setAccessibleName("Sound Connect");
+        quickIcon->setPixmap(qApp->windowIcon().pixmap(24, 24)); quickIcon->setAccessibleName("SonyHeadphonesClient");
         auto title = new QLabel;
         closeQuick->setIcon(quick.style()->standardIcon(QStyle::SP_TitleBarCloseButton));
         header->addWidget(quickIcon); header->addWidget(title); header->addStretch(); header->addWidget(closeQuick);
@@ -485,8 +485,8 @@ public:
             closeQuick->setAccessibleName(tr("Close", "关闭")); closeQuick->setToolTip(closeQuick->accessibleName());
         });
         connect(settings, &QPushButton::clicked, this, &App::showSettings);
-        tray = new KStatusNotifierItem("SoundConnectKDE", this);
-        tray->setTitle("Sound Connect"); tray->setIconByPixmap(qApp->windowIcon()); tray->setStatus(KStatusNotifierItem::Active);
+        tray = new KStatusNotifierItem("SonyHeadphonesClientKDE", this);
+        tray->setTitle("SonyHeadphonesClient"); tray->setIconByPixmap(qApp->windowIcon()); tray->setStatus(KStatusNotifierItem::Active);
         tray->setStandardActionsEnabled(false);
         auto menu = new QMenu;
         const auto addMenu = [this, menu](const char* en, const char* zh, std::function<void()> callback) {
@@ -633,17 +633,17 @@ int main(int argc, char** argv) {
     QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
     QApplication application(argc, argv);
-    application.setDesktopFileName("io.github.czcqty.SoundConnect.kde");
+    application.setDesktopFileName("io.github.czcqty.SonyHeadphonesClient.Native.kde");
     auto iconPaths = QIcon::themeSearchPaths() + QStandardPaths::locateAll(QStandardPaths::GenericDataLocation, "icons", QStandardPaths::LocateDirectory);
     iconPaths.removeDuplicates(); QIcon::setThemeSearchPaths(iconPaths);
     if (QIcon::themeName().isEmpty()) QIcon::setThemeName("breeze");
     if (QIcon::fallbackThemeName().isEmpty() || QIcon::fallbackThemeName() == "hicolor") QIcon::setFallbackThemeName("breeze");
     application.setWindowIcon(QIcon(":/icons/soundconnect.png"));
-    application.setApplicationName("SoundConnectKDE"); application.setQuitOnLastWindowClosed(false);
+    application.setApplicationName("SonyHeadphonesClientKDE"); application.setQuitOnLastWindowClosed(false);
     QCommandLineParser parser; parser.addHelpOption();
-    parser.addOption({"backend", "Absolute path to shared host", "path", "/usr/libexec/soundconnect/SoundConnectBackend"});
+    parser.addOption({"backend", "Absolute path to shared host", "path", "/usr/libexec/sonyheadphonesclient/SoundConnectBackend"});
     const auto localCatalog = QCoreApplication::applicationDirPath() + "/catalog.json";
-    parser.addOption({"catalog", "Binding catalog", "path", QFileInfo::exists(localCatalog) ? localCatalog : "/usr/share/soundconnect/clients/common/catalog.json"});
+    parser.addOption({"catalog", "Binding catalog", "path", QFileInfo::exists(localCatalog) ? localCatalog : "/usr/share/sonyheadphonesclient/clients/common/catalog.json"});
     parser.addOption({"locale", "en or zh_CN", "locale", "en"});
     parser.addOption({"theme", "system, light or dark session override", "theme"});
     parser.addOption({"profile", "Isolated preview profile", "profile", "WH-1000XM6"});

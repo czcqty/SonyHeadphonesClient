@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.31 FATAL_ERROR)
 project(
     SonyHeadphonesClient
-    VERSION 2.0.4
+    VERSION 2.9.1
     LANGUAGES C CXX
 )
 
@@ -110,7 +110,7 @@ set(CPACK_PACKAGE_INSTALL_DIRECTORY "SonyHeadphonesClient")
 
 if(NOT MDR_BUILD_QT_FRONTEND)
     set(CPACK_PACKAGE_NAME "SoundConnectBackend")
-    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Shared Qt Core device backend for native Sound Connect frontends")
+    set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Shared Qt Core device backend for native SonyHeadphonesClient frontends")
     if(WIN32)
         set(CPACK_GENERATOR "ZIP")
     else()

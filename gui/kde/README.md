@@ -17,7 +17,7 @@ retains the repository's Qt 6.5+ requirement.
 sudo apt install cmake g++ qtbase5-dev libkf5widgetsaddons-dev libkf5notifications-dev libkf5configwidgets-dev libkf5wayland-dev breeze libqt5svg5
 cmake -S gui/kde -B build/kde
 cmake --build build/kde --parallel
-build/kde/SoundConnectKDE --backend "$PWD/build/backend/SoundConnectBackend"
+build/kde/SonyHeadphonesClientKDE --backend "$PWD/build/backend/SoundConnectBackend"
 ```
 
 Build the shared host using [../native/README.md](../native/README.md). Optional
@@ -40,8 +40,8 @@ state. Unsupported controls expose a localized explanation. Paired-device
 actions use the connection and playback flags reported for each device.
 
 ```sh
-xvfb-run -a dbus-run-session -- build/kde/SoundConnectKDE --backend /absolute/backend --smoke-test
-xvfb-run -a dbus-run-session -- build/kde/SoundConnectKDE --backend /absolute/backend --locale zh_CN --parity-test
+xvfb-run -a dbus-run-session -- build/kde/SonyHeadphonesClientKDE --backend /absolute/backend --smoke-test
+xvfb-run -a dbus-run-session -- build/kde/SonyHeadphonesClientKDE --backend /absolute/backend --locale zh_CN --parity-test
 ```
 
 Run both checks with `--locale en` and `--locale zh_CN`. Smoke exercises
