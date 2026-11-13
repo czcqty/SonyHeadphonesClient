@@ -30,7 +30,7 @@ struct Options {
         }
         if catalog.isEmpty { catalog = Bundle.main.path(forResource: "catalog", ofType: "json") ?? "clients/common/catalog.json" }
         guard !backend.isEmpty, ["", "en", "zh_CN"].contains(locale), ["", "system", "light", "dark"].contains(theme) else {
-            fatalError("Usage: SoundConnect --backend /absolute/host [--locale en|zh_CN] [--profile ID] [--panel] [--live]")
+            fatalError("Usage: SonyHeadphonesClient --backend /absolute/host [--locale en|zh_CN] [--profile ID] [--panel] [--live]")
         }
     }
 }
@@ -164,7 +164,7 @@ final class App: NSObject, NSApplicationDelegate, NSTableViewDataSource, NSTable
         pages = catalog["pages"] as? [Object] ?? []
         installMenu()
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 880, height: 660), styleMask: [.titled, .closable, .miniaturizable, .resizable], backing: .buffered, defer: false)
-        window.title = "Sound Connect"; window.minSize = NSSize(width: 720, height: 480); window.isReleasedWhenClosed = false
+        window.title = "SonyHeadphonesClient"; window.minSize = NSSize(width: 720, height: 480); window.isReleasedWhenClosed = false
         let split = NSSplitView(); split.isVertical = true; split.dividerStyle = .thin
         let navigation = NSScrollView(); navigation.hasVerticalScroller = true
         table.addTableColumn(NSTableColumn(identifier: NSUserInterfaceItemIdentifier("page")))
@@ -184,7 +184,7 @@ final class App: NSObject, NSApplicationDelegate, NSTableViewDataSource, NSTable
         table.selectRowIndexes(IndexSet(integer: pages.firstIndex { string($0["id"]) == options.route } ?? 0), byExtendingSelection: false)
         selectPage()
         status = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
-        status.button?.image = NSImage(systemSymbolName: "headphones", accessibilityDescription: "Sound Connect")
+        status.button?.image = NSImage(systemSymbolName: "headphones", accessibilityDescription: "SonyHeadphonesClient")
         status.button?.target = self; status.button?.action = #selector(togglePanel)
         status.button?.sendAction(on: [.leftMouseUp, .rightMouseUp])
         let quick = NSViewController(); quick.view = stack(.vertical)
@@ -217,7 +217,7 @@ final class App: NSObject, NSApplicationDelegate, NSTableViewDataSource, NSTable
             action.keyEquivalentModifierMask = [.control, .option]; action.target = self
         }
         appMenu.addItem(NSMenuItem.separator())
-        appMenu.addItem(withTitle: tr("Quit Sound Connect", "退出 Sound Connect"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
+        appMenu.addItem(withTitle: tr("Quit SonyHeadphonesClient", "退出 SonyHeadphonesClient"), action: #selector(NSApplication.terminate(_:)), keyEquivalent: "q")
         NSApp.mainMenu = menu
     }
     @objc func play() { backend.send("playback", "togglePlayback") }
