@@ -11,8 +11,8 @@ from client import (CATALOG, Client, choices, command, connection_error, display
                     enabled, options, quick_page, title, unavailable_reason, value, visible)
 
 
-APP_ID = 'io.github.czcqty.SoundConnect.gnome'
-ICON = 'io.github.czcqty.SoundConnect'
+APP_ID = 'io.github.czcqty.SonyHeadphonesClient.Native.gnome'
+ICON = 'io.github.czcqty.SonyHeadphonesClient.Native'
 PAGE_ICONS = {
     'home': 'go-home-symbolic', 'connection': 'bluetooth-symbolic',
     'sound': 'audio-volume-high-symbolic', 'noise': 'audio-headphones-symbolic',
@@ -73,7 +73,7 @@ class App(Adw.Application):
             self.window.present()
             return
         Gtk.Window.set_default_icon_name(ICON)
-        self.window = Adw.ApplicationWindow(application=self, title='Sound Connect', default_width=960, default_height=740)
+        self.window = Adw.ApplicationWindow(application=self, title='SonyHeadphonesClient', default_width=960, default_height=740)
         self.window.set_size_request(370, 340)
         self.window.connect('close-request', self.close_main)
         toolbar = Adw.ToolbarView()
@@ -601,7 +601,7 @@ class App(Adw.Application):
         return GLib.SOURCE_REMOVE
 
 if __name__ == '__main__':
-    GLib.set_application_name('Sound Connect')
+    GLib.set_application_name('SonyHeadphonesClient')
     app = App(options())
     result = app.run([sys.argv[0]] + (['--panel'] if app.args.panel else []))
     sys.exit(app.exit_code or result)

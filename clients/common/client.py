@@ -10,7 +10,7 @@ CATALOG = json.loads(Path(__file__).with_name('catalog.json').read_text(encoding
 
 def options():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--backend', type=Path, default=Path('/usr/libexec/soundconnect/SoundConnectBackend'))
+    parser.add_argument('--backend', type=Path, default=Path('/usr/libexec/sonyheadphonesclient/SoundConnectBackend'))
     parser.add_argument('--profile', default='WH-1000XM6')
     parser.add_argument('--live', action='store_true')
     parser.add_argument('--locale', choices=['en', 'zh_CN'])

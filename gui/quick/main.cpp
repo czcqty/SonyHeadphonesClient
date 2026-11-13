@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
     app.setWindowIcon(QIcon(QStringLiteral(":/icons/app-icon-512.png")));
 
     QCommandLineParser parser;
-    parser.setApplicationDescription(QStringLiteral("Clean-room Sound Connect local controls frontend"));
+    parser.setApplicationDescription(QStringLiteral("SonyHeadphonesClient local headphone controls"));
     parser.addHelpOption();
     parser.addVersionOption();
     parser.addOption({QStringLiteral("preview-profile"), QStringLiteral("Device profile to load"), QStringLiteral("profile")});

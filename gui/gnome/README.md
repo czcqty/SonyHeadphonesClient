@@ -27,7 +27,7 @@ The panel's × closes it. If it was the only window, settings becomes reachable.
 Repeated live launcher invocations bring forward the primary process's window.
 Ctrl+Q quits the application and closes its backend.
 
-Use the installed `soundconnect-gnome` command or run these preview checks from
+Use the installed `sonyheadphonesclient-gnome` command or run these preview checks from
 the source tree with a Linux backend:
 
 ```sh

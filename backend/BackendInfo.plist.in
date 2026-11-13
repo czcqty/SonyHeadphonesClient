@@ -10,6 +10,6 @@
     <key>CFBundleVersion</key><string>${PROJECT_VERSION}</string>
     <key>LSBackgroundOnly</key><true/>
     <key>NSBluetoothAlwaysUsageDescription</key>
-    <string>Control the Sony headphones selected in Sound Connect.</string>
+    <string>Control the Sony headphones selected in SonyHeadphonesClient.</string>
 </dict>
 </plist>
