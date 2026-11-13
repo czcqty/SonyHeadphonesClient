@@ -25,7 +25,7 @@ def dependencies(binary, staging):
     (staging / 'DEBIAN').mkdir(exist_ok=True)
     control = staging / 'debian/control'
     control.parent.mkdir()
-    control.write_text('Source: soundconnect\nSection: sound\nPriority: optional\nMaintainer: Sound Connect contributors <noreply@github.com>\n\nPackage: soundconnect\nArchitecture: any\nDescription: Sound Connect\n')
+    control.write_text('Source: sonyheadphonesclient\nSection: sound\nPriority: optional\nMaintainer: SonyHeadphonesClient contributors <noreply@github.com>\n\nPackage: sonyheadphonesclient\nArchitecture: any\nDescription: SonyHeadphonesClient\n')
     binaries = [binary, *sorted((binary.parent / 'lib').glob('*.so*'))]
     excluded = ['-xlibqt6core6t64'] if (binary.parent / 'lib/libQt6Core.so.6').exists() else []
     result = run('dpkg-shlibdeps', '--ignore-missing-info', '-O', '-S' + str(staging), *excluded,
@@ -47,22 +47,22 @@ def main():
     if run('dpkg', '--print-architecture') != 'amd64':
         raise SystemExit('This package recipe targets amd64')
     version = re.search(r'\bVERSION\s+(\d+\.\d+\.\d+)', (ROOT / 'CMakeLists.txt').read_text())[1]
-    version += '-2~' + args.distro
+    version += '-3~' + args.distro
     revision = os.environ.get('SOUNDCONNECT_SOURCE_REVISION') or run('git', '-C', ROOT, 'rev-parse', 'HEAD')
-    with tempfile.TemporaryDirectory(prefix='soundconnect-deb-') as temporary:
+    with tempfile.TemporaryDirectory(prefix='sonyheadphonesclient-deb-') as temporary:
         temp = Path(temporary)
-        packages = {name: temp / name for name in ('soundconnect-common', 'soundconnect-backend', 'soundconnect-' + args.desktop)}
+        packages = {name: temp / name for name in ('sonyheadphonesclient-common', 'sonyheadphonesclient-backend', 'sonyheadphonesclient-' + args.desktop)}
         for directory in packages.values():
             directory.mkdir()
-        common = packages['soundconnect-common']
+        common = packages['sonyheadphonesclient-common']
         for name in ('catalog.json', 'client.py', 'process_client.py'):
-            copy(ROOT / 'clients/common' / name, common / 'usr/share/soundconnect/clients/common' / name)
-        copy(ROOT / 'gui/assets/icons/app-icon.svg', common / 'usr/share/icons/hicolor/scalable/apps/io.github.czcqty.SoundConnect.svg')
+            copy(ROOT / 'clients/common' / name, common / 'usr/share/sonyheadphonesclient/clients/common' / name)
+        copy(ROOT / 'gui/assets/icons/app-icon.svg', common / 'usr/share/icons/hicolor/scalable/apps/io.github.czcqty.SonyHeadphonesClient.Native.svg')
         for size in (16, 24, 32, 48, 64, 128, 256, 512):
             copy(ROOT / f'gui/assets/icons/app-icon-{size}.png',
-                 common / f'usr/share/icons/hicolor/{size}x{size}/apps/io.github.czcqty.SoundConnect.png')
-        backend = packages['soundconnect-backend']
-        executable = backend / 'usr/libexec/soundconnect/SoundConnectBackend'
+                 common / f'usr/share/icons/hicolor/{size}x{size}/apps/io.github.czcqty.SonyHeadphonesClient.Native.png')
+        backend = packages['sonyheadphonesclient-backend']
+        executable = backend / 'usr/libexec/sonyheadphonesclient/SoundConnectBackend'
         copy(build / 'backend/backend/SoundConnectBackend', executable, True)
         if args.distro == 'ubuntu24.04':
             if not args.qt_root:
@@ -87,46 +87,48 @@ def main():
             run('patchelf', '--set-rpath', '$ORIGIN/lib', executable)
             license_dir = qt_root / 'LICENSES'
             if license_dir.is_dir():
-                shutil.copytree(license_dir, backend / 'usr/share/doc/soundconnect-backend/qt-licenses')
+                shutil.copytree(license_dir, backend / 'usr/share/doc/sonyheadphonesclient-backend/qt-licenses')
         else:
             run('patchelf', '--remove-rpath', executable)
         backend_deps = dependencies(executable, backend)
-        frontend = packages['soundconnect-' + args.desktop]
-        command = 'soundconnect-' + args.desktop
+        frontend = packages['sonyheadphonesclient-' + args.desktop]
+        command = 'sonyheadphonesclient-' + args.desktop
         if args.desktop == 'kde':
             target = frontend / 'usr/bin' / command
-            copy(build / 'kde/SoundConnectKDE', target, True)
+            copy(build / 'kde/SonyHeadphonesClientKDE', target, True)
             run('patchelf', '--remove-rpath', target)
             native_deps = dependencies(target, frontend) + (', kde-style-breeze-data, kf6-breeze-icon-theme, qt6-svg-plugins'
                                                             if args.distro == 'debian13' else ', breeze, libqt5svg5')
         else:
             for filename in ('main.py', 'parity.py'):
-                copy(ROOT / 'gui' / args.desktop / filename, frontend / 'usr/share/soundconnect/gui' / args.desktop / filename)
+                copy(ROOT / 'gui' / args.desktop / filename, frontend / 'usr/share/sonyheadphonesclient/gui' / args.desktop / filename)
             target = frontend / 'usr/bin' / command
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text('#!/bin/sh\nexec /usr/bin/python3 -B /usr/share/soundconnect/gui/' + args.desktop + '/main.py "$@"\n')
+            target.write_text('#!/bin/sh\nexec /usr/bin/python3 -B /usr/share/sonyheadphonesclient/gui/' + args.desktop + '/main.py "$@"\n')
             target.chmod(0o755)
             native_deps = ('python3, python3-gi, gir1.2-gtk-4.0 (>= 4.10), gir1.2-adw-1 (>= 1.4)'
                            if args.desktop == 'gnome' else 'python3, python3-gi, adwaita-icon-theme, librsvg2-common, gir1.2-gtk-3.0 (>= 3.24), gir1.2-libxfce4ui-2.0 (>= 4.18)')
-        desktop_file = frontend / 'usr/share/applications' / ('io.github.czcqty.SoundConnect.' + args.desktop + '.desktop')
+        desktop_file = frontend / 'usr/share/applications' / ('io.github.czcqty.SonyHeadphonesClient.Native.' + args.desktop + '.desktop')
         desktop_file.parent.mkdir(parents=True)
-        desktop_file.write_text('[Desktop Entry]\nType=Application\nName=Sound Connect (' + args.desktop.upper() + ')\n'
+        desktop_file.write_text('[Desktop Entry]\nType=Application\nName=SonyHeadphonesClient (' + args.desktop.upper() + ')\n'
             'Comment=Control supported Sony headphones\nExec=' + command + ' --live\n'
-            'Icon=io.github.czcqty.SoundConnect\nTerminal=false\nCategories=AudioVideo;Audio;Settings;\n')
-        wm_class = {'kde': 'SoundConnectKDE', 'xfce': 'io.github.czcqty.SoundConnect.xfce'}.get(args.desktop)
+            'Icon=io.github.czcqty.SonyHeadphonesClient.Native\nTerminal=false\nCategories=AudioVideo;Audio;Settings;\n')
+        wm_class = {'kde': 'SonyHeadphonesClientKDE', 'xfce': 'io.github.czcqty.SonyHeadphonesClient.Native.xfce'}.get(args.desktop)
         if wm_class:
             with desktop_file.open('a') as entry:
                 entry.write(f'StartupWMClass={wm_class}\n')
         run('desktop-file-validate', desktop_file)
         manifest = dict(version=version, source=revision, distro=args.distro, desktop=args.desktop, packages=[])
         for name, directory in packages.items():
-            deps = 'python3' if name == 'soundconnect-common' else backend_deps if name == 'soundconnect-backend' else native_deps + ', soundconnect-backend (= ' + version + '), soundconnect-common (= ' + version + ')'
+            deps = 'python3' if name == 'sonyheadphonesclient-common' else backend_deps if name == 'sonyheadphonesclient-backend' else native_deps + ', sonyheadphonesclient-backend (= ' + version + '), sonyheadphonesclient-common (= ' + version + ')'
             metadata = directory / 'DEBIAN'
             metadata.mkdir(exist_ok=True)
-            recommends = 'Recommends: fonts-noto-cjk\n' if name == 'soundconnect-common' else ''
-            (metadata / 'control').write_text(f'Package: {name}\nVersion: {version}\nArchitecture: {"all" if name == "soundconnect-common" else "amd64"}\nMaintainer: Sound Connect contributors <noreply@github.com>\nSection: sound\nPriority: optional\nDepends: {deps}\n{recommends}Description: Native Sound Connect {name.removeprefix("soundconnect-")}\n Shared local controls for supported Sony headphones.\n')
+            recommends = 'Recommends: fonts-noto-cjk\n' if name == 'sonyheadphonesclient-common' else ''
+            legacy = name.replace('sonyheadphonesclient-', 'soundconnect-', 1)
+            transition = f'Provides: {legacy} (= {version})\nConflicts: {legacy}\nReplaces: {legacy}\n'
+            (metadata / 'control').write_text(f'Package: {name}\nVersion: {version}\nArchitecture: {"all" if name == "sonyheadphonesclient-common" else "amd64"}\nMaintainer: SonyHeadphonesClient contributors <noreply@github.com>\nSection: sound\nPriority: optional\nDepends: {deps}\n{transition}{recommends}Description: Native SonyHeadphonesClient {name.removeprefix("sonyheadphonesclient-")}\n Shared local controls for supported Sony headphones.\n')
             copy(ROOT / 'LICENSE', directory / 'usr/share/doc' / name / 'copyright')
-            archive = output / (name + '_' + version + '_' + ('all' if name == 'soundconnect-common' else 'amd64') + '.deb')
+            archive = output / (name + '_' + version + '_' + ('all' if name == 'sonyheadphonesclient-common' else 'amd64') + '.deb')
             run('dpkg-deb', '--root-owner-group', '--build', directory, archive)
             manifest['packages'].append(dict(file=archive.name, dependencies=deps))
         (output / ('manifest-' + args.desktop + '.json')).write_text(json.dumps(manifest, indent=2) + '\n')

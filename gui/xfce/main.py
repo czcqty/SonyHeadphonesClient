@@ -13,7 +13,7 @@ from client import (CATALOG, Client, choices, command, connection_error, display
                     enabled, options, quick_page, title, unavailable_reason, value, visible)
 
 
-APP_ICON = 'io.github.czcqty.SoundConnect'
+APP_ICON = 'io.github.czcqty.SonyHeadphonesClient.Native'
 PAGE_ICONS = {
     'home': 'go-home-symbolic', 'connection': 'bluetooth-symbolic',
     'sound': 'audio-volume-high-symbolic', 'noise': 'audio-headphones-symbolic',
@@ -60,7 +60,7 @@ class App:
         # This is the primary settings window. xfwm otherwise keeps dialog
         # windows above the independent quick panel even after it gains focus.
         self.window.set_type_hint(Gdk.WindowTypeHint.NORMAL)
-        self.window.set_title('Sound Connect')
+        self.window.set_title('SonyHeadphonesClient')
         self.window.set_icon_name(APP_ICON)
         self.window.set_subtitle(self.tr('Headphone settings', '耳机设置'))
         self.window.set_default_size(860, 650)
@@ -120,7 +120,7 @@ class App:
         self.tray_was_embedded = False
         self.tray = Gtk.StatusIcon.new_from_icon_name(APP_ICON) if isinstance(Gdk.Display.get_default(), GdkX11.X11Display) else None
         if self.tray:
-            self.tray.set_tooltip_text('Sound Connect'); self.tray.set_visible(True)
+            self.tray.set_tooltip_text('SonyHeadphonesClient'); self.tray.set_visible(True)
             self.tray.connect('activate', self.show_quick)
         self.menu = Gtk.Menu()
         self.menu_labels = []
@@ -626,7 +626,7 @@ class App:
 if __name__ == '__main__':
     args = options()
     GLib.set_prgname(APP_ICON + '.xfce')
-    GLib.set_application_name('Sound Connect')
+    GLib.set_application_name('SonyHeadphonesClient')
     Gdk.set_program_class(APP_ICON + '.xfce')
     if not Gtk.init_check()[0]:
         print('Cannot open a GTK display', file=sys.stderr)

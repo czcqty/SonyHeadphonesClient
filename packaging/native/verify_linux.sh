@@ -16,7 +16,7 @@ printf '[appearance]\nlocale=zh_CN\nthemeMode=dark\n' > "$XDG_CONFIG_HOME/czcqty
 cp "$XDG_CONFIG_HOME/czcqty/SonyHeadphonesClient.conf" "$testroot/preferences-before"
 
 # Select this adapter even if the directory also contains packages for the other desktops.
-archives=("$packages"/soundconnect-backend_*.deb "$packages"/soundconnect-common_*.deb "$packages"/soundconnect-"$desktop"_*.deb)
+archives=("$packages"/sonyheadphonesclient-backend_*.deb "$packages"/sonyheadphonesclient-common_*.deb "$packages"/sonyheadphonesclient-"$desktop"_*.deb)
 if (( ${#archives[@]} != 3 )); then echo "Expected one revision of each package" >&2; exit 2; fi
 if [[ -n ${3:-} ]]; then
   previous=$(realpath "$3")
@@ -40,15 +40,15 @@ for locale in en zh_CN; do
   for suite in smoke parity; do
     pointer_test=0
     if [[ "$desktop" == gnome && "$suite" == parity ]]; then pointer_test=1; fi
-    SOUNDCONNECT_TEST_X11_POINTER=$pointer_test timeout 300 xvfb-run -a dbus-run-session -- "soundconnect-$desktop" --locale "$locale" "--$suite-test" \
+    SOUNDCONNECT_TEST_X11_POINTER=$pointer_test timeout 300 xvfb-run -a dbus-run-session -- "sonyheadphonesclient-$desktop" --locale "$locale" "--$suite-test" \
       2>&1 | tee "$reports/$desktop-$locale-$suite.log"
   done
 done
 cmp "$testroot/preferences-before" "$XDG_CONFIG_HOME/czcqty/SonyHeadphonesClient.conf"
-ldd /usr/libexec/soundconnect/SoundConnectBackend | tee "$reports/backend-dependencies.txt"
+ldd /usr/libexec/sonyheadphonesclient/SoundConnectBackend | tee "$reports/backend-dependencies.txt"
 if grep -E 'not found|libQt6(Gui|Widgets|Quick|Qml)' "$reports/backend-dependencies.txt"; then exit 1; fi
-dpkg-query -W 'soundconnect-*' > "$reports/installed-packages.txt"
-apt-get remove -y "soundconnect-$desktop" soundconnect-common soundconnect-backend
+dpkg-query -W 'sonyheadphonesclient-*' > "$reports/installed-packages.txt"
+apt-get remove -y "sonyheadphonesclient-$desktop" sonyheadphonesclient-common sonyheadphonesclient-backend
 while IFS= read -r -d '' path; do test ! -e "${path#"$testroot/payload"}"; done < <(find "$testroot/payload" -type f -print0)
 cmp "$testroot/preferences-before" "$XDG_CONFIG_HOME/czcqty/SonyHeadphonesClient.conf"
 echo 'PASS: installed payload, native Linux backend, both languages, preview isolation and uninstall'

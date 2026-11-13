@@ -14,7 +14,7 @@ symbol and translated label. Narrow windows keep the symbols and tooltips.
 
 Install the matching common, backend and Xfce packages described in the
 [Linux packaging guide](../../packaging/native/README.md). The installed
-desktop entry starts live mode. Running `soundconnect-xfce` from the shell
+desktop entry starts live mode. Running `sonyheadphonesclient-xfce` from the shell
 starts an isolated preview. For a source checkout, build the shared backend
 and supply its path explicitly.
 
@@ -56,7 +56,7 @@ X11. For a source checkout, use the Python entry above with the same flags.
 for locale in en zh_CN; do
   for suite in smoke parity; do
     G_DEBUG=fatal-criticals xvfb-run -a dbus-run-session -- \
-      soundconnect-xfce --locale "$locale" "--$suite-test" || exit 1
+      sonyheadphonesclient-xfce --locale "$locale" "--$suite-test" || exit 1
   done
 done
 ```
